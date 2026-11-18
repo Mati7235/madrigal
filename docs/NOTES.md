@@ -43,6 +43,7 @@ F2-3: playlist read (incl. RD*/VL* fallback), radios, moods, charts-as-custom-qu
 F2-4: home-as-custom-query, library/history, playlist writes, rate.
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 ## Account session port (F7-1)
 
 Oracle: `upstream_desktop/account/{cookies,session,browser_cookies,secret_store,errors,browser_auth}.py`
@@ -85,3 +86,13 @@ Gaps: std-only HTTP reaches `http://` loopback mocks only; `https://`
 endpoints fail closed as `HttpsUnsupported` until a TLS transport lands.
 No secrets in-repo: Last.fm key/secret/session arrive as call arguments.
 
+## InnerTube extension pattern (F2-2 example)
+
+`madrigal-innertube::extension` parses `GetMoodCategoriesQuery` into the
+own `MoodListing` type (adds optional thumbnails over the native output)
+via `impl ParseFrom<GetMoodCategoriesQuery> for MoodListing`, fed with
+`YtMusic::json_query` plus `into_inner()`. Live (`mood_listing`) and
+offline (`parse_mood_listing`) share that impl; `moods.json` pins it.
+F2-3/F2-4 follow the same shape for charts/home: own `Query`/`PostQuery`
+plus own `ParseFrom`, raw JSON pinned via `raw_json_query`, offline
+coverage through `CatalogClient::parse_*` without network.

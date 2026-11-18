@@ -99,3 +99,11 @@ group = "offline"
 [[check]]
 name = "scrobble_outbox"
 group = "offline"
+
+[[check]]
+name = "innertube_search"
+group = "offline"
+
+[[check]]
+name = "innertube_pages"
+group = "offline"
