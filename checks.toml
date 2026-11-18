@@ -175,3 +175,11 @@ group = "native"
 [[check]]
 name = "ui_foundations"
 group = "offline"
+
+[[check]]
+name = "sponsorblock"
+group = "offline"
+
+[[check]]
+name = "tidal_client"
+group = "offline"

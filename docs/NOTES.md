@@ -38,6 +38,25 @@ Query trait is designed for extension; a full own client would re-implement
 SAPISIDHASH auth and a dozen parsers with no gain.
 Risks: crate API churn (0.x); anti-bot breakage hits either option equally;
 custom parsers must pin fixtures from live JSON via raw_json_query.
+
+## SponsorBlock + Tidal fixtures (F7-3)
+
+- SponsorBlock segment payload shape (videoID/segments/segment/category/actionType/UUID/votes)
+  copied from `RESPUESTA` in `scripts/check_sponsorblock.py`.
+- Tidal search item keys (id/title/duration/artists/album/cover), lyrics keys
+  (trackId/lyricsProvider/lyrics/subtitles) and playbackinfo keys (trackId/
+  audioQuality/manifestMimeType/manifest/bitDepth/sampleRate) follow the field
+  names `tidalapi` parses (`media.py`: `Media.parse`, `Lyrics.parse`,
+  `Stream.parse`, `StreamManifest.__init__`); values are synthetic.
+- Tidal device flow uses the oracle endpoints
+  (`/v1/oauth2/device_authorization`, `/v1/oauth2/token` with the
+  `device_code` grant, `expired_token` terminal error) but app credentials are
+  constructor parameters, never committed.
+- MPD fixture is minimal MPEG-DASH carrying what the port reads
+  (`mediaPresentationDuration`, `SegmentTemplate` media/timescale,
+  `SegmentTimeline` d/r, `Representation` codecs/sampling rate).
+- `encryptionType: "NONE"` counts as clear alongside empty, unlike the oracle
+  truthiness test; real clear manifests vary between the two.
 F2-2: wrap YtMusic (auth from browser cookie), search/suggestions/artist/album.
 F2-3: playlist read (incl. RD*/VL* fallback), radios, moods, charts-as-custom-query.
 F2-4: home-as-custom-query, library/history, playlist writes, rate.
