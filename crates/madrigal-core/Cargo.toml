@@ -1,0 +1,19 @@
+[package]
+name = "madrigal-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1"
+tempfile = "3"
+
+[lints]
+workspace = true
+
+[[test]]
+name = "check_core_models"
+path = "tests/checks/check_core_models.rs"
