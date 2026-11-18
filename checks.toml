@@ -187,3 +187,7 @@ group = "offline"
 [[check]]
 name = "innertube_home_library"
 group = "offline"
+
+[[check]]
+name = "innertube_discover"
+group = "offline"

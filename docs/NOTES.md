@@ -177,3 +177,29 @@ user header set, drop the on-behalf-of-user header and retry once.
 Gaps: no authed live verification (no user cookies); create/delete
 offline shape unpinned; live gate at account phase.
 
+## InnerTube discover surface (F2-3)
+
+New files only (`charts.rs`, `browse.rs`, `radios.rs`); live methods call
+the public `raw_json` seam and share the offline `parse_*` code path.
+- `GetChartsQuery` posts `browseId FEmusic_charts` with
+  `formData.selectedValues`; upstream marks GetCharts "Not Planned"
+  (parity table), so no upstream test data exists: `charts_ZZ.json`
+  pinned live 2026-11-18 unauthenticated. Chart playlist ids keep the full
+  `VL` browseId (browse-consistent, `is_radio_id` true); extra video
+  buckets (premium daily/weekly, US genres, IN languages) fold into
+  `genres`.
+- `GetNewReleasesQuery` posts `browseId FEmusic_explore` and reads the
+  `FEmusic_new_releases_albums` / `FEmusic_new_releases_videos` tabs.
+  Unauthenticated explore omits premium `top_songs` (`VLPL`); both tabs
+  missing is `Err`. Video ids fall back to the item menu when the title
+  run carries no play endpoint.
+- `GetBrowseQuery` walks grid/carousel/shelf sections into
+  `BrowseItem` (prefix rule: `MPRE` album, `UC` artist, else playlist;
+  title-run or menu video id means track). Button-only sections
+  (moods grid/carousel) are skipped.
+- `MoodPlaylistsPage` reuses native `GetMoodPlaylistsQuery` with an own
+  `ParseFrom` mapping to core `Playlist`.
+- `is_radio_id` (`RD`/`VL` prefix) routes to
+  `GetWatchPlaylistQuery::new_from_playlist_id`; `parse_playlist_radio`
+  shares the song-radio parse path.
+

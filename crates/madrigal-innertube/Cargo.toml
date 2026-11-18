@@ -29,3 +29,7 @@ path = "tests/checks/check_innertube_home_library.rs"
 [[test]]
 name = "check_innertube_pages"
 path = "tests/checks/check_innertube_pages.rs"
+
+[[test]]
+name = "check_innertube_discover"
+path = "tests/checks/check_innertube_discover.rs"
