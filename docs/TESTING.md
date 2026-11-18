@@ -35,4 +35,5 @@ Sin `cargo` disponible el check es FAIL.
 
 | Check | Grupo | Qué verifica |
 | ----- | ----- | ------------ |
-|       |       |              |
+| `core_models` | offline | Roundtrip serde e invariantes de `madrigal-core` |
+| `i18n_parity` | offline | Paridad es/en de madrigal-i18n: sin huérfanas ni vacías, tr() no vacío, clave inexistente da error |
