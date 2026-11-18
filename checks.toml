@@ -211,3 +211,7 @@ group = "live"
 [[check]]
 name = "lyrics_live"
 group = "live"
+
+[[check]]
+name = "ai_providers"
+group = "offline"

@@ -3488,6 +3488,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "madrigal-ai"
+version = "0.1.0"
+dependencies = [
+ "madrigal-core",
+ "madrigal-db",
+ "madrigal-library",
+ "madrigal-lyrics",
+ "madrigal-settings",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "madrigal-backup"
 version = "0.1.0"
 dependencies = [
