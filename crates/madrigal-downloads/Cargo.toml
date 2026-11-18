@@ -1,0 +1,29 @@
+[package]
+name = "madrigal-downloads"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+madrigal-core = { path = "../madrigal-core" }
+madrigal-db = { path = "../madrigal-db" }
+madrigal-files = { path = "../madrigal-files" }
+madrigal-paths = { path = "../madrigal-paths" }
+madrigal-settings = { path = "../madrigal-settings" }
+rusqlite = { version = "0.41" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[[test]]
+name = "check_downloads_queue"
+path = "tests/checks/check_downloads_queue.rs"
+
+[[test]]
+name = "check_downloads_postprocess"
+path = "tests/checks/check_downloads_postprocess.rs"

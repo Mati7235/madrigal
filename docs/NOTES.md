@@ -106,3 +106,15 @@ not body+4 (sample rate). MP4 `©*` atoms are raw 0xA9 bytes, not UTF-8 ©.
 `sync_to_db` upserts only; removal detection (stale Local rows whose file
 vanished) is a later task and needs mtime/size tombstones first.
 
+## Downloads queue decision
+
+Oracle: `upstream_desktop/downloads/manager.py` (thread pool, yt-dlp
+SponsorBlock/ModifyChapters postprocessors, quarantine dir) + `application/downloads.py`.
+Port: `DownloadRunner` trait (fake injectable offline; `YtDlpRunner` spawns
+yt-dlp with `--newline` parse in production), album/artist/track-number
+output paths, db registry via `madrigal_db::upsert_download`.
+Findings: `madrigal_db::open` writes (migrations) so registry open+write must
+share one mutex or concurrent first-writes hit `database is locked` under WAL;
+ffmpeg chapter rewrite must be single-pass (`atrim`/`concat` + `-map_chapters 1`
+with re-encode) because `-c copy` + chapters is rejected by the ipod muxer.
+

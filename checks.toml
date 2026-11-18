@@ -111,3 +111,11 @@ group = "offline"
 [[check]]
 name = "localmedia_scan"
 group = "native"
+
+[[check]]
+name = "downloads_queue"
+group = "offline"
+
+[[check]]
+name = "downloads_postprocess"
+group = "native"

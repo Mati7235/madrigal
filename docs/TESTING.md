@@ -64,6 +64,8 @@ Without `cargo` available the check is FAIL.
 | `innertube_search` | offline | Fixture search songs/artists/albums map to core models, filter mapping, suggestions |
 | `innertube_pages` | offline | Fixture artist/album/playlist/watch pages map to models, moods via custom parse, malformed input errors |
 | `localmedia_scan` | native | Local folder scan (ffmpeg fixtures): tags/durations/artwork/lyrics, exclude/short/corrupt handling, Local db upserts, artwork prune |
+| `downloads_queue` | offline | Download queue: concurrency cap, pause/resume, cancel, retry, quarantine, delete, layout, export/import |
+| `downloads_postprocess` | native | ffmpeg segment cut with chapter rewrite on real audio |
 
 ## Visual verification
 
