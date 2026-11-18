@@ -63,6 +63,7 @@ Without `cargo` available the check is FAIL.
 | `account_profiles` | offline | Isolated account profiles, settings active pointer, delete, 0600 cookies, browser seam |
 | `innertube_search` | offline | Fixture search songs/artists/albums map to core models, filter mapping, suggestions |
 | `innertube_pages` | offline | Fixture artist/album/playlist/watch pages map to models, moods via custom parse, malformed input errors |
+| `localmedia_scan` | native | Local folder scan (ffmpeg fixtures): tags/durations/artwork/lyrics, exclude/short/corrupt handling, Local db upserts, artwork prune |
 
 ## Visual verification
 

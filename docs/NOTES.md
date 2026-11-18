@@ -42,8 +42,6 @@ F2-2: wrap YtMusic (auth from browser cookie), search/suggestions/artist/album.
 F2-3: playlist read (incl. RD*/VL* fallback), radios, moods, charts-as-custom-query.
 F2-4: home-as-custom-query, library/history, playlist writes, rate.
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 ## Account session port (F7-1)
 
 Oracle: `upstream_desktop/account/{cookies,session,browser_cookies,secret_store,errors,browser_auth}.py`
@@ -96,3 +94,15 @@ offline (`parse_mood_listing`) share that impl; `moods.json` pins it.
 F2-3/F2-4 follow the same shape for charts/home: own `Query`/`PostQuery`
 plus own `ParseFrom`, raw JSON pinned via `raw_json_query`, offline
 coverage through `CatalogClient::parse_*` without network.
+
+## Local media scan (F6-2)
+
+Tag parsing is std-only on purpose: no `lofty` in the offline cargo cache,
+so mp3 (ID3v2.3/2.4 + MPEG frame walk), flac, ogg vorbis, m4a and wav
+parsers are hand-written. Opus-in-ogg returns a clean per-file error.
+ffmpeg writes `lyrics=` to a TXXX frame described "USLT", not a real USLT
+frame; the mp3 parser accepts both. WAV `fmt ` byte rate sits at body+8,
+not body+4 (sample rate). MP4 `©*` atoms are raw 0xA9 bytes, not UTF-8 ©.
+`sync_to_db` upserts only; removal detection (stale Local rows whose file
+vanished) is a later task and needs mtime/size tombstones first.
+

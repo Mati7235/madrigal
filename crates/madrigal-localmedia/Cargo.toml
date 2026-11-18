@@ -1,0 +1,26 @@
+[package]
+name = "madrigal-localmedia"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+madrigal-core = { path = "../madrigal-core" }
+madrigal-db = { path = "../madrigal-db" }
+madrigal-files = { path = "../madrigal-files" }
+madrigal-paths = { path = "../madrigal-paths" }
+madrigal-settings = { path = "../madrigal-settings" }
+rusqlite = { version = "0.41", features = ["bundled"] }
+
+[dev-dependencies]
+madrigal-db = { path = "../madrigal-db" }
+madrigal-paths = { path = "../madrigal-paths" }
+madrigal-settings = { path = "../madrigal-settings" }
+tempfile = "3"
+
+[lints]
+workspace = true
+
+[[test]]
+name = "check_localmedia_scan"
+path = "tests/checks/check_localmedia_scan.rs"

@@ -107,3 +107,7 @@ group = "offline"
 [[check]]
 name = "innertube_pages"
 group = "offline"
+
+[[check]]
+name = "localmedia_scan"
+group = "native"
