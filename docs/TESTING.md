@@ -37,3 +37,6 @@ Sin `cargo` disponible el check es FAIL.
 | ----- | ----- | ------------ |
 | `core_models` | offline | Roundtrip serde e invariantes de `madrigal-core` |
 | `i18n_parity` | offline | Paridad es/en de madrigal-i18n: sin huérfanas ni vacías, tr() no vacío, clave inexistente da error |
+| `paths_isolation` | offline | Rutas contenidas en MADRIGAL_PROFILE_ROOT |
+| `files_atomic` | offline | Escritura atómica todo-o-nada sin temporales |
+| `secrets_permissions` | offline | Secretos 0600, rechazo de symlinks, keyring desactivado |

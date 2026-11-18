@@ -11,3 +11,15 @@ group = "offline"
 [[check]]
 name = "i18n_parity"
 group = "offline"
+
+[[check]]
+name = "paths_isolation"
+group = "offline"
+
+[[check]]
+name = "files_atomic"
+group = "offline"
+
+[[check]]
+name = "secrets_permissions"
+group = "offline"

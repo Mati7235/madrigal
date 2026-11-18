@@ -1,0 +1,15 @@
+[package]
+name = "madrigal-paths"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+tempfile = "3"
+
+[[test]]
+name = "check_paths_isolation"
+path = "tests/checks/check_paths_isolation.rs"
