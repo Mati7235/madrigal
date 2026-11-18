@@ -2957,6 +2957,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "madrigal-settings"
+version = "0.1.0"
+dependencies = [
+ "madrigal-files",
+ "madrigal-paths",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "madrigal-streams"
 version = "0.1.0"
 dependencies = [

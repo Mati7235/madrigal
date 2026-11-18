@@ -49,6 +49,7 @@ Without `cargo` available the check is FAIL.
 | `streams_cache` | offline | Stream cache TTL, prune of expired only, atomic writes |
 | `streams_po_token` | offline | PO token injection via local server, offline degradation |
 | `settings_roundtrip` | offline | Typed settings load/save with sanitize, unknown-key retention and per-account isolation |
+| `lyrics_parsers` | offline | LRC/enhanced/TTML/SYLT parsing, markers, to_lrc roundtrip |
 
 ## Visual verification
 

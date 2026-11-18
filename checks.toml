@@ -25,7 +25,6 @@ name = "secrets_permissions"
 group = "offline"
 
 [[check]]
-<<<<<<< HEAD
 name = "testkit_selftest"
 group = "offline"
 
@@ -51,4 +50,8 @@ group = "offline"
 
 [[check]]
 name = "settings_roundtrip"
+group = "offline"
+
+[[check]]
+name = "lyrics_parsers"
 group = "offline"

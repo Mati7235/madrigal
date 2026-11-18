@@ -1,0 +1,19 @@
+[package]
+name = "madrigal-lyrics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+regex = "1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints]
+workspace = true
+
+[[test]]
+name = "check_lyrics_parsers"
+path = "tests/checks/check_lyrics_parsers.rs"
