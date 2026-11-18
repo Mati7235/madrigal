@@ -1,0 +1,26 @@
+[package]
+name = "madrigal-db"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+madrigal-core = { path = "../madrigal-core" }
+madrigal-paths = { path = "../madrigal-paths" }
+rusqlite = { version = "0.41", features = ["bundled"] }
+rusqlite_migration = "2"
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[[test]]
+name = "check_db_migrations"
+path = "tests/checks/check_db_migrations.rs"
+
+[[test]]
+name = "check_db_recovery"
+path = "tests/checks/check_db_recovery.rs"

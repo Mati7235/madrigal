@@ -1,42 +1,70 @@
 # Testing
 
-`cargo xtask checks` es la única puerta de calidad.
+`cargo xtask checks` is the only quality gate.
 
-## Grupos
+## Groups
 
-| Grupo   | Qué cubre                                              |
+| Group   | Covers                                                 |
 | ------- | ------------------------------------------------------ |
-| offline | Lógica pura, sin red ni binarios del sistema           |
-| native  | Integración con el sistema (libmpv, MPRIS, keyring)    |
-| live    | Red real (YouTube, LRCLIB, SponsorBlock); opt-in       |
-| visual  | Inspección de interfaz; opt-in                         |
+| offline | Pure logic, no network or system binaries              |
+| native  | System integration (libmpv, MPRIS, keyring)            |
+| live    | Real network (YouTube, LRCLIB, SponsorBlock); opt-in    |
+| visual  | UI inspection; opt-in                                  |
 
-Por defecto se corre `offline` + `native`. `live` y `visual` sólo a pedido.
+By default `offline` + `native` run. `live` and `visual` only on request.
 
-## Códigos de salida
+## Exit codes
 
-- `0`: todo PASS o SKIP, o registro vacío (`0 checks`).
-- `1`: al menos un FAIL.
-- `2`: uso inválido (grupo inexistente, falta valor, subcomando erróneo).
+- `0`: all PASS or SKIP, or an empty registry (`0 checks`).
+- `1`: at least one FAIL.
+- `2`: invalid usage (unknown group, missing value, wrong subcommand).
 
-Cada check imprime `PASS|FAIL|SKIP <nombre> <grupo>`.
-SKIP = el target `check_<nombre>` no existe aún o el entorno no lo soporta.
-Sin `cargo` disponible el check es FAIL.
+Each check prints `PASS|FAIL|SKIP <name> <group>`.
+SKIP = the `check_<name>` target doesn't exist yet or the environment doesn't support it.
+Without `cargo` available the check is FAIL.
 
-## Agregar un check
+## Adding a check
 
-1. Crear `crates/<crate>/tests/checks/check_<nombre>.rs`.
-2. Agregar la fila en `checks.toml`:
-   `[[check]]` + `name = "<nombre>"` + `group = "<grupo>"`.
-3. Agregar la fila a la tabla de abajo.
-4. El check debe aislar XDG en un directorio temporal y no dejar estado.
+1. Create `crates/<crate>/tests/checks/check_<name>.rs`.
+2. Add the row in `checks.toml`:
+   `[[check]]` + `name = "<name>"` + `group = "<group>"`.
+3. Add the row to the table below.
+4. The check must isolate XDG state in a temp directory and leave nothing behind.
 
-## Registro
+## Registry
 
-| Check | Grupo | Qué verifica |
-| ----- | ----- | ------------ |
-| `core_models` | offline | Roundtrip serde e invariantes de `madrigal-core` |
-| `i18n_parity` | offline | Paridad es/en de madrigal-i18n: sin huérfanas ni vacías, tr() no vacío, clave inexistente da error |
-| `paths_isolation` | offline | Rutas contenidas en MADRIGAL_PROFILE_ROOT |
-| `files_atomic` | offline | Escritura atómica todo-o-nada sin temporales |
-| `secrets_permissions` | offline | Secretos 0600, rechazo de symlinks, keyring desactivado |
+| Check | Group | What it verifies |
+| ----- | ----- | ---------------- |
+| `core_models` | offline | serde roundtrip and invariants of `madrigal-core` |
+| `i18n_parity` | offline | es/en parity of madrigal-i18n: no orphans or empties, tr() non-empty, unknown key errors |
+| `paths_isolation` | offline | All paths contained within MADRIGAL_PROFILE_ROOT |
+| `files_atomic` | offline | All-or-nothing atomic writes with no temp leftovers |
+| `secrets_permissions` | offline | Secrets 0600, symlink rejection, keyring disabled |
+| `testkit_selftest` | offline | Headless UI harness: click, virtual clock, drag, PNG |
+| `db_migrations` | offline | Fresh DB migrates to latest, idempotent reopen, basic song/playlist/event roundtrip |
+| `db_recovery` | offline | Damaged header is quarantined with timestamp and fresh DB takes over; empty and healthy files are never quarantined |
+
+## Visual verification
+
+Flow validated in the spike (`slint-spike/INFORME.md`): Slint 1.19 headless
+backend for clicks, virtual clock, drag-reorder, and PNG screenshots.
+
+Harness contract (`madrigal-testkit`):
+
+- Pinned versions: `slint = "=1.19.0"` with the `mcp` feature (without it the
+  headless backend does not compile the selector).
+- `init_headless()` installs the testing backend with mock clock and software
+  rasterizer; call it once per process.
+- Clicks: `click` / `click_by_id` (sync, via `mock_single_click`); the canonical
+  async pattern is `spawn_local` + `single_click().await`
+  (`slint::testing::send_*` does not exist in 1.19).
+- Virtual clock: `mock_advance` steps in 1 ms increments because one large
+  `mock_elapsed_time` call fires at most 1 tick per timer.
+- Drag&drop: the reorder commit goes in `pointer-event(up)`, never in `clicked`
+  (click does not fire if the press moved).
+- Screenshots: `snapshot_to` uses `Window::take_snapshot()` and saves PNG.
+- Qualified `Component::id` ids; the crate compiles the `.slint` with forced
+  debug info (`with_debug_info(true)`).
+- Crates compiling `.slint` do not inherit `unsafe_code = "forbid"` from the
+  workspace: Slint-generated code uses unsafe internally.
+

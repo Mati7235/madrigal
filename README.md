@@ -1,29 +1,29 @@
-# Madrigal — reproductor de música de escritorio
+# Madrigal — desktop music player
 
-Reproduce tu biblioteca local y YouTube Music (streaming y descargas),
-con letras sincronizadas, scrobbling y control MPRIS.
+Plays your local library and YouTube Music (streaming and downloads),
+with synced lyrics, scrobbling, and MPRIS control.
 
-## Requisitos
+## Requirements
 
 - Rust ≥ 1.100 (`rustup toolchain install stable`)
-- libmpv (reproducción)
-- yt-dlp (streams y descargas de YouTube)
-- ffmpeg (conversión y metadatos)
-- deno o node (provider PO para streaming de YouTube Music)
+- libmpv (playback)
+- yt-dlp (YouTube streams and downloads)
+- ffmpeg (conversion and metadata)
+- deno or node (PO provider for YouTube Music streaming)
 
 ## Checks
 
-`cargo xtask checks` es la única puerta de calidad.
+`cargo xtask checks` is the only quality gate.
 
 ```sh
-cargo xtask checks                        # todos los grupos
+cargo xtask checks                        # all groups
 cargo xtask checks --group offline        # offline | native | live | visual
-cargo xtask checks --only queue           # un solo check
-cargo xtask checks --max-fails 1          # corta en la primera falla
+cargo xtask checks --only queue           # a single check
+cargo xtask checks --max-fails 1          # stop at the first failure
 ```
 
-Detalle del contrato en `docs/TESTING.md`.
+See `docs/TESTING.md` for the full contract.
 
-## Licencia
+## License
 
-GPL-3.0-or-later, ver `LICENSE`.
+GPL-3.0-or-later, see `LICENSE`.

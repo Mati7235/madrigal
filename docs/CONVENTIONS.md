@@ -1,25 +1,25 @@
-# Convenciones
+# Conventions
 
-## Estructura del workspace
+## Workspace layout
 
 ```text
 Cargo.toml          # workspace: members = ["crates/*", "xtask"]
-checks.toml         # registro de checks: nombre -> grupo
+checks.toml         # check registry: name -> group
 crates/
-  madrigal-<area>/  # un crate por área (player, library, lyrics, ...)
-    tests/checks/   # checks de integración: check_<nombre>.rs
-xtask/              # runner `cargo xtask checks`
+  madrigal-<area>/  # one crate per area (player, library, lyrics, ...)
+    tests/checks/   # integration checks: check_<name>.rs
+xtask/              # `cargo xtask checks` runner
 docs/
 ```
 
-## Nombres
+## Naming
 
-- Crates del producto: `madrigal-<area>` en minúsculas.
-- Checks: archivo `check_<nombre>.rs`, target de test `check_<nombre>`,
-  fila `[[check]]` con ese `name` en `checks.toml`.
+- Product crates: lowercase `madrigal-<area>`.
+- Checks: file `check_<name>.rs`, test target `check_<name>`,
+  `[[check]]` row with that `name` in `checks.toml`.
 
-## Reglas de merge
+## Merge rules
 
-- Una tarea = un worktree (ver `.worktrees/`, ignorado por git).
-- Mergea sólo el coordinador; los worktrees proponen, no integran.
-- Cada merge corre `cargo xtask checks` en verde antes de integrar.
+- One task = one worktree (see `.worktrees/`, git-ignored).
+- Only the coordinator merges; worktrees propose, they don't integrate.
+- Every merge runs `cargo xtask checks` green before landing.

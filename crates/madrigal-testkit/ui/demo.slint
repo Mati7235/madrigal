@@ -1,0 +1,59 @@
+import { Button, ListView } from "std-widgets.slint";
+
+export component Demo inherits Window {
+    out property<int> count: 0;
+    in-out property<int> ticks: 0;
+    in-out property<[string]> songs;
+    in-out property<int> drag-from: -1;
+    in-out property<int> drag-to: -1;
+    callback tick();
+    callback drag-start(int, length);
+    callback drag-move(length);
+    callback drag-end();
+    tick => { root.ticks += 1; }
+    title: "testkit-demo";
+    width: 320px;
+    height: 420px;
+    VerticalLayout {
+        spacing: 8px;
+        padding: 8px;
+        inc-btn := Button {
+            text: "Sumar";
+            clicked => { root.count += 1; }
+        }
+        dec-btn := Button {
+            text: "Restar";
+            clicked => { root.count -= 1; }
+        }
+        Text { text: "count=" + root.count; }
+        Text { text: "ticks=" + root.ticks; }
+        ListView {
+            for idx in songs.length: Rectangle {
+                height: 36px;
+                background: idx == root.drag-to ? #334455 : #222222;
+                Text {
+                    x: 8px;
+                    vertical-alignment: center;
+                    text: (idx + 1) + ". " + songs[idx];
+                    color: white;
+                }
+                ta := TouchArea {
+                    mouse-cursor: move;
+                    pointer-event(e) => {
+                        if (e.kind == PointerEventKind.down && e.button == PointerEventButton.left) {
+                            root.drag-start(idx, self.mouse-y);
+                        }
+                        if (e.kind == PointerEventKind.up) {
+                            root.drag-end();
+                        }
+                    }
+                    moved => {
+                        if (self.pressed) {
+                            root.drag-move(self.mouse-y);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

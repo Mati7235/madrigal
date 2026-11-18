@@ -1,8 +1,8 @@
-# Registro de checks: cada entrada mapea un nombre a su grupo.
-# group vale offline | native | live | visual.
-# El check <nombre> vive en crates/<crate>/tests/checks/check_<nombre>.rs
-# y se ejecuta con `cargo test --test check_<nombre>`.
-# Registro vacio: `cargo xtask checks` informa "0 checks" y sale 0.
+# Check registry: each entry maps a name to its group.
+# group is one of: offline | native | live | visual.
+# The check <name> lives in crates/<crate>/tests/checks/check_<name>.rs
+# and runs with `cargo test --test check_<name>`.
+# Empty registry: `cargo xtask checks` reports "0 checks" and exits 0.
 
 [[check]]
 name = "core_models"
@@ -22,4 +22,16 @@ group = "offline"
 
 [[check]]
 name = "secrets_permissions"
+group = "offline"
+
+[[check]]
+name = "testkit_selftest"
+group = "offline"
+
+[[check]]
+name = "db_migrations"
+group = "offline"
+
+[[check]]
+name = "db_recovery"
 group = "offline"

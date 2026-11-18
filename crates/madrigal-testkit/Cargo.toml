@@ -1,0 +1,24 @@
+[package]
+name = "madrigal-testkit"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+slint = { version = "=1.19.0", features = ["mcp"] }
+i-slint-backend-testing = { version = "=1.19.0", features = ["renderer-software"] }
+image = "0.25"
+
+[dev-dependencies]
+tempfile = "3"
+
+[build-dependencies]
+slint-build = "=1.19.0"
+
+# Slint-generated code uses unsafe internally: do not inherit the workspace forbid.
+[lints.clippy]
+all = "warn"
+
+[[test]]
+name = "check_testkit_selftest"
+path = "tests/checks/check_testkit_selftest.rs"
