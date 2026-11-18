@@ -3392,6 +3392,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "madrigal-backup"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "madrigal-core",
+ "madrigal-db",
+ "madrigal-files",
+ "madrigal-paths",
+ "madrigal-settings",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "madrigal-core"
 version = "0.1.0"
 dependencies = [

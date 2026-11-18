@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 
 pub const JSON_FORMAT: &str = "madrigal-playlist";
-pub const LEGACY_JSON_FORMAT: &str = "upstream-playlist";
 pub const JSON_VERSION: u32 = 1;
 pub const CSV_COLUMNS: [&str; 5] = ["position", "title", "artists", "videoId", "localPath"];
 pub const ARTIST_SEPARATOR: &str = "; ";
@@ -961,7 +960,7 @@ pub fn validate_json(
         .map(str::trim)
         .unwrap_or(JSON_FORMAT)
         .to_owned();
-    if format != JSON_FORMAT && format != LEGACY_JSON_FORMAT {
+    if format != JSON_FORMAT {
         issues.push(ExchangeIssue::error(
             "format_mismatch",
             format!("unknown format: {format}"),

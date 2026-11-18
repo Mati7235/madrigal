@@ -49,6 +49,7 @@ Without `cargo` available the check is FAIL.
 | `streams_cache` | offline | Stream cache TTL, prune of expired only, atomic writes |
 | `streams_po_token` | offline | PO token injection via local server, offline degradation |
 | `settings_roundtrip` | offline | Typed settings load/save with sanitize, unknown-key retention and per-account isolation |
+<<<<<<< HEAD
 | `scrobble_thresholds` | offline | Scrobble eligibility table: 50%/180s cap with 30s floor, boundary cases |
 | `scrobble_clients` | offline | Maloja/Last.fm/ListenBrainz payloads, auth signature, error mapping via local mocks |
 | `scrobble_outbox` | offline | Persistent outbox: reload, flush, dedup, growing backoff |
@@ -69,6 +70,9 @@ Without `cargo` available the check is FAIL.
 | `backup_restore` | offline | Full backup snapshot/restore with local-first merge, covers, version gate |
 | `playlist_exchange` | offline | Versioned JSON/CSV playlist exchange roundtrip, preview, atomic export |
 | `backup_schedule` | offline | Schedule next-run math, overwrite/keep naming, poll trigger |
+| `player_queue` | offline | Pure queue logic: repeat cycles, seeded shuffle distribution, move/remove, edit lock |
+| `player_engine` | native | libmpv playback over ffmpeg WAVs: props, pause, af log-verify, gapless EndFile(Eof)->StartFile; SKIP without ffmpeg/libmpv |
+| `player_session` | native | Session save/restore with paused state and deferred stream resolution; SKIP without ffmpeg/libmpv |
 
 ## Visual verification
 

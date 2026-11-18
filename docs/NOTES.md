@@ -2,7 +2,7 @@
 
 ## InnerTube client decision
 
-Oracle: `upstream_desktop/backends/yt.py` + `backends/playlists.py`,
+Oracle (local Python app): `backends/yt.py` + `backends/playlists.py`,
 driven by `application/catalog.py` (ytmusicapi 1.x, Python).
 
 Oracle surface (per ytmusicapi call):
@@ -44,7 +44,7 @@ F2-4: home-as-custom-query, library/history, playlist writes, rate.
 
 ## Account session port (F7-1)
 
-Oracle: `upstream_desktop/account/{cookies,session,browser_cookies,secret_store,errors,browser_auth}.py`
+Oracle (local Python app): `account/{cookies,session,browser_cookies,secret_store,errors,browser_auth}.py`
 plus vectors in `scripts/check_account{,_storage}.py`.
 Ported to `madrigal-account` minus QtWebEngine login; browser sqlite import
 is a `records_from_browser` seam returning Unsupported.
@@ -64,7 +64,7 @@ is a `records_from_browser` seam returning Unsupported.
 
 ## Scrobble backends decision
 
-Oracle: `upstream_desktop/scrobble.py` (Maloja nowplaying/scrobble,
+Oracle (local Python app): `scrobble.py` (Maloja nowplaying/scrobble,
 threshold `min(duration*0.5, 180)` gated on `duration > 30`) plus the
 Android parity target (`lastfm/LastFM.kt` signed form POSTs,
 `ListenBrainzManager.kt` token JSON submits, `ScrobbleManager.kt`
@@ -108,7 +108,7 @@ vanished) is a later task and needs mtime/size tombstones first.
 
 ## Downloads queue decision
 
-Oracle: `upstream_desktop/downloads/manager.py` (thread pool, yt-dlp
+Oracle (local Python app): `downloads/manager.py` (thread pool, yt-dlp
 SponsorBlock/ModifyChapters postprocessors, quarantine dir) + `application/downloads.py`.
 Port: `DownloadRunner` trait (fake injectable offline; `YtDlpRunner` spawns
 yt-dlp with `--newline` parse in production), album/artist/track-number

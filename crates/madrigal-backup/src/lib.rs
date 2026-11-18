@@ -8,8 +8,8 @@ pub use backup::{
     snapshot_to, snapshot_with_covers,
 };
 pub use exchange::{
-    ARTIST_SEPARATOR, CSV_COLUMNS, JSON_FORMAT, JSON_VERSION, LEGACY_JSON_FORMAT,
-    MAX_COVER_BYTES, MAX_FILE_BYTES, MAX_TRACKS, CoverSummary, ExchangeError, ExchangeIssue,
+    ARTIST_SEPARATOR, CSV_COLUMNS, JSON_FORMAT, JSON_VERSION, MAX_COVER_BYTES, MAX_FILE_BYTES,
+    MAX_TRACKS, CoverSummary, ExchangeError, ExchangeIssue,
     ExchangeReport, ImportDiff, PlaylistMeta, Severity, TrackEntry, build_json_payload,
     diff_against, export_csv, export_json, load_csv, load_json, parse_csv, parse_json,
     preview_csv, preview_file, preview_json, serialize_csv, serialize_json, validate_csv,

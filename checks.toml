@@ -131,3 +131,15 @@ group = "offline"
 [[check]]
 name = "backup_schedule"
 group = "offline"
+
+[[check]]
+name = "player_queue"
+group = "offline"
+
+[[check]]
+name = "player_engine"
+group = "native"
+
+[[check]]
+name = "player_session"
+group = "native"

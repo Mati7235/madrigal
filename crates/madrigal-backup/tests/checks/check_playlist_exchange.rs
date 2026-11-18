@@ -68,11 +68,6 @@ fn json_roundtrip_is_byte_faithful() {
 
     let again = serialize_json(Some(&playlist_meta()), &report.entries, None).expect("reserialize");
     assert_eq!(text, again, "byte-faithful roundtrip");
-
-    let legacy = text.replace("madrigal-playlist", "upstream-playlist");
-    let legacy_report =
-        validate_json(&madrigal_backup::parse_json(&legacy).unwrap(), false).unwrap();
-    assert!(legacy_report.valid);
 }
 
 #[test]
