@@ -205,7 +205,6 @@ name = "innertube_home_library"
 group = "offline"
 
 [[check]]
-<<<<<<< HEAD
 name = "innertube_discover"
 group = "offline"
 
@@ -251,4 +250,8 @@ group = "offline"
 
 [[check]]
 name = "spotify_import"
+group = "offline"
+
+[[check]]
+name = "cast_protocol"
 group = "offline"

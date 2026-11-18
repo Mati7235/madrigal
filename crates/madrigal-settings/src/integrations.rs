@@ -4,6 +4,8 @@ use crate::de::{or_default, vec_filtered};
 
 pub const SPONSORBLOCK_DEFAULT_API_URL: &str = "https://sponsor.ajay.app/api/skipSegments";
 
+pub const DEFAULT_CAST_RECEIVER_APP_ID: &str = "CC1AD845";
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum SponsorCategory {
     #[default]
@@ -169,6 +171,10 @@ pub struct Integrations {
     pub spotify_account_name: String,
     #[serde(deserialize_with = "or_default")]
     pub spotify_account_avatar_url: String,
+    #[serde(deserialize_with = "or_default")]
+    pub cast_enabled: bool,
+    #[serde(deserialize_with = "or_default")]
+    pub cast_receiver_app_id: String,
 }
 
 impl Default for Integrations {
@@ -219,6 +225,8 @@ impl Default for Integrations {
             show_spotify_playlists: false,
             spotify_account_name: String::new(),
             spotify_account_avatar_url: String::new(),
+            cast_enabled: false,
+            cast_receiver_app_id: DEFAULT_CAST_RECEIVER_APP_ID.to_owned(),
         }
     }
 }
@@ -244,6 +252,10 @@ impl Integrations {
         self.spotify_account_avatar_url =
             self.spotify_account_avatar_url.trim().to_owned();
         self.discord_client_id = self.discord_client_id.trim().to_owned();
+        self.cast_receiver_app_id = crate::sanitize::non_empty_or(
+            self.cast_receiver_app_id.trim(),
+            DEFAULT_CAST_RECEIVER_APP_ID,
+        );
         self.discord_large_image_custom_url =
             self.discord_large_image_custom_url.trim().to_owned();
         self.discord_small_image_custom_url =

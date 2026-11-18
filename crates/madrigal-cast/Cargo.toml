@@ -1,0 +1,19 @@
+[package]
+name = "madrigal-cast"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+madrigal-core = { path = "../madrigal-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+mdns-sd = "0.22"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+
+[[test]]
+name = "check_cast_protocol"
+path = "tests/checks/check_cast_protocol.rs"

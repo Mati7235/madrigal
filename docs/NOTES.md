@@ -443,3 +443,49 @@ reads: `uri`/`_uri`/`profile.name`/`albumOfTrack`/`coverArt.sources`/
 invented. Mapper test reuses the real `madrigal-innertube` fixture
 `search_songs_beatles.json` through `CatalogClient::parse_search_songs`.
 
+## Cast spike (F10-6)
+
+Oracle (local Android app): `.../cast/` on Android uses the GMS Cast SDK
+(`media3-cast`) with `DEFAULT_MEDIA_RECEIVER_APPLICATION_ID` (`CC1AD845`,
+empty `cast_receiver_application_id` falls back to it), GMS
+`MediaMetadata` music-track keys (TITLE/ARTIST/ALBUM_TITLE/images),
+volume `0.0..=1.0` coerced, and a local HTTP proxy with Range + CORS so
+the receiver can fetch local files.
+
+Crate options researched 2026-11:
+- `rust_cast` 0.21.0 (github.com/azasypkin/rust-cast, MIT, sync,
+  rustls since 0.19, updated Dec 2025): most downloads, but sync
+  blocking API and protobuf dependency; message shapes not asserted
+  against the oracle.
+- `cast-sender` 0.4.x (github.com/haecker-felix/cast-sender, MIT,
+  async, updated Oct 2026): small community, smol runtime, mismatches
+  the workspace tokio stack.
+- `oxicast` 0.0.5 (tokio, updated Nov 2026): too young (0.0.x).
+- `mdns-sd` 0.22.0 (pure Rust, no async runtime): maintained,
+  standard choice for `_googlecast._tcp.local` browse.
+- Hand-rolled CastV2 framing: the wire format is a 4-byte big-endian
+  length prefix around one protobuf `CastMessage`; chosen for the
+  protocol layer so CONNECT/LAUNCH/LOAD shapes stay byte-exact with
+  the oracle without depending on a third-party protocol crate.
+
+Verdict: implement MVP in `madrigal-cast`. Scope: `protocol`
+(hand-rolled protobuf codec + frame codec + message builders and
+status parsers), `media` (LOAD payload from `Track`: contentId URL,
+normalized contentType, BUFFERED streamType, MUSIC_TRACK metadata
+with title/artist/albumName/images), `discovery` (`mdns-sd` browse
+plus pure `ServiceRecord` -> `CastDevice` mapping with fn/md/id
+fallbacks), `session` (Idle->Connected->Launched->Loaded->Stopped->
+Closed over a `Transport` trait; rustls TLS connector with
+device-cert acceptance). Settings: `cast_enabled` (default false),
+`cast_receiver_app_id` (default `CC1AD845`, sanitized non-empty).
+Seams: device-certificate auth challenge is not verified (same trust
+model as node-castv2/pychromecast defaults; hardening later);
+`check_cast_protocol` covers framing and the state machine over an
+in-memory mock transport, not the TLS handshake (no cert generation
+in offline checks); the local-file HTTP proxy from the oracle's
+`LocalCastMediaServer` is not ported yet. Manual live test: enable
+`cast_enabled` on LAN with a Chromecast powered on, browse for the
+friendly name, connect (port 8009), launch the default receiver,
+LOAD an http(s) stream URL, check audio starts, set volume, stop,
+disconnect.
+
