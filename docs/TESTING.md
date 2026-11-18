@@ -75,6 +75,10 @@ Without `cargo` available the check is FAIL.
 | `player_queue` | offline | Pure queue logic: repeat cycles, seeded shuffle distribution, move/remove, edit lock |
 | `player_engine` | native | libmpv playback over ffmpeg WAVs: props, pause, af log-verify, gapless EndFile(Eof)->StartFile; SKIP without ffmpeg/libmpv |
 | `player_session` | native | Session save/restore with paused state and deferred stream resolution; SKIP without ffmpeg/libmpv |
+| `lyrics_providers` | offline | Per-provider fixtures through local mocks: timings, word-level, similarity gate, megalobiz comparison, paxsenix scoring, tidal seam |
+| `lyrics_chain` | offline | Order honored, disabled skipped, first-hit wins, miss/hit cached in db, provider errors skipped, tidal plan |
+| `mpris_service` | native | MPRIS service on private bus: metadata mapping, action recording, Seeked and PropertiesChanged |
+| `notify_actions` | native | Notification show/capabilities/action round-trip against a stub service on a private bus |
 
 ## Visual verification
 

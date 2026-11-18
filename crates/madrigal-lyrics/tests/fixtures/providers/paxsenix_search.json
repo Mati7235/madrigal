@@ -1,0 +1,18 @@
+{
+ "data": [
+  {
+   "id": "decoy-1",
+   "name": "Yesterday",
+   "artistName": "Metallica",
+   "durationInMillis": 372000
+  },
+  {
+   "id": "am-4242",
+   "attributes": {
+    "name": "Yesterday",
+    "artistName": "The Beatles",
+    "durationInMillis": 125000
+   }
+  }
+ ]
+}

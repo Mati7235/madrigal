@@ -1,7 +1,10 @@
+pub mod chain;
 pub mod embedded;
 pub mod karaoke;
 pub mod lrc;
 pub mod lrc_enhanced;
+pub mod matching;
+pub mod providers;
 pub mod share_image;
 pub mod sylt;
 pub mod translation;

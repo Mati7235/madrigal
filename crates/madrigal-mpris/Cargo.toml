@@ -1,0 +1,23 @@
+[package]
+name = "madrigal-mpris"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+madrigal-core = { path = "../madrigal-core" }
+madrigal-settings = { path = "../madrigal-settings" }
+zbus = { version = "5", features = ["tokio"] }
+
+[dev-dependencies]
+futures-lite = "2"
+serde = "1"
+tempfile = "3"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+
+[[test]]
+name = "check_mpris_service"
+path = "tests/checks/check_mpris_service.rs"

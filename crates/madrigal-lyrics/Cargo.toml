@@ -5,16 +5,23 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+madrigal-core = { path = "../madrigal-core" }
+madrigal-db = { path = "../madrigal-db" }
+madrigal-settings = { path = "../madrigal-settings" }
+rusqlite = { version = "0.41", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 regex = "1"
+base64 = "0.22"
 lofty = "0.22"
 image = "0.25"
+unicode-normalization = "0.1"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+tokio = { version = "1", features = ["rt", "time", "macros"] }
 
 [dev-dependencies]
 tempfile = "3"
-madrigal-core = { path = "../madrigal-core" }
-madrigal-db = { path = "../madrigal-db" }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
 
 [lints]
 workspace = true
@@ -34,3 +41,11 @@ path = "tests/checks/check_lyrics_translation.rs"
 [[test]]
 name = "check_lyrics_embedded_image"
 path = "tests/checks/check_lyrics_embedded_image.rs"
+
+[[test]]
+name = "check_lyrics_providers"
+path = "tests/checks/check_lyrics_providers.rs"
+
+[[test]]
+name = "check_lyrics_chain"
+path = "tests/checks/check_lyrics_chain.rs"

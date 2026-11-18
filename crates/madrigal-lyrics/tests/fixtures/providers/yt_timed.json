@@ -1,0 +1,277 @@
+{
+ "contents": {
+  "elementRenderer": {
+   "newElement": {
+    "type": {
+     "componentType": {
+      "model": {
+       "timedLyricsModel": {
+        "lyricsData": {
+         "timedLyricsData": [
+          {
+           "lyricLine": "\u266a",
+           "cueRange": {
+            "startTimeMilliseconds": "0",
+            "endTimeMilliseconds": "5070",
+            "metadata": {
+             "id": "0"
+            }
+           }
+          },
+          {
+           "lyricLine": "Yesterday",
+           "cueRange": {
+            "startTimeMilliseconds": "5070",
+            "endTimeMilliseconds": "7600",
+            "metadata": {
+             "id": "1"
+            }
+           }
+          },
+          {
+           "lyricLine": "All my troubles seemed so far away",
+           "cueRange": {
+            "startTimeMilliseconds": "8150",
+            "endTimeMilliseconds": "12440",
+            "metadata": {
+             "id": "2"
+            }
+           }
+          },
+          {
+           "lyricLine": "Now it looks as though they're here to stay",
+           "cueRange": {
+            "startTimeMilliseconds": "13040",
+            "endTimeMilliseconds": "16460",
+            "metadata": {
+             "id": "3"
+            }
+           }
+          },
+          {
+           "lyricLine": "Oh, I believe in yesterday",
+           "cueRange": {
+            "startTimeMilliseconds": "16860",
+            "endTimeMilliseconds": "22110",
+            "metadata": {
+             "id": "4"
+            }
+           }
+          },
+          {
+           "lyricLine": "Suddenly",
+           "cueRange": {
+            "startTimeMilliseconds": "22160",
+            "endTimeMilliseconds": "24910",
+            "metadata": {
+             "id": "5"
+            }
+           }
+          },
+          {
+           "lyricLine": "I'm not half the man I used to be",
+           "cueRange": {
+            "startTimeMilliseconds": "25310",
+            "endTimeMilliseconds": "29390",
+            "metadata": {
+             "id": "6"
+            }
+           }
+          },
+          {
+           "lyricLine": "There's a shadow hangin' over me",
+           "cueRange": {
+            "startTimeMilliseconds": "30240",
+            "endTimeMilliseconds": "33600",
+            "metadata": {
+             "id": "7"
+            }
+           }
+          },
+          {
+           "lyricLine": "Oh, yesterday came suddenly",
+           "cueRange": {
+            "startTimeMilliseconds": "34200",
+            "endTimeMilliseconds": "39010",
+            "metadata": {
+             "id": "8"
+            }
+           }
+          },
+          {
+           "lyricLine": "Why she had to go, I don't know, she wouldn't say",
+           "cueRange": {
+            "startTimeMilliseconds": "39460",
+            "endTimeMilliseconds": "48470",
+            "metadata": {
+             "id": "9"
+            }
+           }
+          },
+          {
+           "lyricLine": "I said something wrong, now I long for yesterday",
+           "cueRange": {
+            "startTimeMilliseconds": "49370",
+            "endTimeMilliseconds": "59010",
+            "metadata": {
+             "id": "10"
+            }
+           }
+          },
+          {
+           "lyricLine": "Yesterday",
+           "cueRange": {
+            "startTimeMilliseconds": "59310",
+            "endTimeMilliseconds": "61880",
+            "metadata": {
+             "id": "11"
+            }
+           }
+          },
+          {
+           "lyricLine": "Love was such an easy game to play",
+           "cueRange": {
+            "startTimeMilliseconds": "62430",
+            "endTimeMilliseconds": "67020",
+            "metadata": {
+             "id": "12"
+            }
+           }
+          },
+          {
+           "lyricLine": "Now I need a place to hide away",
+           "cueRange": {
+            "startTimeMilliseconds": "67620",
+            "endTimeMilliseconds": "71250",
+            "metadata": {
+             "id": "13"
+            }
+           }
+          },
+          {
+           "lyricLine": "Oh, I believe in yesterday",
+           "cueRange": {
+            "startTimeMilliseconds": "71300",
+            "endTimeMilliseconds": "76450",
+            "metadata": {
+             "id": "14"
+            }
+           }
+          },
+          {
+           "lyricLine": "Why she had to go, I don't know, she wouldn't say",
+           "cueRange": {
+            "startTimeMilliseconds": "77000",
+            "endTimeMilliseconds": "86360",
+            "metadata": {
+             "id": "15"
+            }
+           }
+          },
+          {
+           "lyricLine": "I said something wrong, now I long for yesterday",
+           "cueRange": {
+            "startTimeMilliseconds": "86910",
+            "endTimeMilliseconds": "96920",
+            "metadata": {
+             "id": "16"
+            }
+           }
+          },
+          {
+           "lyricLine": "Yesterday",
+           "cueRange": {
+            "startTimeMilliseconds": "96970",
+            "endTimeMilliseconds": "99520",
+            "metadata": {
+             "id": "17"
+            }
+           }
+          },
+          {
+           "lyricLine": "Love was such an easy game to play",
+           "cueRange": {
+            "startTimeMilliseconds": "100120",
+            "endTimeMilliseconds": "104640",
+            "metadata": {
+             "id": "18"
+            }
+           }
+          },
+          {
+           "lyricLine": "Now I need a place to hide away",
+           "cueRange": {
+            "startTimeMilliseconds": "105140",
+            "endTimeMilliseconds": "109080",
+            "metadata": {
+             "id": "19"
+            }
+           }
+          },
+          {
+           "lyricLine": "Oh, I believe in yesterday",
+           "cueRange": {
+            "startTimeMilliseconds": "109130",
+            "endTimeMilliseconds": "114050",
+            "metadata": {
+             "id": "20"
+            }
+           }
+          },
+          {
+           "lyricLine": "Mm mm mm mm mm mm mm",
+           "cueRange": {
+            "startTimeMilliseconds": "114550",
+            "endTimeMilliseconds": "121400",
+            "metadata": {
+             "id": "21"
+            }
+           }
+          }
+         ],
+         "sourceMessage": "Source: LyricFind",
+         "trackingParams": "CAIQiPgDIhMIosawlsySmAMV8VFIAB31uiLv",
+         "loggingCommand": {
+          "clickTrackingParams": "CAIQiPgDIhMIosawlsySmAMV8VFIAB31uiLvygEEe5cxpw==",
+          "logLyricEventCommand": {
+           "serializedLyricInfo": "EhB0X0NuNjd5QWNIeW03LTEzGAEiCzAwMi0xNzEyMjE0KAIwxIn__Ac="
+          }
+         },
+         "colorSamplePaletteEntityKey": "EipZVE1fUExBWUVSX0NPTE9SX1NBTVBMRV9QQUxFVFRFX0VOVElUWV9LRVkgiwMoAQ%3D%3D",
+         "backgroundImage": {
+          "sources": [
+           {
+            "url": "https://yt3.googleusercontent.com/cHaRyci2upQidmt3iHYeAzbkFJ_c1vXEJbpVh-RZpAnbyMNOtOAeZdNMoJnUrRMZnjipmxfxvuvBeFzhWw=w544-h544-l90-rj"
+           }
+          ]
+         },
+         "timedLyricsCommand": {
+          "clickTrackingParams": "CAIQiPgDIhMIosawlsySmAMV8VFIAB31uiLvygEEe5cxpw==",
+          "logLyricEventCommand": {
+           "serializedLyricInfo": "EhB0X0NuNjd5QWNIeW03LTEzGAEiCzAwMi0xNzEyMjE0KAMwxIn__Ac="
+          }
+         },
+         "collectionKey": "lyrics_collection313140709",
+         "experiments": {
+          "enableAsyncInitController": false,
+          "enableLyricLine": false,
+          "updatedLyricTimeMs": 0,
+          "enableLyricsTextDirectionOverride": false,
+          "enableScreenAlwaysOn": false,
+          "enableTextWithTranslation": false,
+          "enableFixedBackgroundHeight": false,
+          "enableLyricsEpSplitView": false,
+          "enableTimedLyricsWhileCasting": false,
+          "enableUnifiedTimedLyricsScreenAlwaysOn": false,
+          "enableLyricsShareLanguageSettingsFix": false,
+          "enableLyricsSharingSplitSmallTonalButton": false
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

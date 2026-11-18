@@ -1,0 +1,99 @@
+{
+  "responseContext": {
+    "serviceTrackingParams": [
+      {
+        "service": "GFEEDBACK",
+        "params": [
+          {
+            "key": "browse_id",
+            "value": "MPLYt_Cn67yAcHym7-13"
+          },
+          {
+            "key": "browse_id_prefix",
+            "value": ""
+          },
+          {
+            "key": "has_unlimited_entitlement",
+            "value": "False"
+          },
+          {
+            "key": "logged_in",
+            "value": "0"
+          }
+        ]
+      },
+      {
+        "service": "CSI",
+        "params": [
+          {
+            "key": "c",
+            "value": "WEB_REMIX"
+          },
+          {
+            "key": "cver",
+            "value": "1.20261118.01.00"
+          },
+          {
+            "key": "yt_li",
+            "value": "0"
+          },
+          {
+            "key": "GetBrowseTrackLyricsPage_rid",
+            "value": "0x037500de5d121219"
+          }
+        ]
+      },
+      {
+        "service": "ECATCHER",
+        "params": [
+          {
+            "key": "client.version",
+            "value": "1.20000101"
+          },
+          {
+            "key": "client.name",
+            "value": "WEB_REMIX"
+          }
+        ]
+      }
+    ],
+    "responseId": "IhMI5vOsqcySmAMV_IOVAh0wqDeG"
+  },
+  "contents": {
+    "sectionListRenderer": {
+      "contents": [
+        {
+          "musicDescriptionShelfRenderer": {
+            "description": {
+              "runs": [
+                {
+                  "text": "Yesterday\r\nAll my troubles seemed so far away\r\nNow it looks as though they're here to stay\r\nOh, I believe in yesterday\r\n\r\nSuddenly\r\nI'm not half the man I used to be\r\nThere's a shadow hangin' over me\r\nOh, yesterday came suddenly\r\n\r\nWhy she had to go, I don't know, she wouldn't say\r\nI said something wrong, now I long for yesterday\r\n\r\nYesterday\r\nLove was such an easy game to play\r\nNow I need a place to hide away\r\nOh, I believe in yesterday\r\n\r\nWhy she had to go, I don't know, she wouldn't say\r\nI said something wrong, now I long for yesterday\r\n\r\nYesterday\r\nLove was such an easy game to play\r\nNow I need a place to hide away\r\nOh, I believe in yesterday\r\nMm mm mm mm mm mm mm"
+                }
+              ]
+            },
+            "trackingParams": "CAIQ2fQEGAAiEwjm86ypzJKYAxX8g5UCHTCoN4Y=",
+            "maxCollapsedLines": 0,
+            "maxExpandedLines": 0,
+            "onShowCommands": [
+              {
+                "clickTrackingParams": "CAIQ2fQEGAAiEwjm86ypzJKYAxX8g5UCHTCoN4bKAQQwml_f",
+                "logLyricEventCommand": {
+                  "serializedLyricInfo": "CgswMDItMTcxMjIxNBIQdF9DbjY3eUFjSHltNy0xMxgBIgswMDItMTcxMjIxNA=="
+                }
+              }
+            ],
+            "footer": {
+              "runs": [
+                {
+                  "text": "Source: LyricFind"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "trackingParams": "CAEQui8iEwjm86ypzJKYAxX8g5UCHTCoN4Y="
+    }
+  },
+  "trackingParams": "CAAQhGciEwjm86ypzJKYAxX8g5UCHTCoN4bKAQQwml_f"
+}

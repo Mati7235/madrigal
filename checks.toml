@@ -155,3 +155,19 @@ group = "native"
 [[check]]
 name = "player_session"
 group = "native"
+
+[[check]]
+name = "lyrics_providers"
+group = "offline"
+
+[[check]]
+name = "lyrics_chain"
+group = "offline"
+
+[[check]]
+name = "mpris_service"
+group = "native"
+
+[[check]]
+name = "notify_actions"
+group = "native"
