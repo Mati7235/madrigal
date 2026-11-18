@@ -63,3 +63,15 @@ group = "offline"
 [[check]]
 name = "net_retry"
 group = "offline"
+
+[[check]]
+name = "library_playlists"
+group = "offline"
+
+[[check]]
+name = "library_stats"
+group = "offline"
+
+[[check]]
+name = "library_history"
+group = "offline"

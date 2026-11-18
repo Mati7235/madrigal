@@ -52,6 +52,9 @@ Without `cargo` available the check is FAIL.
 | `lyrics_parsers` | offline | LRC/enhanced/TTML/SYLT parsing, markers, to_lrc roundtrip |
 | `net_proxy` | offline | Proxy routing, auth header, stream bypass, probe, DoH construct-only |
 | `net_retry` | offline | Backoff attempts, jitter bounds, budget, section counters |
+| `library_playlists` | offline | Local playlists with tags, cover, hidden flag, liked auto-playlist, duplicate policy and undo |
+| `library_stats` | offline | Play counts, streaks, listen time and Year in Music tops over seeded events |
+| `library_history` | offline | Listen/search history with settings pause, clear and duration window |
 
 ## Visual verification
 

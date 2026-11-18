@@ -1,0 +1,31 @@
+[package]
+name = "madrigal-library"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+madrigal-core = { path = "../madrigal-core" }
+madrigal-db = { path = "../madrigal-db" }
+madrigal-settings = { path = "../madrigal-settings" }
+rusqlite = { version = "0.41", features = ["bundled"] }
+serde_json = "1"
+
+[dev-dependencies]
+madrigal-paths = { path = "../madrigal-paths" }
+tempfile = "3"
+
+[[test]]
+name = "check_library_playlists"
+path = "tests/checks/check_library_playlists.rs"
+
+[[test]]
+name = "check_library_stats"
+path = "tests/checks/check_library_stats.rs"
+
+[[test]]
+name = "check_library_history"
+path = "tests/checks/check_library_history.rs"

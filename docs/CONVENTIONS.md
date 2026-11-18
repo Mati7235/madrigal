@@ -23,3 +23,5 @@ docs/
 - One task = one worktree (see `.worktrees/`, git-ignored).
 - Only the coordinator merges; worktrees propose, they don't integrate.
 - Every merge runs `cargo xtask checks` green before landing.
+- Builds in worktrees run with `CARGO_BUILD_JOBS=2`: the machine bottleneck is
+  CPU (12 cores shared by many parallel tasks), not RAM.
