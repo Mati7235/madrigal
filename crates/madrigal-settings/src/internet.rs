@@ -43,6 +43,8 @@ pub struct Internet {
     pub use_visitor_data: bool,
     #[serde(deserialize_with = "or_default")]
     pub po_token_source_url: String,
+    #[serde(deserialize_with = "or_default")]
+    pub offline_mode: bool,
 }
 
 impl Default for Internet {
@@ -63,6 +65,7 @@ impl Default for Internet {
             web_client_po_token_enabled: true,
             use_visitor_data: true,
             po_token_source_url: String::new(),
+            offline_mode: false,
         }
     }
 }

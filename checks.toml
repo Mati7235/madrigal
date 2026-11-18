@@ -219,3 +219,7 @@ group = "offline"
 [[check]]
 name = "together_lan"
 group = "offline"
+
+[[check]]
+name = "curation"
+group = "offline"

@@ -1,0 +1,16 @@
+# Sample AI-generated content blocklist (format fixture, fake ids).
+# Lines starting with '#' or '!' are comments. Blank lines are ignored.
+# A bare 'moderate:' line opens the moderate-confidence section;
+# 'moderate:<id>' marks a single moderate-confidence entry.
+
+UCxHighFakeBlock01
+dQw4w9WgXcQ
+! generated channel, high confidence
+AISlopMusicFactory
+
+moderate:
+UCxModerateFake002
+moderate:UCxWarnlistFake03
+@@@
+
+# trailing comment

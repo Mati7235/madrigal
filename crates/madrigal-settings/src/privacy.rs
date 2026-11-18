@@ -19,6 +19,8 @@ pub struct Privacy {
     pub ai_content_filter_include_moderate: bool,
     #[serde(deserialize_with = "or_default")]
     pub ai_content_filter_last_updated: i64,
+    #[serde(deserialize_with = "or_default")]
+    pub ai_content_filter_source_url: String,
 }
 
 impl Default for Privacy {
@@ -31,6 +33,7 @@ impl Default for Privacy {
             ai_content_filter_enabled: false,
             ai_content_filter_include_moderate: false,
             ai_content_filter_last_updated: 0,
+            ai_content_filter_source_url: String::new(),
         }
     }
 }
@@ -42,5 +45,6 @@ impl Privacy {
         if self.ai_content_filter_last_updated < 0 {
             self.ai_content_filter_last_updated = 0;
         }
+        self.ai_content_filter_source_url = self.ai_content_filter_source_url.trim().to_owned();
     }
 }

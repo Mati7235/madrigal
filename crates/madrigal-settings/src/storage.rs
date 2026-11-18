@@ -17,6 +17,8 @@ pub struct Storage {
     #[serde(deserialize_with = "or_default")]
     pub max_canvas_cache_mb: i32,
     #[serde(deserialize_with = "or_default")]
+    pub max_lyrics_cache_mb: i32,
+    #[serde(deserialize_with = "or_default")]
     pub smart_trimmer: bool,
     #[serde(deserialize_with = "or_default")]
     pub storage_folder_path: String,
@@ -40,6 +42,7 @@ impl Default for Storage {
             max_image_cache_mb: 512,
             max_song_cache_mb: 4096,
             max_canvas_cache_mb: 512,
+            max_lyrics_cache_mb: 64,
             smart_trimmer: true,
             storage_folder_path: String::new(),
             storage_folder_display_name: String::new(),
@@ -72,6 +75,8 @@ impl Storage {
             crate::sanitize::clamp_i32(self.max_song_cache_mb, 0, 1024 * 1024);
         self.max_canvas_cache_mb =
             crate::sanitize::clamp_i32(self.max_canvas_cache_mb, 0, 1024 * 1024);
+        self.max_lyrics_cache_mb =
+            crate::sanitize::clamp_i32(self.max_lyrics_cache_mb, 0, 1024 * 1024);
         self.downloads_dir = self.downloads_dir.trim().to_owned();
         self.storage_folder_path = self.storage_folder_path.trim().to_owned();
         self.storage_folder_display_name =

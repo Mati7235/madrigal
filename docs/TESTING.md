@@ -91,6 +91,7 @@ Without `cargo` available the check is FAIL.
 | `lyrics_live` | live | Real network: LRCLIB-only fetch of Yesterday/Beatles/125s with >= 10 lines |
 | `ai_providers` | offline | AI chat completions (OpenAI-compat/Gemini), validation, translation chain, mix/suggestion parsing, key secrecy |
 | `together_lan` | offline | LAN sessions: discovery, approve, gated add/control, kick/ban/transfer, LWW play-state, queue reorder, log order, link roundtrip, malformed frames |
+| `curation` | offline | AI-slop blocklist parse/modes/counters, offline gate, cache sweep caps, explicit/video filters |
 
 ## Visual verification
 

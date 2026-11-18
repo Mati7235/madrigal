@@ -205,7 +205,7 @@ the public `raw_json` seam and share the offline `parse_*` code path.
 
 ## Shazam recognition port (F10-1)
 
-Oracle: `upstream/shazamkit` (`ShazamSignatureGenerator.kt` DejaVu port,
+Oracle (local Android app): `shazamkit` (`ShazamSignatureGenerator.kt` DejaVu port,
 `Shazam.kt` amp.shazam.com client, `models/ShazamModels.kt` shapes).
 
 Signature (`madrigal-shazam::signature`): faithful port of the Kotlin
@@ -301,4 +301,30 @@ concurrent emit lands first); removal authority is the read loop only
 dropped); abrupt drops need graceful `Close` after the notice or kick/ban
 frames are lost to RST.
 
+## Content curation (F10-8)
+
+Oracle (Android app): `aicontentfilter/` (`AiContentFilterRepository`,
+`AiContentFilterUseCases`), queue `filterExplicit`/`filterVideo`
+(`playback/queues/Queue.kt`), `StorageLocationRepository` cache kinds,
+`MusicService` song-cache trimmer.
+Port: `madrigal-curation` (`slop`, `offline`, `curation::caches`, `content`).
+Findings:
+- Oracle AI lists are two remote files (AiSList `aislist_blocklist.txt` +
+  `aislist_warnlist.txt`) with `!` comments and `normalizeChannelKey`
+  (strip `@`, alphanumerics only, lowercase). Madrigal uses one
+  configurable source URL (`privacy.ai_content_filter_source_url`, empty
+  by default) with `#`/`!` comments, a bare `moderate:` section marker
+  and `moderate:<id>` inline prefixes; the AiSList URLs are documented
+  here, not hardcoded, so no invented official default ships.
+- Oracle `musicVideoType` (OMV/UGC) has no Madrigal `Track` equivalent,
+  so `content::flags_of` guesses video-ness from id shape only (bare
+  11-char base64url YouTube id; UC/PL/VL/RD/OLAK/MPRE/FE and
+  `tidal:`/`local:` prefixes never match). Callers with real metadata
+  pass their own `ContentFlags`.
+- Cache sweep covers `cache_dir()` subdirs `images/songs/canvas/lyrics`;
+  existing writer dirs (`artwork`, `streams`) keep their own prune logic.
+  Cap 0 MB clears the dir; `max_lyrics_cache_mb` defaults to 64.
+- `NetworkGate` (from `internet.offline_mode`) fails network ops fast
+  with `Offline`; local lookups bypass it. No connectivity probe: in
+  offline mode the answer is known without touching the network.
 
