@@ -1,0 +1,27 @@
+[package]
+name = "madrigal-spotify"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+madrigal-core = { path = "../madrigal-core" }
+madrigal-secrets = { path = "../madrigal-secrets" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", features = ["blocking", "json"] }
+rusqlite = { version = "0.41", features = ["bundled"] }
+regex = "1"
+
+[dev-dependencies]
+tempfile = "3"
+madrigal-db = { path = "../madrigal-db" }
+madrigal-innertube = { path = "../madrigal-innertube" }
+madrigal-paths = { path = "../madrigal-paths" }
+
+[[test]]
+name = "check_spotify_import"
+path = "tests/checks/check_spotify_import.rs"

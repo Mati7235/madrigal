@@ -1,0 +1,62 @@
+{
+  "data": {
+    "me": {
+      "libraryV3": {
+        "totalCount": 3,
+        "pagingInfo": {"limit": 2, "offset": 0},
+        "items": [
+          {
+            "item": {
+              "__typename": "PlaylistResponseWrapper",
+              "_uri": "spotify:playlist:pl_rock",
+              "data": {
+                "__typename": "Playlist",
+                "name": "Rock Classics",
+                "description": "Loud guitars",
+                "images": {
+                  "items": [
+                    {
+                      "sources": [
+                        {"url": "https://i.scdn.example/rock-big.jpg", "height": 640, "width": 640},
+                        {"url": "https://i.scdn.example/rock-mid.jpg", "height": 300, "width": 300},
+                        {"url": "https://i.scdn.example/rock-small.jpg", "height": 64, "width": 64}
+                      ]
+                    }
+                  ]
+                },
+                "ownerV2": {
+                  "data": {"uri": "spotify:user:owner1", "id": "owner1", "name": "Owner One"}
+                },
+                "content": {"totalCount": 2}
+              }
+            }
+          },
+          {
+            "item": {
+              "__typename": "PlaylistResponseWrapper",
+              "_uri": "spotify:playlist:pl_jazz",
+              "data": {
+                "__typename": "Playlist",
+                "name": "Jazz Nights",
+                "description": null,
+                "images": {
+                  "items": [
+                    {
+                      "sources": [
+                        {"url": "https://i.scdn.example/jazz.jpg", "height": 640, "width": 640}
+                      ]
+                    }
+                  ]
+                },
+                "ownerV2": {
+                  "data": {"uri": "spotify:user:owner2", "id": "owner2", "name": "Owner Two"}
+                },
+                "content": {"totalCount": 1}
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

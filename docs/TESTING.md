@@ -87,6 +87,7 @@ Without `cargo` available the check is FAIL.
 | `sponsorblock` | offline | Segments parse, category filter, active-segment math, skip-once, 404 empty, custom URL |
 | `tidal_client` | offline | Device-link login, 0600 token store, search Tracks, HLS manifest, lyrics payload |
 | `innertube_home_library` | offline | Fixture home feed maps to models, library/history/writes parse from pinned fixtures, cookie upgrade builds offline |
+<<<<<<< HEAD
 | `innertube_discover` | offline | Fixture charts/new releases/browse walk/mood deep-link/radio fallback map to models, malformed input errors |
 | `shazam_signature` | native | DejaVu signature: determinism, chunked-feed equality, order sensitivity, pinned tone hash, clean wav errors |
 | `shazam_client` | offline | amp.shazam.com mock: match parse with links, no-match, 5xx retry, malformed/status errors, rate spacing |
@@ -98,6 +99,7 @@ Without `cargo` available the check is FAIL.
 | `curation` | offline | AI-slop blocklist parse/modes/counters, offline gate, cache sweep caps, explicit/video filters |
 | `canvas` | offline | Canvas overlays: Tidal/Apple/BetterLyrics fetch, Spotify seam, cache TTL/prune, refetch |
 | `ui_shell` | offline | MainShell: sidebar pages, overlays, shortcuts, i18n/theme flips, PNG snapshot |
+| `spotify_import` | offline | Cookie TOTP auth exchange, 0600 token store, GQL playlist/track parses, YTM mapper over the real search fixture, mapping cache, unresolved reporting, clean cookie errors |
 
 ## Visual verification
 

@@ -1,0 +1,27 @@
+{
+  "data": {
+    "me": {
+      "libraryV3": {
+        "totalCount": 3,
+        "pagingInfo": {"limit": 2, "offset": 2},
+        "items": [
+          {
+            "item": {
+              "__typename": "PlaylistResponseWrapper",
+              "_uri": "spotify:playlist:pl_empty",
+              "data": {
+                "__typename": "Playlist",
+                "name": "Untitled Stash",
+                "description": "",
+                "images": {"items": []},
+                "ownerV2": {
+                  "data": {"uri": "spotify:user:owner1", "id": "owner1", "name": "Owner One"}
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

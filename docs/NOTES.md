@@ -395,3 +395,51 @@ so TransitionMode::Crossfade has no in-process implementation and behaves as
 Normal. Plan: dual-instance with a short overlap driven by a fade
 coordinator. Volume ramps inside one instance would fake it; not done.
 
+## Spotify import port (F10-4)
+`madrigal-spotify`: cookie-based Spotify import (playlists to YTM mapping).
+Oracle: `spotifycore` (`Spotify.kt`, `SpotifyAuth.kt`, `SpotifyMapper.kt`,
+`models/`) plus app-layer `SpotifyLibraryRepository.kt` (session/expiry rules)
+and `SpotifyPlaybackResolver.kt` (resolution rules).
+
+Auth flow: `GET gist nuances.json` (pick max `v` with valid base32 `s`) +
+`GET open.spotify.com/api/server-time` feed a TOTP (HMAC-SHA1, 30 s step,
+6 digits, implemented dependency-free in `totp.rs`, verified against RFC 6238
+vectors) into `GET open.spotify.com/api/token?reason=transport&
+productType=web-player&totp=&totpServer=&totpVer=` with
+`Cookie: sp_dc=...[; sp_key=...]`; anonymous/blank token means the cookie is
+invalid. Session `{sp_dc, sp_key, access_token, expires_at_ms}` lives in
+`madrigal-secrets` account `spotify` (0600 fallback); reuse while fresh with
+the oracle's 60 s grace, otherwise re-exchange via stored cookies; a 401
+refreshes once (rejected-token guard) and only then surfaces `NotLoggedIn`.
+
+Playlists over the partner GQL endpoint (`api-partner.spotify.com/
+pathfinder/v2/query`, `app-platform: WebPlayer` + open.spotify.com
+origin/referer) with the oracle's pinned persisted-query hashes
+(`libraryV3`, `fetchPlaylist`, `profileAttributes`): `libraryV3`
+`flatten=true` flat list paginated at 50, missing track totals backfilled via
+a `limit=1` `fetchPlaylist` call; `fetchPlaylist` paginated `content.items`
+with `itemV2._uri` + `uid`, local tracks skipped at the track level exactly
+like the oracle; `PersistedQueryNotFound`/412 surfaces `HashRotated`
+(no remote refresh in this crate). Profile reads GQL `profileAttributes`
+with the oracle's REST `GET /v1/me` fallback.
+
+Mapper rules ported 1:1: query is `"<first artist> <title>"`; lowercase +
+strip `(feat..)`, `(ft..)`, `[..]`, `(remaster..)`, `(remix..)`, non-alnum,
+collapse spaces; Dice bigram similarity weighted title 0.45 / artist 0.35 /
+duration 0.20 with the oracle's duration ladder (<=2 s: 1.0, <=5: 0.8,
+<=10: 0.5, <=30: 0.2, else 0; unknown: 0.5); accept at >= 0.35 with early exit
+at >= 0.95. Resolution keeps the YTM title/artists/identity, prefers the
+Spotify album name/duration (when > 0)/medium artwork, and stores the
+`spotify_id -> Track` mapping in `spotify_mappings` (lazy `CREATE TABLE IF
+NOT EXISTS`, no migration bump); misses stay unresolved and never fail the
+import. `import_playlist` honors the existing `show_spotify_playlists`
+settings toggle (`madrigal-settings` `Integrations`).
+
+Fixtures are synthetic values shaped by the Kotlin parse code (field names it
+reads: `uri`/`_uri`/`profile.name`/`albumOfTrack`/`coverArt.sources`/
+`duration.totalMilliseconds`/`durationMs`/`is_local`/`content.totalCount`/
+`ownerV2`/`pagingInfo`/`accessToken`/`isAnonymous`/`serverTime`/nuance
+`s`+`v`); provenance: shapes from `spotifycore` + app repository, values
+invented. Mapper test reuses the real `madrigal-innertube` fixture
+`search_songs_beatles.json` through `CatalogClient::parse_search_songs`.
+

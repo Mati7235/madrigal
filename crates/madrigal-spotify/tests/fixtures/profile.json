@@ -1,0 +1,16 @@
+{
+  "data": {
+    "me": {
+      "profile": {
+        "uri": "spotify:user:me1",
+        "name": "Fixture Me",
+        "avatar": {
+          "sources": [
+            {"url": "https://i.scdn.example/me.jpg", "height": 64, "width": 64},
+            {"url": "https://i.scdn.example/me-big.jpg", "height": 300, "width": 300}
+          ]
+        }
+      }
+    }
+  }
+}

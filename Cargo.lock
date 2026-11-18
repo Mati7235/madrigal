@@ -3787,6 +3787,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "madrigal-spotify"
+version = "0.1.0"
+dependencies = [
+ "madrigal-core",
+ "madrigal-db",
+ "madrigal-innertube",
+ "madrigal-paths",
+ "madrigal-secrets",
+ "regex",
+ "reqwest 0.12.28",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "madrigal-streams"
 version = "0.1.0"
 dependencies = [

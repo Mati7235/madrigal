@@ -1,0 +1,83 @@
+{
+  "data": {
+    "playlistV2": {
+      "name": "Rock Classics",
+      "content": {
+        "totalCount": 3,
+        "items": [
+          {
+            "uid": "uid-aaa",
+            "itemV2": {
+              "_uri": "spotify:track:trk_tomorrow",
+              "uid": "uid-aaa",
+              "data": {
+                "uri": "spotify:track:trk_tomorrow",
+                "name": "Tomorrow Never Knows",
+                "artists": {
+                  "items": [
+                    {"uri": "spotify:artist:art_beatles", "profile": {"name": "The Beatles"}}
+                  ]
+                },
+                "albumOfTrack": {
+                  "uri": "spotify:album:alb_revolver",
+                  "name": "Revolver (Deluxe)",
+                  "coverArt": {
+                    "sources": [
+                      {"url": "https://i.scdn.example/revolver.jpg", "height": 300, "width": 300}
+                    ]
+                  }
+                },
+                "duration": {"totalMilliseconds": 178000}
+              }
+            }
+          },
+          {
+            "uid": "uid-bbb",
+            "itemV2": {
+              "_uri": "spotify:track:trk_flat",
+              "uid": "uid-bbb",
+              "data": {
+                "uri": "spotify:track:trk_flat",
+                "name": "Flat Duration Song",
+                "artists": {
+                  "items": [
+                    {"uri": "spotify:artist:art_someone", "profile": {"name": "Someone"}}
+                  ]
+                },
+                "albumOfTrack": {
+                  "uri": "spotify:album:alb_flat",
+                  "name": "Flat Album",
+                  "coverArt": {"sources": []}
+                },
+                "durationMs": 210000
+              }
+            }
+          },
+          {
+            "uid": "uid-ccc",
+            "itemV2": {
+              "_uri": "spotify:track:trk_local",
+              "uid": "uid-ccc",
+              "data": {
+                "uri": "spotify:track:trk_local",
+                "name": "Local File Riff",
+                "is_local": true,
+                "artists": {
+                  "items": [
+                    {"uri": "spotify:artist:art_local", "profile": {"name": "Garage Band"}}
+                  ]
+                },
+                "albumOfTrack": {
+                  "uri": "spotify:album:alb_local",
+                  "name": "Demos",
+                  "coverArt": {"sources": []}
+                },
+                "duration": {"totalMilliseconds": 120000}
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

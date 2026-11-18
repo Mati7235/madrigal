@@ -1,0 +1,23 @@
+{
+  "data": {
+    "playlistV2": {
+      "name": "Rock Classics",
+      "description": "Loud guitars",
+      "images": {
+        "items": [
+          {
+            "sources": [
+              {"url": "https://i.scdn.example/rock-mid.jpg", "height": 300, "width": 300},
+              {"url": "https://i.scdn.example/rock-big.jpg", "height": 640, "width": 640}
+            ]
+          }
+        ]
+      },
+      "ownerV2": {
+        "data": {"uri": "spotify:user:owner1", "name": "Owner One"}
+      },
+      "content": {"totalCount": 3},
+      "collaborative": false
+    }
+  }
+}
