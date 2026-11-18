@@ -1,0 +1,21 @@
+[package]
+name = "madrigal-together"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+madrigal-core = { path = "../madrigal-core" }
+madrigal-settings = { path = "../madrigal-settings" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[[test]]
+name = "check_together_lan"
+path = "tests/checks/check_together_lan.rs"

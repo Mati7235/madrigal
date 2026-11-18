@@ -264,3 +264,41 @@ channel or album ids. Paused keeps the configured small image with small text
 the key. Text caps ported exactly: 128 chars for name/details/state, 32 for button
 labels, 256 for URLs, values under 2 chars dropped.
 
+## Music Together port (F10-2)
+
+Oracle (local Android app): `.../together/` package (Ktor WebSocket LAN server+client,
+online relay via the author's server infra, `together://` deep links).
+Port: `madrigal-together`, LAN-only over std threads + newline-JSON TCP
+frames; no tokio (nothing else in the frame path needs it).
+
+Protocol map (message set and state machine ported 1:1, wire differs):
+`ClientHello/ServerWelcome/ServerError` handshake with `PROTOCOL_VERSION`,
+`RoomState` full-snapshot broadcast, `ControlRequest` (play/pause/seek/
+skip-next/previous/seek-index/seek-track/repeat/shuffle),
+`AddTrackRequest` (play-next/queue), `QueueMove/QueueRemove` (queue edits
+need the add flag), `JoinRequest/JoinDecision/ParticipantJoined/Left`,
+`HostTransfer/HostTransferred`, `Kick/Ban`, `ClientLeave`,
+`HeartbeatPing/Pong`, `PlayStateSubmit` for guest sync.
+Roles host/guest, approve flow (`require_approval`), per-flag gates
+(`guests_can_add/guests_can_control`), banned stable `client_id`s,
+welcome text in `ServerWelcome`, bounded activity ring
+(join/leave/approve/reject/kick/ban/transfer/queue-change/play-state).
+Playback converges last-writer-wins on a `version` counter; queue order is
+host-authoritative. Deep links: `madrigal://together?host&port&sid&key`
+plus `madrigal://together/join?code=` and the legacy `host|port|sid|key`
+compact form.
+Discovery: UDP beacon (`BEACON_MAGIC`, default port 42117 matching the
+oracle pref) with per-host ephemeral ports in checks.
+
+Online mode is an explicit deviation: the oracle relay (`TogetherOnlineApi`,
+bearer token, author endpoint) has no self-hostable spec, so `madrigal-together`
+ships LAN-only until a self-hosted relay exists. `madrigal-db` likewise
+unused: sessions are ephemeral, nothing persists.
+Findings: broadcast must never block the read loop (per-client writer
+threads + bounded mailbox; welcome is queued before map insert or a
+concurrent emit lands first); removal authority is the read loop only
+(pump death must not prune, or in-flight submits from vanished peers are
+dropped); abrupt drops need graceful `Close` after the notice or kick/ban
+frames are lost to RST.
+
+

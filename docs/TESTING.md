@@ -90,6 +90,7 @@ Without `cargo` available the check is FAIL.
 | `catalog_live` | live | Real network: search/suggestions/home/charts(ZZ)/moods counts and non-emptiness |
 | `lyrics_live` | live | Real network: LRCLIB-only fetch of Yesterday/Beatles/125s with >= 10 lines |
 | `ai_providers` | offline | AI chat completions (OpenAI-compat/Gemini), validation, translation chain, mix/suggestion parsing, key secrecy |
+| `together_lan` | offline | LAN sessions: discovery, approve, gated add/control, kick/ban/transfer, LWW play-state, queue reorder, log order, link roundtrip, malformed frames |
 
 ## Visual verification
 

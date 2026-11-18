@@ -215,3 +215,7 @@ group = "live"
 [[check]]
 name = "ai_providers"
 group = "offline"
+
+[[check]]
+name = "together_lan"
+group = "offline"
