@@ -1,0 +1,96 @@
+import { Shape, Type } from "../tokens.slint";
+
+export component M3ListItem inherits Rectangle {
+    in property<string> title;
+    in property<string> subtitle;
+    in property<string> duration;
+    in property<string> action-label;
+    in property<bool> active: false;
+    in property<float> progress: -1;
+    in property<color> row-bg;
+    in property<color> active-bg;
+    in property<color> title-color;
+    in property<color> subtitle-color;
+    in property<color> progress-track;
+    in property<color> progress-fill;
+    callback action();
+
+    accessible-label: root.title;
+    accessible-role: AccessibleRole.list-item;
+
+    height: 64px;
+    border-radius: Shape.medium;
+    background: root.active ? root.active-bg : item-touch.has-hover ? root.row-bg : transparent;
+    animate background { duration: 100ms; easing: ease-in-out; }
+
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 16px;
+        spacing: 12px;
+        alignment: center;
+
+        art := Rectangle {
+            width: 38px;
+            height: 38px;
+            border-radius: Shape.small;
+            background: root.progress-track;
+        }
+
+        texts := VerticalLayout {
+            spacing: 2px;
+            alignment: center;
+            horizontal-stretch: 1;
+
+            item-title := Text {
+                text: root.title;
+                color: root.title-color;
+                font-size: Type.body-large.size;
+                font-weight: root.active ? Type.body-large-emphasized.weight : Type.body-large.weight;
+                overflow: elide;
+            }
+
+            item-sub := Text {
+                text: root.subtitle;
+                color: root.subtitle-color;
+                font-size: Type.body-medium.size;
+                overflow: elide;
+            }
+        }
+
+        download-bar := Rectangle {
+            width: 120px;
+            height: 6px;
+            border-radius: 3px;
+            background: root.progress-track;
+            visible: root.progress >= 0;
+
+            download-fill := Rectangle {
+                width: parent.width * clamp(root.progress, 0, 1);
+                height: 100%;
+                border-radius: 3px;
+                background: root.progress-fill;
+            }
+        }
+
+        item-duration := Text {
+            text: root.duration;
+            color: root.subtitle-color;
+            font-size: Type.body-medium.size;
+            vertical-alignment: center;
+        }
+
+        item-action := Text {
+            text: root.action-label;
+            color: root.title-color;
+            font-size: Type.body-large.size;
+            vertical-alignment: center;
+            visible: root.active || item-touch.has-hover;
+            animate opacity { duration: 100ms; easing: ease-in-out; }
+        }
+    }
+
+    item-touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.action(); }
+    }
+}

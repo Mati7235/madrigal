@@ -1,0 +1,117 @@
+import { Shape, Type } from "../tokens.slint";
+
+export component M3Card inherits Rectangle {
+    in property<string> title;
+    in property<string> subtitle;
+    in property<bool> elevated: true;
+    in property<color> fill;
+    in property<color> title-color;
+    in property<color> subtitle-color;
+    in property<color> shadow-color;
+    callback clicked();
+
+    accessible-label: root.title;
+    accessible-role: AccessibleRole.button;
+
+    border-radius: Shape.large;
+    background: root.fill;
+    drop-shadow-color: root.shadow-color;
+    drop-shadow-blur: !root.elevated ? 0px : card-touch.has-hover ? 12px : 3px;
+    drop-shadow-offset-y: !root.elevated ? 0px : card-touch.has-hover ? 4px : 1px;
+    animate background { duration: 100ms; easing: ease-in-out; }
+    animate drop-shadow-blur { duration: 200ms; easing: ease-out; }
+    animate drop-shadow-offset-y { duration: 200ms; easing: ease-out; }
+
+    hover-tint := Rectangle {
+        width: 100%;
+        height: 100%;
+        border-radius: root.border-radius;
+        background: root.title-color;
+        opacity: card-touch.has-hover ? 0.05 : 0;
+        animate opacity { duration: 100ms; easing: ease-in-out; }
+    }
+
+    VerticalLayout {
+        padding: 16px;
+        spacing: 4px;
+        alignment: start;
+
+        card-title := Text {
+            text: root.title;
+            color: root.title-color;
+            font-size: Type.title-large.size;
+            font-weight: Type.title-large.weight;
+            overflow: elide;
+        }
+
+        card-sub := Text {
+            text: root.subtitle;
+            color: root.subtitle-color;
+            font-size: Type.body-medium.size;
+            overflow: elide;
+        }
+    }
+
+    card-touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component M3Chip inherits Rectangle {
+    in property<string> text;
+    in property<bool> selected: false;
+    in property<color> selected-fill;
+    in property<color> selected-content;
+    in property<color> unselected-content;
+    in property<color> unselected-line;
+    callback clicked();
+
+    accessible-label: root.text;
+    accessible-role: AccessibleRole.button;
+
+    height: 32px;
+    border-radius: self.height / 2;
+    background: root.selected ? root.selected-fill : transparent;
+    border-width: root.selected ? 0px : 1px;
+    border-color: root.unselected-line;
+    animate background { duration: 150ms; easing: ease-in-out; }
+
+    state-layer := Rectangle {
+        width: 100%;
+        height: 100%;
+        border-radius: root.border-radius;
+        background: root.selected ? root.selected-content : root.unselected-content;
+        opacity: chip-touch.has-hover ? 0.08 : 0;
+        animate opacity { duration: 100ms; easing: ease-in-out; }
+    }
+
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 16px;
+        spacing: 8px;
+        alignment: center;
+
+        chip-mark := Text {
+            text: "✓";
+            color: root.selected-content;
+            font-size: 14px;
+            vertical-alignment: center;
+            visible: root.selected;
+        }
+
+        chip-label := Text {
+            text: root.text;
+            color: root.selected ? root.selected-content : root.unselected-content;
+            font-size: Type.label-large.size;
+            font-weight: Type.label-large.weight;
+            vertical-alignment: center;
+            animate color { duration: 100ms; easing: ease-in-out; }
+        }
+    }
+
+    chip-touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}

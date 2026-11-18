@@ -1,0 +1,117 @@
+import { Shape, Type } from "../tokens.slint";
+
+export component M3Button inherits Rectangle {
+    in property<string> text;
+    in property<string> size: "small";
+    in property<bool> enabled: true;
+    in property<bool> focus-visible: false;
+    in property<color> fill;
+    in property<color> content;
+    in property<color> line: transparent;
+    in property<color> state-on-surface;
+    callback clicked();
+
+    accessible-label: text;
+    accessible-role: AccessibleRole.button;
+
+    property<bool> small: root.size == "small";
+    property<length> rest-radius: root.small ? Shape.medium : Shape.large;
+    property<length> pressed-radius: root.small ? Shape.small : Shape.medium;
+
+    height: root.small ? 40px : 56px;
+    border-radius: touch.pressed && root.enabled ? root.pressed-radius : root.rest-radius;
+    background: root.enabled ? root.fill : root.state-on-surface.with-alpha(0.12);
+    border-width: root.line == transparent ? 0px : 1px;
+    border-color: root.line;
+
+    animate border-radius { duration: 150ms; easing: ease-in-out; }
+    animate background { duration: 100ms; easing: ease-in-out; }
+
+    focus-ring := Rectangle {
+        width: parent.width + 6px;
+        height: parent.height + 6px;
+        border-radius: root.border-radius + 3px;
+        border-width: root.focus-visible && root.enabled ? 3px : 0px;
+        border-color: root.content;
+    }
+
+    state-layer := Rectangle {
+        width: 100%;
+        height: 100%;
+        border-radius: root.border-radius;
+        background: root.content;
+        opacity: !root.enabled ? 0 : touch.pressed ? 0.1 : touch.has-hover ? 0.08 : 0;
+        animate opacity { duration: 100ms; easing: ease-in-out; }
+    }
+
+    label := Text {
+        text: root.text;
+        color: root.enabled ? root.content : root.state-on-surface.with-alpha(0.38);
+        font-size: Type.label-large.size;
+        font-weight: Type.label-large.weight;
+        letter-spacing: Type.label-large.tracking;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        x: root.small ? 16px : 24px;
+        width: parent.width - 2 * (root.small ? 16px : 24px);
+        height: 100%;
+        overflow: elide;
+        animate color { duration: 100ms; easing: ease-in-out; }
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: root.enabled ? pointer : default;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component M3IconButton inherits Rectangle {
+    in property<string> glyph;
+    in property<bool> enabled: true;
+    in property<bool> selected: false;
+    in property<color> fill: transparent;
+    in property<color> content;
+    in property<color> line: transparent;
+    in property<color> state-on-surface;
+    callback clicked();
+
+    accessible-label: root.glyph;
+    accessible-role: AccessibleRole.button;
+
+    width: 40px;
+    height: 40px;
+    border-radius: root.selected ? Shape.small : self.height / 2;
+    background: root.enabled ? root.fill : root.state-on-surface.with-alpha(0.12);
+    border-width: root.line == transparent ? 0px : 1px;
+    border-color: root.line;
+
+    animate border-radius { duration: 150ms; easing: ease-in-out; }
+    animate background { duration: 100ms; easing: ease-in-out; }
+
+    hover-layer := Rectangle {
+        width: 100%;
+        height: 100%;
+        border-radius: root.border-radius;
+        background: root.content;
+        opacity: !root.enabled ? 0 : touch.has-hover ? 0.08 : 0;
+        animate opacity { duration: 100ms; easing: ease-in-out; }
+    }
+
+    glyph-label := Text {
+        text: root.glyph;
+        color: root.enabled ? root.content : root.state-on-surface.with-alpha(0.38);
+        font-size: 20px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        width: 100%;
+        height: 100%;
+        animate color { duration: 100ms; easing: ease-in-out; }
+    }
+
+    touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: root.enabled ? pointer : default;
+        clicked => { root.clicked(); }
+    }
+}

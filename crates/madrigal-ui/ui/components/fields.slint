@@ -1,0 +1,141 @@
+import { Shape, Type } from "../tokens.slint";
+
+export component M3TextField inherits Rectangle {
+    in property<string> label;
+    in-out property<string> text;
+    in property<string> support;
+    in property<bool> error: false;
+    in property<bool> enabled: true;
+    in property<color> field-bg;
+    in property<color> line;
+    in property<color> focus-line;
+    in property<color> error-color;
+    in property<color> content;
+    in property<color> support-color;
+    in property<color> state-on-surface;
+    callback accepted(string);
+
+    accessible-label: root.label;
+    accessible-role: AccessibleRole.text;
+
+    property<bool> focused: input.has-focus;
+
+    height: 88px;
+    background: transparent;
+
+    box := Rectangle {
+        width: 100%;
+        height: 56px;
+        border-radius: Shape.extra-small;
+        background: root.enabled ? root.field-bg : root.state-on-surface.with-alpha(0.04);
+        border-width: root.focused && root.enabled ? 2px : 1px;
+        border-color: !root.enabled ? root.state-on-surface.with-alpha(0.38) : root.error ? root.error-color : root.focused ? root.focus-line : root.line;
+        animate border-color { duration: 100ms; easing: ease-in-out; }
+        animate background { duration: 100ms; easing: ease-in-out; }
+
+        floating := Text {
+            text: root.label;
+            color: !root.enabled ? root.state-on-surface.with-alpha(0.38) : root.error ? root.error-color : root.focused || root.text != "" ? root.focus-line : root.support-color;
+            font-size: root.focused || root.text != "" ? Type.body-small.size : Type.body-large.size;
+            x: 16px;
+            y: root.focused || root.text != "" ? 6px : 0px;
+            height: root.focused || root.text != "" ? 16px : 56px;
+            vertical-alignment: center;
+            animate font-size { duration: 150ms; easing: ease-in-out; }
+            animate color { duration: 100ms; easing: ease-in-out; }
+        }
+
+        input := TextInput {
+            text <=> root.text;
+            enabled: root.enabled;
+            color: root.enabled ? root.content : root.state-on-surface.with-alpha(0.38);
+            font-size: Type.body-large.size;
+            x: 16px;
+            y: 22px;
+            width: parent.width - 32px;
+            height: 28px;
+            accepted => { root.accepted(root.text); }
+        }
+    }
+
+    support-text := Text {
+        text: root.support;
+        color: root.error ? root.error-color : root.support-color;
+        font-size: Type.body-small.size;
+        x: 16px;
+        y: 60px;
+        width: parent.width - 32px;
+        height: 24px;
+        vertical-alignment: top;
+        overflow: elide;
+    }
+}
+
+export component M3SearchBar inherits Rectangle {
+    in-out property<string> value;
+    in property<string> hint;
+    in property<bool> enabled: true;
+    in property<color> fill;
+    in property<color> content;
+    in property<color> focus-line;
+    in property<color> hint-color;
+    in property<color> state-on-surface;
+    callback accepted(string);
+
+    accessible-label: root.hint;
+    accessible-role: AccessibleRole.combobox;
+
+    height: 56px;
+    border-radius: self.height / 2;
+    background: root.enabled ? root.fill : root.state-on-surface.with-alpha(0.04);
+    border-width: search-input.has-focus && root.enabled ? 2px : 0px;
+    border-color: root.focus-line;
+    animate border-width { duration: 100ms; }
+    animate background { duration: 100ms; easing: ease-in-out; }
+
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 16px;
+        spacing: 8px;
+
+        lead := Text {
+            text: "○";
+            color: root.content;
+            font-size: 18px;
+            vertical-alignment: center;
+        }
+
+        field := Rectangle {
+            horizontal-stretch: 1;
+            clip: true;
+
+            search-input := TextInput {
+                text <=> root.value;
+                enabled: root.enabled;
+                color: root.enabled ? root.content : root.state-on-surface.with-alpha(0.38);
+                font-size: Type.body-large.size;
+                vertical-alignment: center;
+                width: 100%;
+                height: 100%;
+                accepted => { root.accepted(root.value); }
+            }
+
+            hint-label := Text {
+                text: root.hint;
+                color: root.hint-color;
+                font-size: Type.body-large.size;
+                vertical-alignment: center;
+                width: 100%;
+                height: 100%;
+                visible: root.value == "";
+            }
+        }
+
+        trail := Text {
+            text: root.value == "" ? "" : "×";
+            color: root.content;
+            font-size: 18px;
+            vertical-alignment: center;
+        }
+    }
+}

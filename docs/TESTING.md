@@ -79,6 +79,7 @@ Without `cargo` available the check is FAIL.
 | `lyrics_chain` | offline | Order honored, disabled skipped, first-hit wins, miss/hit cached in db, provider errors skipped, tidal plan |
 | `mpris_service` | native | MPRIS service on private bus: metadata mapping, action recording, Seeked and PropertiesChanged |
 | `notify_actions` | native | Notification show/capabilities/action round-trip against a stub service on a private bus |
+| `ui_foundations` | offline | M3E tokens/themes/components via DemoGallery: palette flips, click state, PNG snapshot |
 
 ## Visual verification
 

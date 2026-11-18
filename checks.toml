@@ -171,3 +171,7 @@ group = "native"
 [[check]]
 name = "notify_actions"
 group = "native"
+
+[[check]]
+name = "ui_foundations"
+group = "offline"

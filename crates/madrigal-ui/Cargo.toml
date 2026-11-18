@@ -1,0 +1,24 @@
+[package]
+name = "madrigal-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints.clippy]
+all = "warn"
+
+[dependencies]
+madrigal-i18n = { path = "../madrigal-i18n" }
+madrigal-settings = { path = "../madrigal-settings" }
+slint = { version = "=1.19.0", features = ["mcp"] }
+
+[dev-dependencies]
+madrigal-testkit = { path = "../madrigal-testkit" }
+tempfile = "3"
+
+[build-dependencies]
+slint-build = "=1.19.0"
+
+[[test]]
+name = "check_ui_foundations"
+path = "tests/checks/check_ui_foundations.rs"

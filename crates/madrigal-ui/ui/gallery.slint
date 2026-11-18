@@ -1,0 +1,301 @@
+import { Palette, Light, Dark, PureBlack, Type, Spacing } from "tokens.slint";
+import { M3Button, M3IconButton } from "components/buttons.slint";
+import { M3TextField, M3SearchBar } from "components/fields.slint";
+import { M3Switch, M3Checkbox, M3Slider } from "components/selection.slint";
+import { M3Card, M3Chip } from "components/cards.slint";
+import { M3ListItem } from "components/rows.slint";
+
+export global I18n {
+    pure callback trl(string, string) -> string;
+    in-out property<string> lang: "es";
+}
+
+export component DemoGallery inherits Window {
+    in-out property<Palette> palette: Light.palette;
+    in-out property<int> theme-kind: 0;
+    in-out property<int> demo-clicks: 0;
+    in-out property<int> card-clicks: 0;
+    in-out property<int> row-clicks: 0;
+    in-out property<bool> chip-on: false;
+    in-out property<bool> sw-on: true;
+    in-out property<bool> chk-on: false;
+    in-out property<float> vol: 0.5;
+    in-out property<string> search-text: "";
+    in-out property<string> field-text: "";
+
+    callback apply-theme(int);
+    apply-theme(k) => {
+        if (k == 0) {
+            root.palette = Light.palette;
+        } else if (k == 1) {
+            root.palette = Dark.palette;
+        } else {
+            root.palette = PureBlack.palette;
+        }
+        root.theme-kind = k;
+    }
+
+    title: "madrigal-ui-gallery";
+    width: 960px;
+    height: 1500px;
+    background: root.palette.surface;
+
+    VerticalLayout {
+        padding: 24px;
+        spacing: 16px;
+
+        gallery-title := Text {
+            text: I18n.trl(I18n.lang, "player.panelTitle");
+            color: root.palette.on-surface;
+            font-size: Type.headline-small.size;
+            font-weight: Type.headline-small.weight;
+        }
+
+        buttons-head := Text {
+            text: I18n.trl(I18n.lang, "cards.actions");
+            color: root.palette.on-surface-variant;
+            font-size: Type.title-medium.size;
+            font-weight: Type.title-medium.weight;
+        }
+
+        HorizontalLayout {
+            spacing: 12px;
+            filled-btn := M3Button {
+                text: I18n.trl(I18n.lang, "common.retry");
+                fill: root.palette.primary;
+                content: root.palette.on-primary;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.demo-clicks += 1; }
+            }
+            tonal-btn := M3Button {
+                text: I18n.trl(I18n.lang, "common.undo");
+                fill: root.palette.secondary-container;
+                content: root.palette.on-secondary-container;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.demo-clicks += 1; }
+            }
+            outlined-btn := M3Button {
+                text: I18n.trl(I18n.lang, "confirm.cancel");
+                fill: transparent;
+                content: root.palette.on-surface-variant;
+                line: root.palette.outline-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.demo-clicks += 1; }
+            }
+            text-btn := M3Button {
+                text: I18n.trl(I18n.lang, "action.close");
+                fill: transparent;
+                content: root.palette.on-surface-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.demo-clicks += 1; }
+            }
+            elevated-btn := M3Button {
+                text: I18n.trl(I18n.lang, "action.play");
+                fill: root.palette.surface-container-low;
+                content: root.palette.primary;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.demo-clicks += 1; }
+            }
+            focus-btn := M3Button {
+                text: I18n.trl(I18n.lang, "action.select");
+                focus-visible: true;
+                fill: root.palette.primary;
+                content: root.palette.on-primary;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.demo-clicks += 1; }
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 12px;
+            alignment: start;
+            icon-std := M3IconButton {
+                glyph: "+";
+                content: root.palette.on-surface-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.demo-clicks += 1; }
+            }
+            icon-filled := M3IconButton {
+                glyph: "▶";
+                selected: true;
+                fill: root.palette.primary;
+                content: root.palette.on-primary;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.demo-clicks += 1; }
+            }
+            icon-tonal := M3IconButton {
+                glyph: "✓";
+                fill: root.palette.secondary-container;
+                content: root.palette.on-secondary-container;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.demo-clicks += 1; }
+            }
+            icon-outlined := M3IconButton {
+                glyph: "×";
+                content: root.palette.on-surface-variant;
+                line: root.palette.outline-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.demo-clicks += 1; }
+            }
+        }
+
+        fields-head := Text {
+            text: I18n.trl(I18n.lang, "explore.search");
+            color: root.palette.on-surface-variant;
+            font-size: Type.title-medium.size;
+            font-weight: Type.title-medium.weight;
+        }
+
+        search-demo := M3SearchBar {
+            value <=> root.search-text;
+            hint: I18n.trl(I18n.lang, "explore.searchHint");
+            fill: root.palette.surface-container-high;
+            content: root.palette.on-surface;
+            focus-line: root.palette.primary;
+            hint-color: root.palette.on-surface-variant;
+            state-on-surface: root.palette.on-surface;
+        }
+
+        field-demo := M3TextField {
+            label: I18n.trl(I18n.lang, "playlists.create");
+            text <=> root.field-text;
+            support: I18n.trl(I18n.lang, "addto.searchHint");
+            field-bg: root.palette.surface-container;
+            line: root.palette.outline;
+            focus-line: root.palette.primary;
+            error-color: root.palette.error;
+            content: root.palette.on-surface;
+            support-color: root.palette.on-surface-variant;
+            state-on-surface: root.palette.on-surface;
+        }
+
+        field-error := M3TextField {
+            label: I18n.trl(I18n.lang, "login.title");
+            text: "demo";
+            error: true;
+            support: I18n.trl(I18n.lang, "error.unknown");
+            field-bg: root.palette.surface-container;
+            line: root.palette.outline;
+            focus-line: root.palette.primary;
+            error-color: root.palette.error;
+            content: root.palette.on-surface;
+            support-color: root.palette.on-surface-variant;
+            state-on-surface: root.palette.on-surface;
+        }
+
+        selection-head := Text {
+            text: I18n.trl(I18n.lang, "audio.equalizer");
+            color: root.palette.on-surface-variant;
+            font-size: Type.title-medium.size;
+            font-weight: Type.title-medium.weight;
+        }
+
+        HorizontalLayout {
+            spacing: 24px;
+            alignment: start;
+            sw-demo := M3Switch {
+                label: I18n.trl(I18n.lang, "player.translate");
+                checked <=> root.sw-on;
+                on-track: root.palette.primary;
+                on-thumb: root.palette.on-primary;
+                off-track: root.palette.surface-container-highest;
+                off-line: root.palette.outline;
+                off-thumb: root.palette.outline;
+                state-on-surface: root.palette.on-surface;
+            }
+            chk-demo := M3Checkbox {
+                label: I18n.trl(I18n.lang, "player.shuffle.on");
+                checked <=> root.chk-on;
+                selected-fill: root.palette.primary;
+                selected-content: root.palette.on-primary;
+                unselected-line: root.palette.on-surface-variant;
+                state-on-surface: root.palette.on-surface;
+            }
+        }
+
+        slider-demo := M3Slider {
+            label: I18n.trl(I18n.lang, "action.volume");
+            value <=> root.vol;
+            active-track: root.palette.primary;
+            inactive-track: root.palette.secondary-container;
+            handle-color: root.palette.primary;
+            state-on-surface: root.palette.on-surface;
+        }
+
+        cards-head := Text {
+            text: I18n.trl(I18n.lang, "nav.lists");
+            color: root.palette.on-surface-variant;
+            font-size: Type.title-medium.size;
+            font-weight: Type.title-medium.weight;
+        }
+
+        card-demo := M3Card {
+            title: I18n.trl(I18n.lang, "player.nowPlaying");
+            subtitle: I18n.trl(I18n.lang, "player.unknownArtist");
+            fill: root.palette.surface-container;
+            title-color: root.palette.on-surface;
+            subtitle-color: root.palette.on-surface-variant;
+            shadow-color: root.palette.shadow;
+            clicked => { root.card-clicks += 1; }
+        }
+
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+            chip-songs := M3Chip {
+                text: I18n.trl(I18n.lang, "detail.play");
+                selected <=> root.chip-on;
+                selected-fill: root.palette.secondary-container;
+                selected-content: root.palette.on-secondary-container;
+                unselected-content: root.palette.on-surface-variant;
+                unselected-line: root.palette.outline;
+                clicked => { root.chip-on = !root.chip-on; }
+            }
+            chip-static := M3Chip {
+                text: I18n.trl(I18n.lang, "nav.home");
+                selected: true;
+                selected-fill: root.palette.secondary-container;
+                selected-content: root.palette.on-secondary-container;
+                unselected-content: root.palette.on-surface-variant;
+                unselected-line: root.palette.outline;
+            }
+        }
+
+        rows-head := Text {
+            text: I18n.trl(I18n.lang, "nav.downloads");
+            color: root.palette.on-surface-variant;
+            font-size: Type.title-medium.size;
+            font-weight: Type.title-medium.weight;
+        }
+
+        row-one := M3ListItem {
+            title: "Canción de muestra";
+            subtitle: "Artista · Álbum";
+            duration: "3:12";
+            action-label: "···";
+            active: true;
+            row-bg: root.palette.surface-container;
+            active-bg: root.palette.primary-container;
+            title-color: root.palette.on-surface;
+            subtitle-color: root.palette.on-surface-variant;
+            progress-track: root.palette.surface-variant;
+            progress-fill: root.palette.primary;
+            action => { root.row-clicks += 1; }
+        }
+
+        row-two := M3ListItem {
+            title: "Descargando pista";
+            subtitle: "12 MB/s · 48%";
+            duration: "4:03";
+            action-label: "×";
+            progress: 0.48;
+            row-bg: root.palette.surface-container;
+            active-bg: root.palette.primary-container;
+            title-color: root.palette.on-surface;
+            subtitle-color: root.palette.on-surface-variant;
+            progress-track: root.palette.surface-variant;
+            progress-fill: root.palette.primary;
+            action => { root.row-clicks += 1; }
+        }
+    }
+}

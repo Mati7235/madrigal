@@ -1,0 +1,302 @@
+export struct Palette {
+    background: color,
+    error: color,
+    error-container: color,
+    inverse-on-surface: color,
+    inverse-primary: color,
+    inverse-surface: color,
+    on-error: color,
+    on-error-container: color,
+    on-primary: color,
+    on-primary-container: color,
+    on-primary-fixed: color,
+    on-primary-fixed-variant: color,
+    on-secondary: color,
+    on-secondary-container: color,
+    on-secondary-fixed: color,
+    on-secondary-fixed-variant: color,
+    on-surface: color,
+    on-surface-variant: color,
+    on-tertiary: color,
+    on-tertiary-container: color,
+    on-tertiary-fixed: color,
+    on-tertiary-fixed-variant: color,
+    outline: color,
+    outline-variant: color,
+    primary: color,
+    primary-container: color,
+    primary-fixed: color,
+    primary-fixed-dim: color,
+    scrim: color,
+    secondary: color,
+    secondary-container: color,
+    secondary-fixed: color,
+    secondary-fixed-dim: color,
+    shadow: color,
+    surface: color,
+    surface-bright: color,
+    surface-container: color,
+    surface-container-high: color,
+    surface-container-highest: color,
+    surface-container-low: color,
+    surface-container-lowest: color,
+    surface-dim: color,
+    surface-tint: color,
+    surface-variant: color,
+    tertiary: color,
+    tertiary-container: color,
+    tertiary-fixed: color,
+    tertiary-fixed-dim: color,
+}
+
+export global Light {
+    in-out property<Palette> palette: {
+        background: #fff8f7,
+        error: #ba1a1a,
+        error-container: #ffdad6,
+        inverse-on-surface: #ffedec,
+        inverse-primary: #ffb3b5,
+        inverse-surface: #382e2e,
+        on-error: #ffffff,
+        on-error-container: #93000a,
+        on-primary: #ffffff,
+        on-primary-container: #733337,
+        on-primary-fixed: #3b080f,
+        on-primary-fixed-variant: #733337,
+        on-secondary: #ffffff,
+        on-secondary-container: #5d3f40,
+        on-secondary-fixed: #2c1516,
+        on-secondary-fixed-variant: #5d3f40,
+        on-surface: #221919,
+        on-surface-variant: #524343,
+        on-tertiary: #ffffff,
+        on-tertiary-container: #5c421a,
+        on-tertiary-fixed: #291800,
+        on-tertiary-fixed-variant: #5c421a,
+        outline: #857373,
+        outline-variant: #d7c1c1,
+        primary: #8f4a4d,
+        primary-container: #ffdada,
+        primary-fixed: #ffdada,
+        primary-fixed-dim: #ffb3b5,
+        scrim: #000000,
+        secondary: #765657,
+        secondary-container: #ffdada,
+        secondary-fixed: #ffdada,
+        secondary-fixed-dim: #e6bdbd,
+        shadow: #000000,
+        surface: #fff8f7,
+        surface-bright: #fff8f7,
+        surface-container: #fceae9,
+        surface-container-high: #f6e4e4,
+        surface-container-highest: #f0dede,
+        surface-container-low: #fff0f0,
+        surface-container-lowest: #ffffff,
+        surface-dim: #e8d6d6,
+        surface-tint: #8f4a4d,
+        surface-variant: #f4dddd,
+        tertiary: #76592f,
+        tertiary-container: #ffddb1,
+        tertiary-fixed: #ffddb1,
+        tertiary-fixed-dim: #e6c18d,
+    };
+}
+
+export global Dark {
+    in-out property<Palette> palette: {
+        background: #1a1111,
+        error: #ffb4ab,
+        error-container: #93000a,
+        inverse-on-surface: #382e2e,
+        inverse-primary: #8f4a4d,
+        inverse-surface: #f0dede,
+        on-error: #690005,
+        on-error-container: #ffdad6,
+        on-primary: #561d22,
+        on-primary-container: #ffdada,
+        on-primary-fixed: #3b080f,
+        on-primary-fixed-variant: #733337,
+        on-secondary: #44292a,
+        on-secondary-container: #ffdada,
+        on-secondary-fixed: #2c1516,
+        on-secondary-fixed-variant: #5d3f40,
+        on-surface: #f0dede,
+        on-surface-variant: #d7c1c1,
+        on-tertiary: #422c05,
+        on-tertiary-container: #ffddb1,
+        on-tertiary-fixed: #291800,
+        on-tertiary-fixed-variant: #5c421a,
+        outline: #9f8c8c,
+        outline-variant: #524343,
+        primary: #ffb3b5,
+        primary-container: #733337,
+        primary-fixed: #ffdada,
+        primary-fixed-dim: #ffb3b5,
+        scrim: #000000,
+        secondary: #e6bdbd,
+        secondary-container: #5d3f40,
+        secondary-fixed: #ffdada,
+        secondary-fixed-dim: #e6bdbd,
+        shadow: #000000,
+        surface: #1a1111,
+        surface-bright: #413737,
+        surface-container: #271d1d,
+        surface-container-high: #322828,
+        surface-container-highest: #3d3232,
+        surface-container-low: #221919,
+        surface-container-lowest: #140c0c,
+        surface-dim: #1a1111,
+        surface-tint: #ffb3b5,
+        surface-variant: #524343,
+        tertiary: #e6c18d,
+        tertiary-container: #5c421a,
+        tertiary-fixed: #ffddb1,
+        tertiary-fixed-dim: #e6c18d,
+    };
+}
+
+export global PureBlack {
+    in-out property<Palette> palette: {
+        background: #000000,
+        error: #ffb4ab,
+        error-container: #93000a,
+        inverse-on-surface: #382e2e,
+        inverse-primary: #8f4a4d,
+        inverse-surface: #f0dede,
+        on-error: #690005,
+        on-error-container: #ffdad6,
+        on-primary: #561d22,
+        on-primary-container: #ffdada,
+        on-primary-fixed: #3b080f,
+        on-primary-fixed-variant: #733337,
+        on-secondary: #44292a,
+        on-secondary-container: #ffdada,
+        on-secondary-fixed: #2c1516,
+        on-secondary-fixed-variant: #5d3f40,
+        on-surface: #f0dede,
+        on-surface-variant: #d7c1c1,
+        on-tertiary: #422c05,
+        on-tertiary-container: #ffddb1,
+        on-tertiary-fixed: #291800,
+        on-tertiary-fixed-variant: #5c421a,
+        outline: #9f8c8c,
+        outline-variant: #524343,
+        primary: #ffb3b5,
+        primary-container: #733337,
+        primary-fixed: #ffdada,
+        primary-fixed-dim: #ffb3b5,
+        scrim: #000000,
+        secondary: #e6bdbd,
+        secondary-container: #5d3f40,
+        secondary-fixed: #ffdada,
+        secondary-fixed-dim: #e6bdbd,
+        shadow: #000000,
+        surface: #000000,
+        surface-bright: #2b2222,
+        surface-container: #0d0b0b,
+        surface-container-high: #161112,
+        surface-container-highest: #201818,
+        surface-container-low: #000000,
+        surface-container-lowest: #000000,
+        surface-dim: #000000,
+        surface-tint: #ffb3b5,
+        surface-variant: #1f1a1a,
+        tertiary: #e6c18d,
+        tertiary-container: #5c421a,
+        tertiary-fixed: #ffddb1,
+        tertiary-fixed-dim: #e6c18d,
+    };
+}
+
+export struct TypeStyle {
+    size: length,
+    weight: int,
+    tracking: length,
+}
+
+export global Type {
+    out property<TypeStyle> display-large: { size: 57px, weight: 400, tracking: -0.2px };
+    out property<TypeStyle> display-large-emphasized: { size: 57px, weight: 500, tracking: 0px };
+    out property<TypeStyle> display-medium: { size: 45px, weight: 400, tracking: 0px };
+    out property<TypeStyle> display-medium-emphasized: { size: 45px, weight: 500, tracking: 0px };
+    out property<TypeStyle> display-small: { size: 36px, weight: 400, tracking: 0px };
+    out property<TypeStyle> display-small-emphasized: { size: 36px, weight: 500, tracking: 0px };
+    out property<TypeStyle> headline-large: { size: 32px, weight: 400, tracking: 0px };
+    out property<TypeStyle> headline-large-emphasized: { size: 32px, weight: 500, tracking: 0px };
+    out property<TypeStyle> headline-medium: { size: 28px, weight: 400, tracking: 0px };
+    out property<TypeStyle> headline-medium-emphasized: { size: 28px, weight: 500, tracking: 0px };
+    out property<TypeStyle> headline-small: { size: 24px, weight: 400, tracking: 0px };
+    out property<TypeStyle> headline-small-emphasized: { size: 24px, weight: 500, tracking: 0px };
+    out property<TypeStyle> title-large: { size: 22px, weight: 400, tracking: 0px };
+    out property<TypeStyle> title-large-emphasized: { size: 22px, weight: 500, tracking: 0px };
+    out property<TypeStyle> title-medium: { size: 16px, weight: 500, tracking: 0.2px };
+    out property<TypeStyle> title-medium-emphasized: { size: 16px, weight: 700, tracking: 0.15px };
+    out property<TypeStyle> title-small: { size: 14px, weight: 500, tracking: 0.1px };
+    out property<TypeStyle> title-small-emphasized: { size: 14px, weight: 700, tracking: 0.1px };
+    out property<TypeStyle> body-large: { size: 16px, weight: 400, tracking: 0.5px };
+    out property<TypeStyle> body-large-emphasized: { size: 16px, weight: 500, tracking: 0.15px };
+    out property<TypeStyle> body-medium: { size: 14px, weight: 400, tracking: 0.2px };
+    out property<TypeStyle> body-medium-emphasized: { size: 14px, weight: 500, tracking: 0.25px };
+    out property<TypeStyle> body-small: { size: 12px, weight: 400, tracking: 0.4px };
+    out property<TypeStyle> body-small-emphasized: { size: 12px, weight: 500, tracking: 0.4px };
+    out property<TypeStyle> label-large: { size: 14px, weight: 500, tracking: 0.1px };
+    out property<TypeStyle> label-large-emphasized: { size: 14px, weight: 700, tracking: 0.1px };
+    out property<TypeStyle> label-medium: { size: 12px, weight: 500, tracking: 0.5px };
+    out property<TypeStyle> label-medium-emphasized: { size: 12px, weight: 700, tracking: 0.5px };
+    out property<TypeStyle> label-small: { size: 11px, weight: 500, tracking: 0.5px };
+    out property<TypeStyle> label-small-emphasized: { size: 11px, weight: 700, tracking: 0.5px };
+}
+
+export global Shape {
+    out property<length> none: 0px;
+    out property<length> extra-small: 4px;
+    out property<length> small: 8px;
+    out property<length> medium: 12px;
+    out property<length> large: 16px;
+    out property<length> large-increased: 20px;
+    out property<length> extra-large: 28px;
+    out property<length> extra-large-increased: 32px;
+    out property<length> extra-extra-large: 48px;
+    out property<length> full: 9999px;
+}
+
+export global Elevation {
+    out property<length> level0: 0px;
+    out property<length> level1: 1px;
+    out property<length> level2: 3px;
+    out property<length> level3: 6px;
+    out property<length> level4: 8px;
+    out property<length> level5: 12px;
+}
+
+export global Motion {
+    out property<int> short1-ms: 50;
+    out property<int> short2-ms: 100;
+    out property<int> short3-ms: 150;
+    out property<int> short4-ms: 200;
+    out property<int> medium1-ms: 250;
+    out property<int> medium2-ms: 300;
+    out property<int> medium3-ms: 350;
+    out property<int> medium4-ms: 400;
+    out property<int> long1-ms: 450;
+    out property<int> long2-ms: 500;
+    out property<int> long3-ms: 550;
+    out property<int> long4-ms: 600;
+    out property<int> extra-long1-ms: 700;
+    out property<int> extra-long2-ms: 800;
+    out property<int> extra-long3-ms: 900;
+    out property<int> extra-long4-ms: 1000;
+    out property<int> hover-ms: 100;
+    out property<int> pressed-ms: 150;
+    out property<int> fade-ms: 200;
+}
+
+export global Spacing {
+    out property<length> s4: 4px;
+    out property<length> s8: 8px;
+    out property<length> s12: 12px;
+    out property<length> s16: 16px;
+    out property<length> s24: 24px;
+    out property<length> s32: 32px;
+    out property<length> s48: 48px;
+}
