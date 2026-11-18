@@ -1,5 +1,12 @@
 use std::env;
 use std::fs;
+use std::sync::{Mutex, MutexGuard};
+
+static PROFILE_LOCK: Mutex<()> = Mutex::new(());
+
+fn lock_profile() -> MutexGuard<'static, ()> {
+    PROFILE_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+}
 
 use madrigal_core::{Track, TrackIdentity};
 use madrigal_db::{fetch_song, latest_version, open, upsert_song, user_version, SQLITE_MAGIC};
@@ -33,6 +40,7 @@ fn quarantine_files(dir: &std::path::Path) -> Vec<std::path::PathBuf> {
 
 #[test]
 fn damaged_header_is_quarantined_and_fresh_db_takes_over() {
+    let _profile = lock_profile();
     let root = tempfile::tempdir().expect("tempdir");
     env::set_var("MADRIGAL_PROFILE_ROOT", root.path());
     madrigal_paths::ensure_dirs().unwrap();
@@ -68,6 +76,7 @@ fn damaged_header_is_quarantined_and_fresh_db_takes_over() {
 
 #[test]
 fn empty_and_healthy_files_are_not_quarantined() {
+    let _profile = lock_profile();
     let root = tempfile::tempdir().expect("tempdir");
     env::set_var("MADRIGAL_PROFILE_ROOT", root.path());
     madrigal_paths::ensure_dirs().unwrap();

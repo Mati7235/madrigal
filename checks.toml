@@ -35,3 +35,15 @@ group = "offline"
 [[check]]
 name = "db_recovery"
 group = "offline"
+
+[[check]]
+name = "streams_orchestration"
+group = "offline"
+
+[[check]]
+name = "streams_cache"
+group = "offline"
+
+[[check]]
+name = "streams_po_token"
+group = "offline"
