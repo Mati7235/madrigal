@@ -1,11 +1,7 @@
-# Legato
+# Madrigal — reproductor de música de escritorio
 
-Reproductor de música de escritorio para Linux, reescrito en Rust.
 Reproduce tu biblioteca local y YouTube Music (streaming y descargas),
 con letras sincronizadas, scrobbling y control MPRIS.
-
-> Nombre pendiente de confirmación externa. Para renombrar, buscar
-> `Legato` en este archivo, `LICENSE` y los `name = "legato-*"` del workspace.
 
 ## Requisitos
 

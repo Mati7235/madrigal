@@ -6,7 +6,7 @@
 Cargo.toml          # workspace: members = ["crates/*", "xtask"]
 checks.toml         # registro de checks: nombre -> grupo
 crates/
-  legato-<area>/    # un crate por área (player, library, lyrics, ...)
+  madrigal-<area>/  # un crate por área (player, library, lyrics, ...)
     tests/checks/   # checks de integración: check_<nombre>.rs
 xtask/              # runner `cargo xtask checks`
 docs/
@@ -14,7 +14,7 @@ docs/
 
 ## Nombres
 
-- Crates del producto: `legato-<area>` en minúsculas.
+- Crates del producto: `madrigal-<area>` en minúsculas.
 - Checks: archivo `check_<nombre>.rs`, target de test `check_<nombre>`,
   fila `[[check]]` con ese `name` en `checks.toml`.
 
