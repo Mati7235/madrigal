@@ -55,3 +55,11 @@ group = "offline"
 [[check]]
 name = "lyrics_parsers"
 group = "offline"
+
+[[check]]
+name = "net_proxy"
+group = "offline"
+
+[[check]]
+name = "net_retry"
+group = "offline"

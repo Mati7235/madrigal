@@ -1,0 +1,25 @@
+[package]
+name = "madrigal-net"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+hickory-resolver = { version = "0.26", default-features = false, features = ["tokio", "https-ring", "webpki-roots"] }
+rand = "0.9"
+reqwest = { version = "0.12", features = ["blocking", "socks"] }
+tokio = { version = "1", features = ["net", "sync"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[lints]
+workspace = true
+
+[[test]]
+name = "check_net_proxy"
+path = "tests/checks/check_net_proxy.rs"
+
+[[test]]
+name = "check_net_retry"
+path = "tests/checks/check_net_retry.rs"
