@@ -42,13 +42,13 @@ Without `cargo` available the check is FAIL.
 | `paths_isolation` | offline | All paths contained within MADRIGAL_PROFILE_ROOT |
 | `files_atomic` | offline | All-or-nothing atomic writes with no temp leftovers |
 | `secrets_permissions` | offline | Secrets 0600, symlink rejection, keyring disabled |
-<<<<<<< HEAD
 | `testkit_selftest` | offline | Headless UI harness: click, virtual clock, drag, PNG |
 | `db_migrations` | offline | Fresh DB migrates to latest, idempotent reopen, basic song/playlist/event roundtrip |
 | `db_recovery` | offline | Damaged header is quarantined with timestamp and fresh DB takes over; empty and healthy files are never quarantined |
 | `streams_orchestration` | offline | yt-dlp shim: resolution, client fallback, 429 backoff |
 | `streams_cache` | offline | Stream cache TTL, prune of expired only, atomic writes |
 | `streams_po_token` | offline | PO token injection via local server, offline degradation |
+| `settings_roundtrip` | offline | Typed settings load/save with sanitize, unknown-key retention and per-account isolation |
 
 ## Visual verification
 

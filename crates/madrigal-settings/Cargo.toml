@@ -1,0 +1,21 @@
+[package]
+name = "madrigal-settings"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+madrigal-files = { path = "../madrigal-files" }
+madrigal-paths = { path = "../madrigal-paths" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[[test]]
+name = "check_settings_roundtrip"
+path = "tests/checks/check_settings_roundtrip.rs"

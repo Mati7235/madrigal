@@ -25,6 +25,7 @@ name = "secrets_permissions"
 group = "offline"
 
 [[check]]
+<<<<<<< HEAD
 name = "testkit_selftest"
 group = "offline"
 
@@ -46,4 +47,8 @@ group = "offline"
 
 [[check]]
 name = "streams_po_token"
+group = "offline"
+
+[[check]]
+name = "settings_roundtrip"
 group = "offline"
