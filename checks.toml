@@ -191,3 +191,11 @@ group = "offline"
 [[check]]
 name = "innertube_discover"
 group = "offline"
+
+[[check]]
+name = "shazam_signature"
+group = "native"
+
+[[check]]
+name = "shazam_client"
+group = "offline"

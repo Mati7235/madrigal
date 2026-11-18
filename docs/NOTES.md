@@ -203,3 +203,44 @@ the public `raw_json` seam and share the offline `parse_*` code path.
   `GetWatchPlaylistQuery::new_from_playlist_id`; `parse_playlist_radio`
   shares the song-radio parse path.
 
+## Shazam recognition port (F10-1)
+
+Oracle: `upstream/shazamkit` (`ShazamSignatureGenerator.kt` DejaVu port,
+`Shazam.kt` amp.shazam.com client, `models/ShazamModels.kt` shapes).
+
+Signature (`madrigal-shazam::signature`): faithful port of the Kotlin
+(spreading ring, peak inequalities, band tags `0x60030040+band`, 48-byte
+header with CRC32 over `full[8..]`, base64 data URI). Deviations: Hann
+window and FFT trig tables use Rust `cos`/`sin`, so last-ulp float drift
+vs the JVM is possible; UUID/timezone/geo/user-agent are time-seeded
+picks from the Kotlin lists instead of `UUID.randomUUID`/`Random`
+(no `rand` dep); steady pure tones yield few or zero peaks by design
+(transient suppression), so checks use ffmpeg concat tone sequences.
+Generator heap-boxes its FFT tables: the 2 MiB ring literals overflow
+the 2 MiB test-thread stack if built on stack before boxing.
+
+Client (`madrigal-shazam::client`): same endpoint path, query params,
+User-Agent list, `Content-Language: en_US` and JSON body shape as the
+Kotlin `performRecognition`; parsing follows `toRecognitionResult`
+exactly (SONG metadata Album/Label/Released, LYRICS text, apple/spotify
+providers, video option `v=` or 11-char path tail). Score maps to
+`Recognition{score: 1.0}` with the YouTube id as `TrackIdentity`;
+extra fields ride in `ShazamMatch.links`. Deviation: HTTP 5xx retries
+with the 429 backoff (task requirement; the Kotlin only retries 429).
+Transport is reqwest blocking via a direct dep (real HTTPS); proxy/DoH
+from `madrigal-net` is a later integration.
+
+Fixtures (`crates/madrigal-shazam/tests/fixtures/`): `no_match.json`
+is a verbatim 2026-11-18 live response to a synthetic-tone signature
+(HTTP 200 `{"matches":[],"tagid":"<echo>","retryms":9000}`, one call);
+`tagid` echoes the request UUID per call. `match.json` is synthesized
+from the Kotlin parser field paths only (values invented for tests).
+
+Capture (`madrigal-shazam::capture`): tool order `pw-cat`, `parec`,
+`ffmpeg`; all three binaries exist on this machine but no live monitor
+is required:
+`pw-cat`/`parec` record under `timeout -s INT`, ffmpeg uses `-t`.
+`read_wav_mono16k` accepts PCM 8/16/24/32 and float32, any rate or
+channel count, resampling linearly to 16 kHz mono; malformed input is
+`Error::Wav`, never a panic.
+

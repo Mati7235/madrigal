@@ -84,6 +84,8 @@ Without `cargo` available the check is FAIL.
 | `tidal_client` | offline | Device-link login, 0600 token store, search Tracks, HLS manifest, lyrics payload |
 | `innertube_home_library` | offline | Fixture home feed maps to models, library/history/writes parse from pinned fixtures, cookie upgrade builds offline |
 | `innertube_discover` | offline | Fixture charts/new releases/browse walk/mood deep-link/radio fallback map to models, malformed input errors |
+| `shazam_signature` | native | DejaVu signature: determinism, chunked-feed equality, order sensitivity, pinned tone hash, clean wav errors |
+| `shazam_client` | offline | amp.shazam.com mock: match parse with links, no-match, 5xx retry, malformed/status errors, rate spacing |
 
 ## Visual verification
 

@@ -8,6 +8,7 @@ mod internet;
 mod lyrics;
 mod player;
 mod privacy;
+mod recognition;
 mod sanitize;
 mod storage;
 mod updates;
@@ -42,6 +43,7 @@ pub use player::{
     AudioQuality, Normalization, Player, RepeatMode, TransitionMode, EQ_BANDS,
 };
 pub use privacy::Privacy;
+pub use recognition::Recognition;
 pub use storage::Storage;
 pub use updates::{UpdateChannel, Updates};
 
@@ -64,6 +66,8 @@ pub struct Settings {
     pub storage: Storage,
     #[serde(deserialize_with = "de::or_default")]
     pub privacy: Privacy,
+    #[serde(deserialize_with = "de::or_default")]
+    pub recognition: Recognition,
     #[serde(deserialize_with = "de::or_default")]
     pub account: Account,
     #[serde(deserialize_with = "de::or_default")]
@@ -129,6 +133,7 @@ impl Settings {
         self.internet.sanitize();
         self.storage.sanitize();
         self.privacy.sanitize();
+        self.recognition.sanitize();
         self.account.sanitize();
         self.integrations.sanitize();
         self.ai.sanitize();
