@@ -1,0 +1,1 @@
+LOGIN_INFO=abc:def; __Secure-3PAPISID=AbCdEf123; SAPISID=primero; PREF=hl=es

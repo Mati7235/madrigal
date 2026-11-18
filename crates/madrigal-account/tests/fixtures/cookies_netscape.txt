@@ -1,0 +1,7 @@
+# Netscape HTTP Cookie File
+# Madrigal test fixture. Derived from upstreamDesktop check_account.py vectors; every token below is fake.
+
+#HttpOnly_.youtube.com	TRUE	/	TRUE	1700086400	LOGIN_INFO	abc:def
+#HttpOnly_.youtube.com	TRUE	/	TRUE	1700086400	__Secure-3PAPISID	AbCdEf123
+.youtube.com	TRUE	/	FALSE	1700086400	PREF	hl=es
+.example.com	FALSE	/	FALSE	1699999999	ajena	x

@@ -41,3 +41,23 @@ custom parsers must pin fixtures from live JSON via raw_json_query.
 F2-2: wrap YtMusic (auth from browser cookie), search/suggestions/artist/album.
 F2-3: playlist read (incl. RD*/VL* fallback), radios, moods, charts-as-custom-query.
 F2-4: home-as-custom-query, library/history, playlist writes, rate.
+
+## Account session port (F7-1)
+
+Oracle: `upstream_desktop/account/{cookies,session,browser_cookies,secret_store,errors,browser_auth}.py`
+plus vectors in `scripts/check_account{,_storage}.py`.
+Ported to `madrigal-account` minus QtWebEngine login; browser sqlite import
+is a `records_from_browser` seam returning Unsupported.
+
+- SAPISIDHASH input order is `{unix_secs} {sapisid} {origin}` (oracle code;
+  verified against golden `SAPISIDHASH 1700000000_1a84dc71...` for
+  `AbCdEf123` @ `https://music.youtube.com`). Plain `SAPISID` outranks
+  `__Secure-3PAPISID`, which outranks `__Secure-1PAPISID`.
+- SHA-1 is hand-rolled in `cookies.rs`: adding any crates.io dep forces a
+  full workspace re-resolve, and the shared offline index cache is a mix of
+  versions (objc2 0.6.4 cached vs 0.6.5 locked) that fails to resolve.
+  Keep this crate dependency-free beyond the workspace + serde.
+- Cookies file lives in the runtime dir (`profile_cookies_path`), never next
+  to the session JSON; both written 0600 via `madrigal-secrets`.
+- Fixtures in `crates/madrigal-account/tests/fixtures/` derive from the
+  oracle check vectors; every token is fake (e.g. `AbCdEf123`).

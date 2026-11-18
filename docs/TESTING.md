@@ -55,6 +55,9 @@ Without `cargo` available the check is FAIL.
 | `library_playlists` | offline | Local playlists with tags, cover, hidden flag, liked auto-playlist, duplicate policy and undo |
 | `library_stats` | offline | Play counts, streaks, listen time and Year in Music tops over seeded events |
 | `library_history` | offline | Listen/search history with settings pause, clear and duration window |
+| `account_cookies` | offline | Netscape/header cookie parsing, YouTube domain filter, roundtrip serialize, expiry, 0600 writes |
+| `account_sapisid` | offline | SAPISIDHASH golden vectors and browser auth header assembly |
+| `account_profiles` | offline | Isolated account profiles, settings active pointer, delete, 0600 cookies, browser seam |
 
 ## Visual verification
 

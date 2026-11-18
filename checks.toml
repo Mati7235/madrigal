@@ -75,3 +75,15 @@ group = "offline"
 [[check]]
 name = "library_history"
 group = "offline"
+
+[[check]]
+name = "account_cookies"
+group = "offline"
+
+[[check]]
+name = "account_sapisid"
+group = "offline"
+
+[[check]]
+name = "account_profiles"
+group = "offline"

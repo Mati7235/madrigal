@@ -3205,6 +3205,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "madrigal-account"
+version = "0.1.0"
+dependencies = [
+ "madrigal-core",
+ "madrigal-paths",
+ "madrigal-secrets",
+ "madrigal-settings",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "madrigal-core"
 version = "0.1.0"
 dependencies = [
@@ -3235,6 +3248,19 @@ dependencies = [
 [[package]]
 name = "madrigal-i18n"
 version = "0.1.0"
+
+[[package]]
+name = "madrigal-library"
+version = "0.1.0"
+dependencies = [
+ "madrigal-core",
+ "madrigal-db",
+ "madrigal-paths",
+ "madrigal-settings",
+ "rusqlite",
+ "serde_json",
+ "tempfile",
+]
 
 [[package]]
 name = "madrigal-lyrics"
