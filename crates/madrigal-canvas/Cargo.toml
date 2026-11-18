@@ -1,0 +1,27 @@
+[package]
+name = "madrigal-canvas"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+madrigal-core = { path = "../madrigal-core" }
+madrigal-files = { path = "../madrigal-files" }
+madrigal-paths = { path = "../madrigal-paths" }
+madrigal-settings = { path = "../madrigal-settings" }
+madrigal-tidal = { path = "../madrigal-tidal" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", features = ["blocking", "json"] }
+regex = "1"
+unicode-normalization = "0.1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[[test]]
+name = "check_canvas"
+path = "tests/checks/check_canvas.rs"

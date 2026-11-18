@@ -1,0 +1,89 @@
+{
+ "results": {
+  "songs": {
+   "href": "/v1/catalog/us/search?limit=10&term=Taylor+Swift+Cruel+Summer&types=songs",
+   "next": "/v1/catalog/us/search?offset=10&term=Taylor+Swift+Cruel+Summer&types=songs",
+   "data": [
+    {
+     "id": "1468058171",
+     "type": "songs",
+     "href": "/v1/catalog/us/songs/1468058171",
+     "attributes": {
+      "albumArtistName": "Taylor Swift",
+      "albumName": "Lover",
+      "artistName": "Taylor Swift",
+      "audioLocale": "en-US",
+      "audioTraits": [
+       "atmos",
+       "lossless",
+       "lossy-stereo",
+       "spatial"
+      ],
+      "composerName": "Taylor Swift, Jack Antonoff & Annie Clark",
+      "discNumber": 1,
+      "durationInMillis": 178426,
+      "genreNames": [
+       "Pop",
+       "Music"
+      ],
+      "hasLyrics": true,
+      "hasTimeSyncedLyrics": true,
+      "isAppleDigitalMaster": true,
+      "isMasteredForItunes": true,
+      "isVocalAttenuationAllowed": true,
+      "isrc": "USUG11901472",
+      "name": "Cruel Summer",
+      "previews": [
+       {
+        "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/44/af/81/44af8168-9609-1b85-5048-ada08dceacf3/mzaf_5595361395314573470.plus.aac.ep.m4a"
+       }
+      ],
+      "releaseDate": "2019-08-23",
+      "trackNumber": 2,
+      "url": "https://music.apple.com/us/album/cruel-summer/1468058165?i=1468058171"
+     }
+    },
+    {
+     "id": "1715759779",
+     "type": "songs",
+     "href": "/v1/catalog/us/songs/1715759779",
+     "attributes": {
+      "albumArtistName": "Taylor Swift",
+      "albumName": "The Cruelest Summer - Single",
+      "artistName": "Taylor Swift & LP Giobbi",
+      "audioLocale": "en-US",
+      "audioTraits": [
+       "atmos",
+       "lossless",
+       "lossy-stereo",
+       "spatial"
+      ],
+      "composerName": "Taylor Swift, Jack Antonoff & Annie Clark",
+      "discNumber": 1,
+      "durationInMillis": 253545,
+      "genreNames": [
+       "Dance",
+       "Music"
+      ],
+      "hasLyrics": true,
+      "hasTimeSyncedLyrics": true,
+      "isAppleDigitalMaster": true,
+      "isMasteredForItunes": true,
+      "isVocalAttenuationAllowed": true,
+      "isrc": "USUG12305724",
+      "name": "Cruel Summer (LP Giobbi Remix - Extended Version)",
+      "previews": [
+       {
+        "url": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/bc/b9/67/bcb9679c-cd99-7f6d-2cdb-9d72e8fc1e67/mzaf_18364704853731244820.plus.aac.ep.m4a"
+       }
+      ],
+      "releaseDate": "2023-10-19",
+      "trackNumber": 3,
+      "url": "https://music.apple.com/us/album/cruel-summer-lp-giobbi-remix-extended-version/1715759490?i=1715759779"
+     }
+    }
+   ]
+  }
+ },
+ "meta": {}
+}

@@ -328,3 +328,37 @@ Findings:
   with `Offline`; local lookups bypass it. No connectivity probe: in
   offline mode the answer is known without touching the network.
 
+## Canvas port (F10-5)
+
+Oracle (local Android app): `canvas/` module (Kotlin).
+`madrigal-canvas` ports `CanvasSource` (incl. `from_preference` with
+`BOTH` -> `ALL`), identity matching (feat./video qualifiers, primary
+artist, NFKD fold), and the per-source fetchers. Player wiring lands in
+F9-3; `resolve_playback` returns the playable video URL (mp4 and m3u8
+both play in mpv natively). The `canvas_wifi_only` setting exists but is
+ignored on desktop (no metered-network detection).
+
+- Tidal: `GET /v1/search` with `types=TRACKS` through the
+  `madrigal-tidal` session (sessionId/countryCode/auth header); video
+  from `album.videoCover` as
+  `resources.tidal.com/videos/{uuid-slashes}/1280x1280.mp4`, still from
+  `album.cover`. Fixture is synthetic (field shapes from the oracle
+  parser).
+- Apple: AMP API `v1/catalog/us/search` (`term/types/limit/10/
+  extend=editorialVideo/include=albums`) plus token scrape of
+  `music.apple.com` (JWT with `iss=AMPWebPlay`, fallback to
+  `/assets/index*.js` scripts) and album lookup for `editorialVideo`.
+  Search/album fixtures are real captures (2026-11-18, "Cruel Summer":
+  `motionDetailSquare`/`motionDetailTall` hold m3u8 `video` URLs; extra
+  keys `motionSquareVideo1x1`/`motionTallVideo3x4` observed but not
+  parsed, matching the oracle). Token-page fixture is synthetic (minted
+  unsigned JWT, parser checks `iss`/`exp` only, like the oracle). Two
+  live calls only (search + album lookup).
+- BetterLyrics: `GET artwork.boidu.dev/?s=&a=&storefront=` with the
+  oracle 60 s TTL; fixture is synthetic.
+- Spotify: full port of the searchDesktop + client-token + canvaz-cache
+  protobuf flow runs against injectable bases, but production
+  credentials need the spotifycore session (pending F10-4), so the
+  `SpotifyCanvasAuth` seam returns `Unsupported` until then
+  (`NoSpotifyAuth`; stub auth in the check proves the wiring).
+

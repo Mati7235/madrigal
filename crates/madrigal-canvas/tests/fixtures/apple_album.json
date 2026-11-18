@@ -1,0 +1,36 @@
+{
+ "data": [
+  {
+   "id": "1468058165",
+   "type": "albums",
+   "attributes": {
+    "artistName": "Taylor Swift",
+    "audioTraits": [
+     "atmos",
+     "lossless",
+     "lossy-stereo",
+     "spatial"
+    ],
+    "editorialVideo": {
+     "motionDetailSquare": {
+      "video": "https://mvod.itunes.apple.com/itunes-assets/HLSMusic116/v4/f9/b5/12/f9b512d4-4781-0214-81c8-13f12d9cee95/P643898319_default.m3u8"
+     },
+     "motionDetailTall": {
+      "video": "https://mvod.itunes.apple.com/itunes-assets/HLSMusic211/v4/f3/84/96/f384962a-8a99-ca3a-76ab-c28b28e63777/P1169970878_default.m3u8"
+     },
+     "motionSquareVideo1x1": {
+      "video": "https://mvod.itunes.apple.com/itunes-assets/HLSMusic116/v4/f9/b5/12/f9b512d4-4781-0214-81c8-13f12d9cee95/P643898319_default.m3u8"
+     },
+     "motionTallVideo3x4": {
+      "video": "https://mvod.itunes.apple.com/itunes-assets/HLSMusic211/v4/f3/84/96/f384962a-8a99-ca3a-76ab-c28b28e63777/P1169970878_default.m3u8"
+     }
+    },
+    "isComplete": true,
+    "isMasteredForItunes": true,
+    "isPrerelease": false,
+    "name": "Lover",
+    "url": "https://music.apple.com/us/album/lover/1468058165"
+   }
+  }
+ ]
+}

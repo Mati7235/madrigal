@@ -3519,6 +3519,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "madrigal-canvas"
+version = "0.1.0"
+dependencies = [
+ "madrigal-core",
+ "madrigal-files",
+ "madrigal-paths",
+ "madrigal-settings",
+ "madrigal-tidal",
+ "regex",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "unicode-normalization",
+]
+
+[[package]]
 name = "madrigal-core"
 version = "0.1.0"
 dependencies = [
