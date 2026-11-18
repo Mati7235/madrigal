@@ -1,0 +1,103 @@
+import { Palette, Type } from "../tokens.slint";
+import { I18n } from "../i18n.slint";
+
+export component PageHost inherits Rectangle {
+    in property<int> page;
+    in property<Palette> palette;
+
+    property<string> title: root.page == 0 ? I18n.trl(I18n.lang, "nav.home") : root.page == 1 ? I18n.trl(I18n.lang, "explore.search") : root.page == 2 ? I18n.trl(I18n.lang, "nav.explore") : root.page == 3 ? I18n.trl(I18n.lang, "nav.lists") : root.page == 4 ? I18n.trl(I18n.lang, "nav.downloads") : I18n.trl(I18n.lang, "settings.title");
+
+    background: root.palette.surface;
+    accessible-role: text;
+    accessible-label: root.title;
+
+    if (root.page == 0) : home-ph := Rectangle {
+        ph-home-label := Text {
+            x: 0px;
+            y: 0px;
+            width: 100%;
+            height: 100%;
+            text: I18n.trl(I18n.lang, "nav.home");
+            color: root.palette.on-surface;
+            font-size: Type.headline-small.size;
+            font-weight: Type.headline-small.weight;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+
+    if (root.page == 1) : search-ph := Rectangle {
+        ph-search-label := Text {
+            x: 0px;
+            y: 0px;
+            width: 100%;
+            height: 100%;
+            text: I18n.trl(I18n.lang, "explore.search");
+            color: root.palette.on-surface;
+            font-size: Type.headline-small.size;
+            font-weight: Type.headline-small.weight;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+
+    if (root.page == 2) : explore-ph := Rectangle {
+        ph-explore-label := Text {
+            x: 0px;
+            y: 0px;
+            width: 100%;
+            height: 100%;
+            text: I18n.trl(I18n.lang, "nav.explore");
+            color: root.palette.on-surface;
+            font-size: Type.headline-small.size;
+            font-weight: Type.headline-small.weight;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+
+    if (root.page == 3) : library-ph := Rectangle {
+        ph-library-label := Text {
+            x: 0px;
+            y: 0px;
+            width: 100%;
+            height: 100%;
+            text: I18n.trl(I18n.lang, "nav.lists");
+            color: root.palette.on-surface;
+            font-size: Type.headline-small.size;
+            font-weight: Type.headline-small.weight;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+
+    if (root.page == 4) : downloads-ph := Rectangle {
+        ph-downloads-label := Text {
+            x: 0px;
+            y: 0px;
+            width: 100%;
+            height: 100%;
+            text: I18n.trl(I18n.lang, "nav.downloads");
+            color: root.palette.on-surface;
+            font-size: Type.headline-small.size;
+            font-weight: Type.headline-small.weight;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+
+    if (root.page == 5) : settings-ph := Rectangle {
+        ph-settings-label := Text {
+            x: 0px;
+            y: 0px;
+            width: 100%;
+            height: 100%;
+            text: I18n.trl(I18n.lang, "settings.title");
+            color: root.palette.on-surface;
+            font-size: Type.headline-small.size;
+            font-weight: Type.headline-small.weight;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+}

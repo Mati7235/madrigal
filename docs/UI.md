@@ -23,4 +23,25 @@ has no GPU scale primitive, so press feedback is morph + state layer.
 
 i18n: global `I18n.trl(lang, key)` (pure callback) wired from Rust to
 `madrigal-i18n`, default Es. Gallery labels call `trl`; runtime `set_lang`
-refreshes every binding through the `lang` property.
+refreshes every binding through the `lang` property. The global lives in
+`ui/i18n.slint` so gallery and shell share one type; `ui/app.slint`
+re-exports `DemoGallery`, `MainShell` and `I18n` as the single compile root.
+
+Shell (`ui/shell/`, presenter `src/shell.rs`): `MainShell` window with a
+`SideNav` (Home, Search, Explore, Library, Downloads, Settings; glyph + label
+via `trl`), a `page` int property (0..5), a `PageHost` workspace, a
+NowPlayingBar placeholder strip (`player.noTrack` + `queue-count` seam), and
+`ConfirmOverlay` / `PromptOverlay` under one `overlay` int enum (0 none,
+1 confirm, 2 prompt; `ShellOverlay` maps it). Esc closes the open overlay,
+then focuses the sidebar (`sidebar-focused`). Shortcuts arrive through the
+`handle-key(string) -> bool` callback (`dispatch_key` from Rust): Space,
+Left/Right (seek ∓10 via `seek-requested`), N/P, F (full player), `/` (search
+focus), `1..6` / `[` / `]` (page jump/cycle). Each signal bumps an
+`@testable` counter property asserted by `ui_shell`.
+
+PageHost seam contract: `PageHost` takes `page` + `palette` and renders one
+placeholder branch per page index. Screens F8-3..F8-6 replace each branch with
+its page component in place, keeping the property names and the branch order;
+`MainShell` only reads `page` and never reaches into page internals. The
+queue drawer seam is `queue-count`, synced from `madrigal-player` `Queue`
+length via `sync_queue_seam` until the real drawer lands.

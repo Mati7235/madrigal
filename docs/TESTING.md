@@ -97,6 +97,7 @@ Without `cargo` available the check is FAIL.
 | `together_lan` | offline | LAN sessions: discovery, approve, gated add/control, kick/ban/transfer, LWW play-state, queue reorder, log order, link roundtrip, malformed frames |
 | `curation` | offline | AI-slop blocklist parse/modes/counters, offline gate, cache sweep caps, explicit/video filters |
 | `canvas` | offline | Canvas overlays: Tidal/Apple/BetterLyrics fetch, Spotify seam, cache TTL/prune, refetch |
+| `ui_shell` | offline | MainShell: sidebar pages, overlays, shortcuts, i18n/theme flips, PNG snapshot |
 
 ## Visual verification
 

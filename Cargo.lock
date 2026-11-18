@@ -3842,6 +3842,7 @@ name = "madrigal-ui"
 version = "0.1.0"
 dependencies = [
  "madrigal-i18n",
+ "madrigal-player",
  "madrigal-settings",
  "madrigal-testkit",
  "slint",

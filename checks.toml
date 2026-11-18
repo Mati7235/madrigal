@@ -243,3 +243,7 @@ group = "offline"
 [[check]]
 name = "canvas"
 group = "offline"
+
+[[check]]
+name = "ui_shell"
+group = "offline"

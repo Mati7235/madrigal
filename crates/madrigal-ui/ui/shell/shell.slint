@@ -1,0 +1,264 @@
+import { Palette, Light, Dark, PureBlack, Type } from "../tokens.slint";
+import { I18n } from "../i18n.slint";
+import { SideNav } from "sidebar.slint";
+import { PageHost } from "pagehost.slint";
+import { ConfirmOverlay, PromptOverlay } from "overlays.slint";
+
+export component MainShell inherits Window {
+    in-out property<Palette> palette: Light.palette;
+    in-out property<int> theme-kind: 0;
+    in-out property<int> page: 0;
+    in-out property<int> overlay: 0;
+    in-out property<bool> sidebar-focused: false;
+    in-out property<bool> search-focused: false;
+    in-out property<int> queue-count: 0;
+    in-out property<string> confirm-title: "";
+    in-out property<string> confirm-body: "";
+    in-out property<int> confirm-result: -1;
+    in-out property<string> prompt-title: "";
+    in-out property<string> prompt-input: "";
+    in-out property<string> prompt-result: "";
+    in-out property<int> play-toggle-count: 0;
+    in-out property<int> seek-back-count: 0;
+    in-out property<int> seek-fwd-count: 0;
+    in-out property<int> seek-delta: 0;
+    in-out property<int> next-count: 0;
+    in-out property<int> prev-count: 0;
+    in-out property<int> full-player-count: 0;
+    in-out property<int> search-focus-count: 0;
+
+    callback apply-theme(int);
+    callback navigate(int);
+    callback open-confirm(string, string);
+    callback open-prompt(string);
+    callback close-overlay();
+    callback confirm-accepted();
+    callback confirm-dismissed();
+    callback prompt-accepted(string);
+    callback prompt-dismissed();
+    callback handle-key(string) -> bool;
+    callback play-pause-toggled();
+    callback seek-requested(int);
+    callback next-requested();
+    callback prev-requested();
+    callback full-player-opened();
+    callback search-focus-requested();
+
+    apply-theme(k) => {
+        if (k == 0) {
+            root.palette = Light.palette;
+        } else if (k == 1) {
+            root.palette = Dark.palette;
+        } else {
+            root.palette = PureBlack.palette;
+        }
+        root.theme-kind = k;
+    }
+
+    navigate(p) => {
+        root.page = p;
+    }
+
+    open-confirm(t, b) => {
+        root.confirm-title = t;
+        root.confirm-body = b;
+        root.confirm-result = -1;
+        root.overlay = 1;
+    }
+
+    open-prompt(t) => {
+        root.prompt-title = t;
+        root.prompt-input = "";
+        root.prompt-result = "";
+        root.overlay = 2;
+    }
+
+    close-overlay() => {
+        root.overlay = 0;
+    }
+
+    confirm-accepted() => {
+        root.confirm-result = 1;
+        root.overlay = 0;
+    }
+
+    confirm-dismissed() => {
+        root.confirm-result = 0;
+        root.overlay = 0;
+    }
+
+    prompt-accepted(text) => {
+        root.prompt-result = text;
+        root.overlay = 0;
+    }
+
+    prompt-dismissed() => {
+        root.overlay = 0;
+    }
+
+    handle-key(key) => {
+        if (key == "Escape") {
+            if (root.overlay == 1) {
+                root.confirm-dismissed();
+                return true;
+            }
+            if (root.overlay == 2) {
+                root.prompt-dismissed();
+                return true;
+            }
+            root.sidebar-focused = true;
+            return true;
+        }
+        if (root.overlay != 0) {
+            return false;
+        }
+        if (key == " ") {
+            root.play-toggle-count += 1;
+            root.play-pause-toggled();
+            return true;
+        }
+        if (key == "Left") {
+            root.seek-back-count += 1;
+            root.seek-delta = -10;
+            root.seek-requested(-10);
+            return true;
+        }
+        if (key == "Right") {
+            root.seek-fwd-count += 1;
+            root.seek-delta = 10;
+            root.seek-requested(10);
+            return true;
+        }
+        if (key == "n" || key == "N") {
+            root.next-count += 1;
+            root.next-requested();
+            return true;
+        }
+        if (key == "p" || key == "P") {
+            root.prev-count += 1;
+            root.prev-requested();
+            return true;
+        }
+        if (key == "f" || key == "F") {
+            root.full-player-count += 1;
+            root.full-player-opened();
+            return true;
+        }
+        if (key == "/") {
+            root.search-focus-count += 1;
+            root.search-focused = true;
+            root.search-focus-requested();
+            return true;
+        }
+        if (key == "]") {
+            if (root.page >= 5) {
+                root.page = 0;
+            } else {
+                root.page += 1;
+            }
+            return true;
+        }
+        if (key == "[") {
+            if (root.page <= 0) {
+                root.page = 5;
+            } else {
+                root.page -= 1;
+            }
+            return true;
+        }
+        if (key == "1") {
+            root.page = 0;
+            return true;
+        }
+        if (key == "2") {
+            root.page = 1;
+            return true;
+        }
+        if (key == "3") {
+            root.page = 2;
+            return true;
+        }
+        if (key == "4") {
+            root.page = 3;
+            return true;
+        }
+        if (key == "5") {
+            root.page = 4;
+            return true;
+        }
+        if (key == "6") {
+            root.page = 5;
+            return true;
+        }
+        return false;
+    }
+
+    title: "madrigal-shell";
+    width: 960px;
+    height: 640px;
+    background: root.palette.surface;
+
+    main-row := HorizontalLayout {
+        spacing: 0px;
+        nav := SideNav {
+            width: 232px;
+            palette: root.palette;
+            page: root.page;
+            focused: root.sidebar-focused;
+            navigate(p) => { root.navigate(p); }
+        }
+        content-col := VerticalLayout {
+            spacing: 0px;
+            host := PageHost {
+                vertical-stretch: 1;
+                palette: root.palette;
+                page: root.page;
+            }
+            nowbar := Rectangle {
+                height: 72px;
+                background: root.palette.surface-container;
+                nowbar-dot := Rectangle {
+                    x: 16px;
+                    y: 14px;
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 22px;
+                    background: root.palette.secondary-container;
+                }
+                nowbar-text := Text {
+                    x: 72px;
+                    y: 0px;
+                    width: parent.width - 88px;
+                    height: 100%;
+                    text: I18n.trl(I18n.lang, "player.noTrack") + " (" + root.queue-count + ")";
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.body-medium.size;
+                    vertical-alignment: center;
+                    overflow: elide;
+                }
+            }
+        }
+    }
+
+    confirm-layer := ConfirmOverlay {
+        width: 100%;
+        height: 100%;
+        visible: root.overlay == 1;
+        palette: root.palette;
+        title: root.confirm-title;
+        body: root.confirm-body;
+        accepted => { root.confirm-accepted(); }
+        dismissed => { root.confirm-dismissed(); }
+    }
+
+    prompt-layer := PromptOverlay {
+        width: 100%;
+        height: 100%;
+        visible: root.overlay == 2;
+        palette: root.palette;
+        title: root.prompt-title;
+        input <=> root.prompt-input;
+        accepted(text) => { root.prompt-accepted(text); }
+        dismissed => { root.prompt-dismissed(); }
+    }
+}

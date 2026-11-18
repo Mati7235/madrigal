@@ -1,14 +1,10 @@
 import { Palette, Light, Dark, PureBlack, Type, Spacing } from "tokens.slint";
+import { I18n } from "i18n.slint";
 import { M3Button, M3IconButton } from "components/buttons.slint";
 import { M3TextField, M3SearchBar } from "components/fields.slint";
 import { M3Switch, M3Checkbox, M3Slider } from "components/selection.slint";
 import { M3Card, M3Chip } from "components/cards.slint";
 import { M3ListItem } from "components/rows.slint";
-
-export global I18n {
-    pure callback trl(string, string) -> string;
-    in-out property<string> lang: "es";
-}
 
 export component DemoGallery inherits Window {
     in-out property<Palette> palette: Light.palette;

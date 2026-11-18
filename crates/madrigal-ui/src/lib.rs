@@ -1,7 +1,13 @@
 slint::include_modules!();
 
+mod shell;
 mod theme;
 
+pub use shell::{
+    apply_shell_appearance, apply_shell_theme, dispatch_key, overlay_from_index, overlay_index,
+    page_from_index, page_index, set_shell_lang, sync_queue_seam, wire_shell_i18n, ShellOverlay,
+    ShellPage,
+};
 pub use theme::{
     from_appearance, lang_code, lang_from_code, theme_from_index, theme_index, ThemeKind,
 };

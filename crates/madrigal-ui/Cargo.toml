@@ -9,6 +9,7 @@ all = "warn"
 
 [dependencies]
 madrigal-i18n = { path = "../madrigal-i18n" }
+madrigal-player = { path = "../madrigal-player" }
 madrigal-settings = { path = "../madrigal-settings" }
 slint = { version = "=1.19.0", features = ["mcp"] }
 
@@ -22,3 +23,7 @@ slint-build = "=1.19.0"
 [[test]]
 name = "check_ui_foundations"
 path = "tests/checks/check_ui_foundations.rs"
+
+[[test]]
+name = "check_ui_shell"
+path = "tests/checks/check_ui_shell.rs"
