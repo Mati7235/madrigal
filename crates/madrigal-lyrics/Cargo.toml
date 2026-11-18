@@ -49,3 +49,7 @@ path = "tests/checks/check_lyrics_providers.rs"
 [[test]]
 name = "check_lyrics_chain"
 path = "tests/checks/check_lyrics_chain.rs"
+
+[[test]]
+name = "check_lyrics_live"
+path = "tests/checks/check_lyrics_live.rs"

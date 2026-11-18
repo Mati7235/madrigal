@@ -33,3 +33,7 @@ path = "tests/checks/check_innertube_pages.rs"
 [[test]]
 name = "check_innertube_discover"
 path = "tests/checks/check_innertube_discover.rs"
+
+[[test]]
+name = "check_catalog_live"
+path = "tests/checks/check_catalog_live.rs"

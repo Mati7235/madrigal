@@ -203,3 +203,11 @@ group = "offline"
 [[check]]
 name = "discord_rpc"
 group = "offline"
+
+[[check]]
+name = "catalog_live"
+group = "live"
+
+[[check]]
+name = "lyrics_live"
+group = "live"
