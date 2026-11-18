@@ -40,7 +40,7 @@ pub use lyrics::{
     TRANSLATION_DEFAULT_ENDPOINT,
 };
 pub use player::{
-    AudioQuality, Normalization, Player, RepeatMode, TransitionMode, EQ_BANDS,
+    AudioQuality, Normalization, Player, RepeatMode, TransitionMode, EQ_BANDS, sanitize_gains,
 };
 pub use privacy::Privacy;
 pub use recognition::Recognition;

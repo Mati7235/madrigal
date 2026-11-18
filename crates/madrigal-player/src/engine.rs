@@ -178,8 +178,32 @@ impl Engine {
             .map_err(|err| Error::Mpv(err.to_string()))
     }
 
+    pub fn set_audio_pitch_correction(&self, enabled: bool) -> Result<(), Error> {
+        self.mpv
+            .set_property("audio-pitch-correction", enabled)
+            .map_err(|err| Error::Mpv(err.to_string()))
+    }
+
+    pub fn audio_pitch_correction(&self) -> Result<bool, Error> {
+        self.mpv
+            .get_property("audio-pitch-correction")
+            .map_err(|err| Error::Mpv(err.to_string()))
+    }
+
     pub fn position(&self) -> Option<f64> {
         self.mpv.get_property("time-pos").ok()
+    }
+
+    pub fn prop_str(&self, name: &str) -> Option<String> {
+        self.mpv.get_property(name).ok()
+    }
+
+    pub fn prop_i64(&self, name: &str) -> Option<i64> {
+        self.mpv.get_property(name).ok()
+    }
+
+    pub fn prop_f64(&self, name: &str) -> Option<f64> {
+        self.mpv.get_property(name).ok()
     }
 
     pub fn duration(&self) -> Option<f64> {

@@ -1,8 +1,14 @@
+pub mod audio;
+pub mod diag_log;
 pub mod engine;
+pub mod latency;
 pub mod player;
 pub mod queue;
 pub mod session;
+pub mod single_instance;
+pub mod sleep;
 pub mod source;
+pub mod stream_info;
 
 use std::fmt;
 use std::io;

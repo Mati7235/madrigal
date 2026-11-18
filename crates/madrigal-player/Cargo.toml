@@ -29,6 +29,22 @@ path = "tests/checks/check_player_engine.rs"
 name = "check_player_session"
 path = "tests/checks/check_player_session.rs"
 
+[[test]]
+name = "check_player_diag"
+path = "tests/checks/check_player_diag.rs"
+
+[[test]]
+name = "check_player_stream_info"
+path = "tests/checks/check_player_stream_info.rs"
+
+[[test]]
+name = "check_player_audio"
+path = "tests/checks/check_player_audio.rs"
+
+[[test]]
+name = "check_player_af_native"
+path = "tests/checks/check_player_af_native.rs"
+
 # libmpv2-sys log capture needs one unsafe call: keep clippy, drop the workspace forbid.
 [lints.clippy]
 all = "warn"

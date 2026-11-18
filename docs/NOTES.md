@@ -362,3 +362,36 @@ ignored on desktop (no metered-network detection).
   `SpotifyCanvasAuth` seam returns `Unsupported` until then
   (`NoSpotifyAuth`; stub auth in the check proves the wiring).
 
+## Audio features port (F4-2)
+
+Oracle (local Python app): `player/audio.py` (EQ bands/presets, loudnorm,
+tempo/pitch mapping) driven by `application/playback.py`.
+Ported to `madrigal-player` (`audio.rs`, `sleep.rs`):
+
+- EQ bands are the oracle's exact set; presets flat/bass/treble/vocal map to
+  the oracle plano/graves/brillante/voz vectors; customs live in
+  `equalizer_custom_profiles_json` as `{"name": [gains]}` with JSON
+  export/import round-trip.
+- `loudnorm=I=-16:TP=-1.5:LRA=11` for Dynamic; replaygain modes map to Off
+  (no mpv replaygain wiring in this Engine).
+- Tempo is the `speed` property (mpv drives its native scaletempo2, which
+  takes no params); pitch semitones map to `2^(semi/12)` via
+  `rubberband=pitch-scale`; `audio-pitch-correction` stays on so speed never
+  double-shifts pitch.
+- Skip silence is `silenceremove` trimming head+tail at -60dB (standard
+  values; the oracle has no silence skip).
+- Unloadable files emit no EndFile event (mpv 0.42 only logs
+  `Failed to recognize file format` and parks playlist-pos at -1), so
+  auto-skip pairs the EndFile(Error) arm with a `poll_failed_load` watchdog
+  (2 s grace, then playlist-pos -1 advances like EOF); the streak resets on
+  FileLoaded and caps at MAX_AUTO_SKIPS.
+- Sleep timer modes are N minutes (host-polled) and end-of-current-song
+  (fires on the next EndFile(Eof)).
+
+## Crossfade seam
+
+mpv cannot cross-fade across playlist items: one Engine owns one audio chain,
+so TransitionMode::Crossfade has no in-process implementation and behaves as
+Normal. Plan: dual-instance with a short overlap driven by a fade
+coordinator. Volume ramps inside one instance would fake it; not done.
+

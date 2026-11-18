@@ -1,8 +1,12 @@
+use std::time::{Duration, Instant};
+
 use madrigal_settings::Player as PlayerConfig;
 
+use crate::audio::{ErrorSkipper, VolumeAction, ZeroVolumePause, MAX_AUTO_SKIPS};
 use crate::engine::{EndReason, Engine, EngineEvent};
 use crate::queue::Queue;
 use crate::session::SessionState;
+use crate::sleep::{SleepMode, SleepTimer};
 use crate::source::StreamSource;
 use crate::Error;
 
@@ -10,7 +14,15 @@ pub struct Player<S: StreamSource> {
     engine: Engine,
     source: S,
     queue: Queue,
+    sleep: Option<SleepTimer>,
+    skips: ErrorSkipper,
+    zero: ZeroVolumePause,
+    preload_enabled: bool,
+    autoskip_enabled: bool,
+    pending: Option<Instant>,
 }
+
+const LOAD_GRACE: Duration = Duration::from_secs(2);
 
 impl<S: StreamSource> Player<S> {
     pub fn new(engine: Engine, source: S) -> Self {
@@ -18,16 +30,23 @@ impl<S: StreamSource> Player<S> {
             engine,
             source,
             queue: Queue::new(),
+            sleep: None,
+            skips: ErrorSkipper::new(MAX_AUTO_SKIPS),
+            zero: ZeroVolumePause::new(),
+            preload_enabled: true,
+            autoskip_enabled: true,
+            pending: None,
         }
     }
 
     pub fn apply_settings(&mut self, config: &PlayerConfig) -> Result<(), Error> {
         self.engine.set_volume(f64::from(config.volume))?;
-        self.engine.set_speed(f64::from(config.playback_speed))?;
         self.queue.set_repeat(config.repeat_mode);
         self.queue.set_permanent_shuffle(config.permanent_shuffle);
         self.queue.set_locked(config.queue_edit_lock);
-        Ok(())
+        self.preload_enabled = config.preload_next_song;
+        self.autoskip_enabled = config.auto_skip_next_on_error;
+        crate::audio::apply_audio(&self.engine, config)
     }
 
     pub fn engine(&self) -> &Engine {
@@ -44,6 +63,62 @@ impl<S: StreamSource> Player<S> {
 
     pub fn queue_mut(&mut self) -> &mut Queue {
         &mut self.queue
+    }
+
+    pub fn sleep_remaining(&self, now: Instant) -> Option<std::time::Duration> {
+        self.sleep.as_ref()?.remaining(now)
+    }
+
+    pub fn arm_sleep(&mut self, mode: SleepMode, now: Instant) {
+        let mut timer = match mode {
+            SleepMode::Minutes(mins) => SleepTimer::minutes(mins),
+            SleepMode::EndOfSong => SleepTimer::end_of_song(),
+        };
+        timer.arm(now);
+        self.sleep = Some(timer);
+    }
+
+    pub fn cancel_sleep(&mut self) {
+        self.sleep = None;
+    }
+
+    pub fn poll_sleep(&mut self, now: Instant) -> Result<bool, Error> {
+        let fired = self.sleep.as_mut().is_some_and(|timer| timer.poll(now));
+        if fired {
+            self.sleep = None;
+            self.engine.set_paused(true)?;
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
+    pub fn set_volume(&mut self, volume: i32) -> Result<(), Error> {
+        let requested = volume.clamp(0, 130);
+        let current = self.engine.volume().unwrap_or(0.0).round() as i32;
+        match self.zero.set_volume(current, requested) {
+            VolumeAction::Keep => self.engine.set_volume(f64::from(requested))?,
+            VolumeAction::Pause => {
+                self.engine.set_volume(0.0)?;
+                self.engine.set_paused(true)?;
+            }
+            VolumeAction::Resume => {
+                self.engine.set_volume(f64::from(requested))?;
+                self.engine.set_paused(false)?;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn resume(&mut self, config: &PlayerConfig) -> Result<(), Error> {
+        let current = self.engine.volume().unwrap_or(0.0).round() as i32;
+        if let Some(target) = self.zero.resume_target(current, config.device_mute_recovery_volume) {
+            self.engine.set_volume(f64::from(target))?;
+        }
+        self.engine.set_paused(false)
+    }
+
+    pub fn consecutive_skips(&self) -> u32 {
+        self.skips.consecutive()
     }
 
     pub fn restore(&mut self, state: &SessionState) -> Result<bool, Error> {
@@ -99,21 +174,80 @@ impl<S: StreamSource> Player<S> {
     }
 
     pub fn preload_next(&mut self) -> Result<bool, Error> {
+        if !self.preload_enabled {
+            return Ok(false);
+        }
         let Some(next) = self.queue.peek_next().cloned() else {
             return Ok(false);
         };
-        let resolved = self
-            .source
-            .resolve(&next)
-            .map_err(Error::Resolve)?;
+        let Ok(resolved) = self.source.resolve(&next) else {
+            return Ok(false);
+        };
         self.engine.append(&resolved.url)?;
         Ok(true)
     }
 
     pub fn handle_event(&mut self, event: &EngineEvent) -> Result<bool, Error> {
         match event {
-            EngineEvent::EndFile(EndReason::Eof) => self.next_track(),
+            EngineEvent::FileLoaded => {
+                self.pending = None;
+                self.skips.on_success();
+                Ok(false)
+            }
+            EngineEvent::EndFile(reason) => self.on_end_file(*reason),
             _ => Ok(false),
+        }
+    }
+
+    pub fn poll_failed_load(&mut self, now: Instant) -> Result<bool, Error> {
+        let mut advanced = false;
+        for event in self.engine.drain() {
+            match event {
+                EngineEvent::FileLoaded => {
+                    self.pending = None;
+                    self.skips.on_success();
+                }
+                EngineEvent::EndFile(reason) => {
+                    advanced = self.on_end_file(reason)? || advanced;
+                }
+                _ => {}
+            }
+        }
+        if advanced {
+            return Ok(true);
+        }
+        let expired = self
+            .pending
+            .is_some_and(|since| now.duration_since(since) >= LOAD_GRACE);
+        let dead = self.engine.playlist_pos().is_ok_and(|pos| pos < 0);
+        if expired && dead {
+            self.pending = None;
+            return self.skip_next();
+        }
+        Ok(false)
+    }
+
+    fn on_end_file(&mut self, reason: EndReason) -> Result<bool, Error> {
+        self.pending = None;
+        match reason {
+            EndReason::Eof => {
+                if self.sleep.as_mut().is_some_and(|timer| timer.on_track_end()) {
+                    self.sleep = None;
+                    self.engine.set_paused(true)?;
+                    return Ok(false);
+                }
+                self.next_track()
+            }
+            EndReason::Error => self.skip_next(),
+            _ => Ok(false),
+        }
+    }
+
+    fn skip_next(&mut self) -> Result<bool, Error> {
+        if self.autoskip_enabled && self.skips.on_error() {
+            self.next_track()
+        } else {
+            Ok(false)
         }
     }
 
@@ -126,6 +260,7 @@ impl<S: StreamSource> Player<S> {
         if resolved.start_offset_secs > 0.0 {
             self.engine.seek(resolved.start_offset_secs)?;
         }
+        self.pending = Some(Instant::now());
         Ok(())
     }
 }

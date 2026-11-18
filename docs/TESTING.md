@@ -75,6 +75,10 @@ Without `cargo` available the check is FAIL.
 | `player_queue` | offline | Pure queue logic: repeat cycles, seeded shuffle distribution, move/remove, edit lock |
 | `player_engine` | native | libmpv playback over ffmpeg WAVs: props, pause, af log-verify, gapless EndFile(Eof)->StartFile; SKIP without ffmpeg/libmpv |
 | `player_session` | native | Session save/restore with paused state and deferred stream resolution; SKIP without ffmpeg/libmpv |
+| `player_diag` | offline | Diag log rotation/filter/export, single-instance socket semantics, latency p50/p95 |
+| `player_stream_info` | native | StreamInfo snapshot on playing WAV (codec/abr/rate/buffer/speed/state), idle None; SKIP without ffmpeg/libmpv |
+| `player_audio` | offline | EQ curve math and presets incl. JSON roundtrip, sleep-timer pure logic, skip bound, zero-volume state machine |
+| `player_af_native` | native | af chain log-verified via apply_af incl. fail-closed, sleep end-of-song on real WAV, auto-skip on corrupt input, zero-volume pause/resume; SKIP without ffmpeg/libmpv |
 | `lyrics_providers` | offline | Per-provider fixtures through local mocks: timings, word-level, similarity gate, megalobiz comparison, paxsenix scoring, tidal seam |
 | `lyrics_chain` | offline | Order honored, disabled skipped, first-hit wins, miss/hit cached in db, provider errors skipped, tidal plan |
 | `mpris_service` | native | MPRIS service on private bus: metadata mapping, action recording, Seeked and PropertiesChanged |
@@ -82,7 +86,6 @@ Without `cargo` available the check is FAIL.
 | `ui_foundations` | offline | M3E tokens/themes/components via DemoGallery: palette flips, click state, PNG snapshot |
 | `sponsorblock` | offline | Segments parse, category filter, active-segment math, skip-once, 404 empty, custom URL |
 | `tidal_client` | offline | Device-link login, 0600 token store, search Tracks, HLS manifest, lyrics payload |
-<<<<<<< HEAD
 | `innertube_home_library` | offline | Fixture home feed maps to models, library/history/writes parse from pinned fixtures, cookie upgrade builds offline |
 | `innertube_discover` | offline | Fixture charts/new releases/browse walk/mood deep-link/radio fallback map to models, malformed input errors |
 | `shazam_signature` | native | DejaVu signature: determinism, chunked-feed equality, order sensitivity, pinned tone hash, clean wav errors |

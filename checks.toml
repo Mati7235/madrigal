@@ -157,6 +157,22 @@ name = "player_session"
 group = "native"
 
 [[check]]
+name = "player_diag"
+group = "offline"
+
+[[check]]
+name = "player_stream_info"
+group = "native"
+
+[[check]]
+name = "player_audio"
+group = "offline"
+
+[[check]]
+name = "player_af_native"
+group = "native"
+
+[[check]]
 name = "lyrics_providers"
 group = "offline"
 
