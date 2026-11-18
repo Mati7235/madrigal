@@ -119,3 +119,15 @@ group = "offline"
 [[check]]
 name = "downloads_postprocess"
 group = "native"
+
+[[check]]
+name = "backup_restore"
+group = "offline"
+
+[[check]]
+name = "playlist_exchange"
+group = "offline"
+
+[[check]]
+name = "backup_schedule"
+group = "offline"

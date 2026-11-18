@@ -66,6 +66,9 @@ Without `cargo` available the check is FAIL.
 | `localmedia_scan` | native | Local folder scan (ffmpeg fixtures): tags/durations/artwork/lyrics, exclude/short/corrupt handling, Local db upserts, artwork prune |
 | `downloads_queue` | offline | Download queue: concurrency cap, pause/resume, cancel, retry, quarantine, delete, layout, export/import |
 | `downloads_postprocess` | native | ffmpeg segment cut with chapter rewrite on real audio |
+| `backup_restore` | offline | Full backup snapshot/restore with local-first merge, covers, version gate |
+| `playlist_exchange` | offline | Versioned JSON/CSV playlist exchange roundtrip, preview, atomic export |
+| `backup_schedule` | offline | Schedule next-run math, overwrite/keep naming, poll trigger |
 
 ## Visual verification
 
