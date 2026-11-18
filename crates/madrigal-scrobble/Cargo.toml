@@ -1,0 +1,33 @@
+[package]
+name = "madrigal-scrobble"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+madrigal-core = { path = "../madrigal-core" }
+madrigal-db = { path = "../madrigal-db" }
+madrigal-files = { path = "../madrigal-files" }
+madrigal-paths = { path = "../madrigal-paths" }
+madrigal-settings = { path = "../madrigal-settings" }
+rusqlite = { version = "0.41" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[[test]]
+name = "check_scrobble_thresholds"
+path = "tests/checks/check_scrobble_thresholds.rs"
+
+[[test]]
+name = "check_scrobble_clients"
+path = "tests/checks/check_scrobble_clients.rs"
+
+[[test]]
+name = "check_scrobble_outbox"
+path = "tests/checks/check_scrobble_outbox.rs"

@@ -42,6 +42,7 @@ F2-2: wrap YtMusic (auth from browser cookie), search/suggestions/artist/album.
 F2-3: playlist read (incl. RD*/VL* fallback), radios, moods, charts-as-custom-query.
 F2-4: home-as-custom-query, library/history, playlist writes, rate.
 
+<<<<<<< HEAD
 ## Account session port (F7-1)
 
 Oracle: `upstream_desktop/account/{cookies,session,browser_cookies,secret_store,errors,browser_auth}.py`
@@ -61,3 +62,26 @@ is a `records_from_browser` seam returning Unsupported.
   to the session JSON; both written 0600 via `madrigal-secrets`.
 - Fixtures in `crates/madrigal-account/tests/fixtures/` derive from the
   oracle check vectors; every token is fake (e.g. `AbCdEf123`).
+
+## Scrobble backends decision
+
+Oracle: `upstream_desktop/scrobble.py` (Maloja nowplaying/scrobble,
+threshold `min(duration*0.5, 180)` gated on `duration > 30`) plus the
+Android parity target (`lastfm/LastFM.kt` signed form POSTs,
+`ListenBrainzManager.kt` token JSON submits, `ScrobbleManager.kt`
+timer with the same threshold shape).
+
+Ported semantics (`madrigal-scrobble`):
+- eligibility is float-compared (`played >= min(duration*fraction, cap)`,
+  `duration > min`); 30 s tracks never qualify, 31 s needs 16 s played.
+- Last.fm api_sig is md5 of sorted key/value concatenation plus secret;
+  `auth.getMobileSession`, `track.updateNowPlaying`,
+  `track.scrobble` with `artist[0]/track[0]/timestamp[0]` batch keys.
+- ListenBrainz payload nests track data under `track_metadata`
+  (`playing_now` without `listened_at`, `single` with it).
+- outbox is a JSON file under the data dir via atomic writes; transport
+  errors and HTTP 5xx/429 retry with doubling backoff, other failures drop.
+Gaps: std-only HTTP reaches `http://` loopback mocks only; `https://`
+endpoints fail closed as `HttpsUnsupported` until a TLS transport lands.
+No secrets in-repo: Last.fm key/secret/session arrive as call arguments.
+

@@ -49,6 +49,9 @@ Without `cargo` available the check is FAIL.
 | `streams_cache` | offline | Stream cache TTL, prune of expired only, atomic writes |
 | `streams_po_token` | offline | PO token injection via local server, offline degradation |
 | `settings_roundtrip` | offline | Typed settings load/save with sanitize, unknown-key retention and per-account isolation |
+| `scrobble_thresholds` | offline | Scrobble eligibility table: 50%/180s cap with 30s floor, boundary cases |
+| `scrobble_clients` | offline | Maloja/Last.fm/ListenBrainz payloads, auth signature, error mapping via local mocks |
+| `scrobble_outbox` | offline | Persistent outbox: reload, flush, dedup, growing backoff |
 | `lyrics_parsers` | offline | LRC/enhanced/TTML/SYLT parsing, markers, to_lrc roundtrip |
 | `net_proxy` | offline | Proxy routing, auth header, stream bypass, probe, DoH construct-only |
 | `net_retry` | offline | Backoff attempts, jitter bounds, budget, section counters |

@@ -87,3 +87,15 @@ group = "offline"
 [[check]]
 name = "account_profiles"
 group = "offline"
+
+[[check]]
+name = "scrobble_thresholds"
+group = "offline"
+
+[[check]]
+name = "scrobble_clients"
+group = "offline"
+
+[[check]]
+name = "scrobble_outbox"
+group = "offline"
