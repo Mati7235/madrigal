@@ -199,3 +199,7 @@ group = "native"
 [[check]]
 name = "shazam_client"
 group = "offline"
+
+[[check]]
+name = "discord_rpc"
+group = "offline"

@@ -244,3 +244,23 @@ is required:
 channel count, resampling linearly to 16 kHz mono; malformed input is
 `Error::Wav`, never a panic.
 
+## Discord RPC port (F10-3)
+
+Oracle: `DiscordRPC.kt` (field templates, buttons, timestamps), `DiscordPresencePolicy.kt`
+(decision + hold), `DiscordSettings.kt` (config surface + preview), `DiscordPresenceModels.kt`
+(type/status enums), `DiscordSocialPresenceClient.kt` (transport).
+Transport: Android talks to Discord over the gateway websocket with a user OAuth
+token minted by their own backend. Desktop uses the local Rich Presence IPC instead:
+unix sockets `discord-ipc-0..9` under `madrigal_paths::runtime_dir()`, frames are
+`u32LE opcode + u32LE length + JSON`, opcode 0 handshake `{"v":1,"client_id"}`,
+opcode 1 `SET_ACTIVITY` with `pid/activity/nonce`; clearing sends `activity: null`.
+OAuth deviation: no user OAuth on desktop, Rich Presence needs only the application
+id, stored in `Integrations.discord_client_id` (numeric snowflake, fixtures use
+labeled fakes). `DiscordOnlineStatus` has no IPC equivalent and is not sent.
+`artisturl`/`albumurl` buttons resolve to nothing: core `Track` carries no artist
+channel or album ids. Paused keeps the configured small image with small text
+"Paused": no pause-icon URL is invented. Timestamps: playing emits start+end from
+`now - position` plus duration; paused emits start only; unknown duration omits
+the key. Text caps ported exactly: 128 chars for name/details/state, 32 for button
+labels, 256 for URLs, values under 2 chars dropped.
+

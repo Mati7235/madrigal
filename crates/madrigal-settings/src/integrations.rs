@@ -114,6 +114,8 @@ pub struct Integrations {
     #[serde(deserialize_with = "or_default")]
     pub discord_rpc_enabled: bool,
     #[serde(deserialize_with = "or_default")]
+    pub discord_client_id: String,
+    #[serde(deserialize_with = "or_default")]
     pub discord_username: String,
     #[serde(deserialize_with = "or_default")]
     pub discord_display_name: String,
@@ -189,6 +191,7 @@ impl Default for Integrations {
             scrobble_min_song_duration_secs: 30,
             scrobble_delay_secs: 10,
             discord_rpc_enabled: false,
+            discord_client_id: String::new(),
             discord_username: String::new(),
             discord_display_name: String::new(),
             discord_avatar_url: String::new(),
@@ -240,6 +243,7 @@ impl Integrations {
         self.spotify_account_name = self.spotify_account_name.trim().to_owned();
         self.spotify_account_avatar_url =
             self.spotify_account_avatar_url.trim().to_owned();
+        self.discord_client_id = self.discord_client_id.trim().to_owned();
         self.discord_large_image_custom_url =
             self.discord_large_image_custom_url.trim().to_owned();
         self.discord_small_image_custom_url =

@@ -3525,6 +3525,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "madrigal-discord"
+version = "0.1.0"
+dependencies = [
+ "madrigal-core",
+ "madrigal-paths",
+ "madrigal-settings",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "madrigal-downloads"
 version = "0.1.0"
 dependencies = [
@@ -3697,6 +3708,21 @@ version = "0.1.0"
 dependencies = [
  "madrigal-files",
  "madrigal-paths",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "madrigal-shazam"
+version = "0.1.0"
+dependencies = [
+ "madrigal-core",
+ "madrigal-db",
+ "madrigal-paths",
+ "madrigal-settings",
+ "reqwest 0.12.28",
+ "rusqlite",
  "serde",
  "serde_json",
  "tempfile",

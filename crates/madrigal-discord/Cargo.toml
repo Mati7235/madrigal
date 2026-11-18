@@ -1,0 +1,21 @@
+[package]
+name = "madrigal-discord"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+madrigal-core = { path = "../madrigal-core" }
+madrigal-paths = { path = "../madrigal-paths" }
+madrigal-settings = { path = "../madrigal-settings" }
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"
+
+[[test]]
+name = "check_discord_rpc"
+path = "tests/checks/check_discord_rpc.rs"
