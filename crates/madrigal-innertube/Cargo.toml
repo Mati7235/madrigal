@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+madrigal-account = { path = "../madrigal-account" }
 madrigal-core = { path = "../madrigal-core" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -20,6 +21,10 @@ workspace = true
 [[test]]
 name = "check_innertube_search"
 path = "tests/checks/check_innertube_search.rs"
+
+[[test]]
+name = "check_innertube_home_library"
+path = "tests/checks/check_innertube_home_library.rs"
 
 [[test]]
 name = "check_innertube_pages"

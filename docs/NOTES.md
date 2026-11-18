@@ -138,3 +138,42 @@ share one mutex or concurrent first-writes hit `database is locked` under WAL;
 ffmpeg chapter rewrite must be single-pass (`atrim`/`concat` + `-map_chapters 1`
 with re-encode) because `-c copy` + chapters is rejected by the ipod muxer.
 
+## InnerTube home, library and writes (F2-4)
+
+`madrigal-innertube::home` (`GetHomeQuery` on browse `FEmusic_home`,
+`ParseFrom` into own `HomeFeed`): sections keep shelf order, items
+classified by `pageType` (`MUSIC_PAGE_TYPE_ALBUM/ARTIST/PLAYLIST`,
+`watchEndpoint` for tracks); tastebuilder shelf skipped.
+`home.json` captured unauthenticated 2026-11-18 via `raw_json_query`
+(2 sections: Trending community playlists x10, Quick picks x20);
+home varies per request, logged-out included.
+
+`madrigal-innertube::library` (`AuthCatalogClient` over
+`YtMusic<BrowserToken>`): liked songs via `GetLibrarySongsQuery`
+(`FEmusic_liked_videos` -> `TableListSong`), `library_playlists`,
+`history` periods (songs/videos map to `Track`, episodes/uploads
+skipped; playlist `owned` stays false, no ownership signal parsed).
+
+`madrigal-innertube::writes`: create/edit/add/remove/move/delete plus
+`rate_song` on native methods; edit/add/remove-history pinned from
+upstream fixtures, create/delete are live-only (no raw captures exist
+upstream for them).
+
+Fixtures from nick42d/youtui `ytmapi-rs/test_json` (real responses,
+2024-2025): `get_library_songs_20240701`, `get_library_playlists`,
+`get_history_20240713`, `rate_song_like_20240710`,
+`edit_playlist_title_20240626`, `add_playlist_items_20240626`,
+`remove_history_items_20240704`. No credentials in repo.
+
+Auth seam: `CatalogClient::with_cookies` validates the header with the
+`madrigal-account` cookie model (`parse_cookie_header` +
+`has_login_cookie`) and assembles the `BrowserToken` offline (field
+names pinned to ytmapi-rs =0.3.4); live refresh via
+`from_cookie`/`from_str` deferred to the account-phase live gate.
+Oracle quirks for the integration (no retry plumbing here, that is
+madrigal-net): retry once after 700 ms on HTTP 400; on HTTP 500 with a
+user header set, drop the on-behalf-of-user header and retry once.
+
+Gaps: no authed live verification (no user cookies); create/delete
+offline shape unpinned; live gate at account phase.
+

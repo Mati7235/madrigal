@@ -82,6 +82,7 @@ Without `cargo` available the check is FAIL.
 | `ui_foundations` | offline | M3E tokens/themes/components via DemoGallery: palette flips, click state, PNG snapshot |
 | `sponsorblock` | offline | Segments parse, category filter, active-segment math, skip-once, 404 empty, custom URL |
 | `tidal_client` | offline | Device-link login, 0600 token store, search Tracks, HLS manifest, lyrics payload |
+| `innertube_home_library` | offline | Fixture home feed maps to models, library/history/writes parse from pinned fixtures, cookie upgrade builds offline |
 
 ## Visual verification
 

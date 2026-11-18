@@ -183,3 +183,7 @@ group = "offline"
 [[check]]
 name = "tidal_client"
 group = "offline"
+
+[[check]]
+name = "innertube_home_library"
+group = "offline"
