@@ -1,0 +1,5 @@
+# Registro de checks: cada entrada mapea un nombre a su grupo.
+# group vale offline | native | live | visual.
+# El check <nombre> vive en crates/<crate>/tests/checks/check_<nombre>.rs
+# y se ejecuta con `cargo test --test check_<nombre>`.
+# Registro vacio: `cargo xtask checks` informa "0 checks" y sale 0.
