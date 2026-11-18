@@ -8,7 +8,7 @@ use crate::http::{self, DEFAULT_TIMEOUT};
 
 pub const NOWPLAYING_PATH: &str = "/apis/track/nowplaying";
 pub const SCROBBLE_PATH: &str = "/apis/track/scrobble";
-pub const TEST_ARTIST: &str = "upstream";
+pub const TEST_ARTIST: &str = "Madrigal";
 pub const TEST_TITLE: &str = "Connection test";
 
 fn loopback(host: &str) -> bool {

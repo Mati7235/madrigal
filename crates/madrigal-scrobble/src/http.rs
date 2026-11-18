@@ -1,6 +1,9 @@
-use std::io::{Read, Write};
-use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::time::Duration;
+
+use reqwest::blocking::Client;
+use reqwest::header::{HeaderName, HeaderValue, CONTENT_TYPE};
+use reqwest::redirect::Policy;
+use reqwest::Url;
 
 use crate::error::{Error, Result};
 
@@ -31,57 +34,18 @@ pub fn encode_form(params: &[(&str, &str)]) -> String {
         .join("&")
 }
 
-fn split_url(url: &str) -> Result<(String, u16, String)> {
-    let (scheme, rest) = url
-        .split_once("://")
-        .ok_or_else(|| Error::BadUrl(format!("missing scheme in {url:?}")))?;
-    if scheme == "https" {
-        return Err(Error::HttpsUnsupported(url.to_owned()));
-    }
-    if scheme != "http" {
-        return Err(Error::BadUrl(format!("unsupported scheme in {url:?}")));
-    }
-    let (authority, path) = match rest.find('/') {
-        Some(index) => (&rest[..index], rest[index..].to_owned()),
-        None => (rest, "/".to_owned()),
-    };
-    let (host, port) = match authority.rsplit_once(':') {
-        Some((host, raw)) => (
-            host.to_owned(),
-            raw.parse::<u16>()
-                .map_err(|_| Error::BadUrl(format!("invalid port in {url:?}")))?,
-        ),
-        None => (authority.to_owned(), 80),
-    };
-    if host.is_empty() {
+fn validate_url(url: &str) -> Result<()> {
+    let parsed =
+        Url::parse(url).map_err(|_| Error::BadUrl(format!("unparseable url in {url:?}")))?;
+    if parsed.host_str().is_none() || parsed.host_str() == Some("") {
         return Err(Error::BadUrl(format!("empty host in {url:?}")));
     }
-    Ok((host, port, path))
-}
-
-fn parse_response(raw: &[u8]) -> Result<Response> {
-    let text = String::from_utf8_lossy(raw);
-    let (head, body) = text
-        .split_once("\r\n\r\n")
-        .ok_or_else(|| Error::BadResponse("missing header/body separator".to_owned()))?;
-    let status_line = head
-        .lines()
-        .next()
-        .ok_or_else(|| Error::BadResponse("empty response".to_owned()))?;
-    if !status_line.starts_with("HTTP/1.") {
-        return Err(Error::BadResponse(format!(
-            "unsupported status line {status_line:?}"
-        )));
+    match parsed.scheme() {
+        "http" | "https" => Ok(()),
+        scheme => Err(Error::BadUrl(format!(
+            "unsupported scheme {scheme:?} in {url:?}"
+        ))),
     }
-    let status: u16 = status_line
-        .split_whitespace()
-        .nth(1)
-        .and_then(|code| code.parse().ok())
-        .ok_or_else(|| Error::BadResponse(format!("unparseable status line {status_line:?}")))?;
-    Ok(Response {
-        status,
-        body: body.to_owned(),
-    })
 }
 
 pub fn post(
@@ -91,29 +55,25 @@ pub fn post(
     body: &[u8],
     timeout: Duration,
 ) -> Result<Response> {
-    let (host, port, path) = split_url(url)?;
-    let addrs: Vec<SocketAddr> = (host.as_str(), port)
-        .to_socket_addrs()
-        .map_err(Error::Transport)?
-        .collect();
-    let addr = addrs
-        .into_iter()
-        .next()
-        .ok_or_else(|| Error::BadUrl(format!("unresolvable host in {url:?}")))?;
-    let mut stream = TcpStream::connect_timeout(&addr, timeout)?;
-    stream.set_read_timeout(Some(timeout))?;
-    stream.set_write_timeout(Some(timeout))?;
-    let mut request = format!(
-        "POST {path} HTTP/1.0\r\nHost: {host}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\n",
-        body.len()
-    );
+    validate_url(url)?;
+    let client = Client::builder()
+        .timeout(timeout)
+        .redirect(Policy::none())
+        .build()
+        .map_err(Error::Transport)?;
+    let mut request = client
+        .post(url)
+        .header(CONTENT_TYPE, content_type)
+        .body(body.to_vec());
     for (name, value) in headers {
-        request.push_str(&format!("{name}: {value}\r\n"));
+        let name = HeaderName::from_bytes(name.as_bytes())
+            .map_err(|_| Error::BadResponse(format!("invalid header name {name:?}")))?;
+        let value = HeaderValue::from_str(value)
+            .map_err(|_| Error::BadResponse(format!("invalid header value {value:?}")))?;
+        request = request.header(name, value);
     }
-    request.push_str("Connection: close\r\n\r\n");
-    stream.write_all(request.as_bytes())?;
-    stream.write_all(body)?;
-    let mut raw = Vec::new();
-    stream.read_to_end(&mut raw)?;
-    parse_response(&raw)
+    let response = request.send().map_err(Error::Transport)?;
+    let status = response.status().as_u16();
+    let body = response.text().map_err(Error::Transport)?;
+    Ok(Response { status, body })
 }

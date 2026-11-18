@@ -1,6 +1,10 @@
+pub mod embedded;
+pub mod karaoke;
 pub mod lrc;
 pub mod lrc_enhanced;
+pub mod share_image;
 pub mod sylt;
+pub mod translation;
 pub mod ttml;
 
 use serde::{Deserialize, Serialize};

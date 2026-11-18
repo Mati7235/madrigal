@@ -188,7 +188,7 @@ fn maloja_payload_paths_and_connection_probe() {
         .request_line
         .starts_with("POST /apis/track/nowplaying "));
     let form = form_map(&captured.body);
-    assert_eq!(form.get("artist").map(String::as_str), Some("upstream"));
+    assert_eq!(form.get("artist").map(String::as_str), Some("Madrigal"));
     assert_eq!(
         form.get("title").map(String::as_str),
         Some("Connection test")
@@ -203,10 +203,14 @@ fn maloja_rejects_unconfigured_and_plain_remote() {
         Err(Error::NotConfigured(_))
     ));
 
-    let remote = MalojaClient::new("https://example.invalid", "key-1").with_timeout(TIMEOUT);
+    let closed = TcpListener::bind("127.0.0.1:0").expect("bind probe");
+    let port = closed.local_addr().expect("addr").port();
+    drop(closed);
+    let remote = MalojaClient::new(&format!("https://127.0.0.1:{port}"), "key-1")
+        .with_timeout(TIMEOUT);
     assert!(matches!(
         remote.now_playing(&sample_track()),
-        Err(Error::HttpsUnsupported(_))
+        Err(Error::Transport(_))
     ));
 
     let plain = MalojaClient::new("http://example.invalid", "key-1").with_timeout(TIMEOUT);

@@ -15,6 +15,33 @@ Pure parsing foundation (`madrigal-lyrics`). No network, no providers.
 - SYLT entries become one line each carrying its single word timing, so `to_lrc` emits word marks. The oracle flattens SYLT to plain LRC through a string intermediate; timings and texts match exactly.
 - Entity unescaping covers named (`amp`, `lt`, `gt`, `quot`, `apos`) plus numeric references; unknown entities pass through untouched.
 
+## Translation
+
+- `translation::TranslationProvider` is the chain seam: `translate_chain` tries each provider in order and keeps the first result with a per-line count match. Network providers land with `src/providers/`.
+- Timings are discarded like the oracle (`translate_lyrics` translates `[line.text]` only) but the result keeps the source text and attaches the translation per line via `markers.translation`, preserving source `start_ms`/`words`.
+- `encode_cache`/`decode_cache` mirror the oracle `{target, lines}` JSON payload; persistence goes through the db `lyrics_cache` table (`cache_lyrics`/`fetch_lyrics`).
+
+## Karaoke
+
+Pure 60fps-consumer helpers (`karaoke.rs`):
+
+- `line_at`: last line with `start_ms <= t`; `None` before the first line.
+- `word_at`: last word with `start_ms <= t`, sticky on the last word; `None` before the first word.
+- `next_line_start`: smallest `start_ms > t`; `None` when exhausted.
+- `progress_within`: 0.0–1.0 sweep of the active word (`end_ms`, else next word start, else done); wordless lines use `end_ms` when present, else a 0.0/1.0 step at `start_ms`.
+- A line is active from exactly its start until the next line starts, even past the last word end.
+
+## Embedded
+
+- `embedded::extract` reads tags via `lofty`: USLT/Vorbis `LYRICS`/`MP4 ©lyr` map to `ItemKey::Lyrics` (`lyrics_from_tag`); SYLT is parsed from raw ID3v2 frames because lofty keeps SYLT as opaque binary.
+- The ID3v2 scanner supports v2.3/v2.4 frame headers and feeds each SYLT payload to lofty's `SynchronizedTextFrame::parse`, then to `sylt::parse`. Files with unsynchronisation, extended headers, or non-millisecond SYLT timestamps yield no synced entries.
+- `extract_lyrics` prefers SYLT; otherwise it parses the unsynced text with `lrc::parse` (plain or LRC-carrying text).
+
+## Share image
+
+- `share_image::render` is glyph-less: vertical gradient from `base`, centered proportional-width line bars, the active line bright and taller, header bars for title/artist. No font pipeline; replace when text rasterization lands.
+- `render_png` encodes the buffer with the `image` crate.
+
 ## Fixtures
 
 All samples are real-derived: the Python repo ships no committed fixture files, so each fixture is copied verbatim (or generated through the oracle) from its check scripts.
@@ -26,3 +53,5 @@ All samples are real-derived: the Python repo ships no committed fixture files, 
 | `chorus.ttml` | `[3]` sample in `scripts/check_lyrics.py` (x-bg exclusion, `<br/>`, `15.8s` format) |
 | `words.ttml` | `[3b]` sample in `scripts/check_lyrics.py` (word spans, nested x-bg span) |
 | `sylt.tsv` | `(text, timestamp_ms)` pairs from `tag_id3` in `scripts/check_lyrics_embedded.py`, stored as `ms<TAB>text` rows |
+| `embedded_uslt.mp3` | 1s silent MP3 (`ffmpeg anullsrc + libmp3lame 32k`), tagged with mutagen `USLT(eng, "First line\nSecond line")` |
+| `embedded_sylt.mp3` | 1s silent MP3 (`ffmpeg anullsrc + libmp3lame 32k`), tagged with mutagen `SYLT(eng, format=MS, [("Hola", 1200), ("Mundo", 3400)])` |

@@ -80,8 +80,9 @@ Ported semantics (`madrigal-scrobble`):
   (`playing_now` without `listened_at`, `single` with it).
 - outbox is a JSON file under the data dir via atomic writes; transport
   errors and HTTP 5xx/429 retry with doubling backoff, other failures drop.
-Gaps: std-only HTTP reaches `http://` loopback mocks only; `https://`
-endpoints fail closed as `HttpsUnsupported` until a TLS transport lands.
+Transport is `reqwest::blocking` (default TLS, no redirects, per-call timeout);
+`http://` and `https://` behave identically and outbox retry semantics are
+unchanged (transport errors and HTTP 5xx/429 retry, other failures drop).
 No secrets in-repo: Last.fm key/secret/session arrive as call arguments.
 
 ## InnerTube extension pattern (F2-2 example)
