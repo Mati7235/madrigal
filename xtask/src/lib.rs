@@ -526,11 +526,73 @@ pub fn plan(selections: &[Selection]) -> Vec<(String, Vec<String>)> {
         .collect()
 }
 
-pub fn plan_args(plan: &[(String, Vec<String>)]) -> Vec<String> {
+pub fn parse_members(text: &str) -> Vec<String> {
+    let mut section = String::new();
+    let mut block = String::new();
+    let mut collecting = false;
+    for raw in text.lines() {
+        let line = strip_comment(raw).trim();
+        if line.starts_with('[') {
+            section = line.to_string();
+            continue;
+        }
+        if section == "[workspace]" && (collecting || line.starts_with("members")) {
+            collecting = true;
+            block.push_str(line);
+            block.push(' ');
+            if line.contains(']') {
+                break;
+            }
+        }
+    }
+    block
+        .split('"')
+        .skip(1)
+        .step_by(2)
+        .map(str::to_string)
+        .collect()
+}
+
+pub fn workspace_packages(root: &Path) -> Vec<String> {
+    let mut packages = Vec::new();
+    let Ok(text) = std::fs::read_to_string(root.join("Cargo.toml")) else {
+        return packages;
+    };
+    for member in parse_members(&text) {
+        let dirs: Vec<PathBuf> = match member.strip_suffix("/*") {
+            Some(prefix) => {
+                let Ok(entries) = std::fs::read_dir(root.join(prefix)) else {
+                    continue;
+                };
+                let mut dirs: Vec<PathBuf> = entries
+                    .flatten()
+                    .map(|entry| entry.path())
+                    .filter(|path| path.join("Cargo.toml").is_file())
+                    .collect();
+                dirs.sort();
+                dirs
+            }
+            None => vec![root.join(&member)],
+        };
+        for dir in dirs {
+            let Ok(manifest) = std::fs::read_to_string(dir.join("Cargo.toml")) else {
+                continue;
+            };
+            if let Some(name) = parse_package_name(&manifest) {
+                packages.push(name);
+            }
+        }
+    }
+    packages.sort();
+    packages.dedup();
+    packages
+}
+
+pub fn plan_args(packages: &[String], plan: &[(String, Vec<String>)]) -> Vec<String> {
     let mut args: Vec<String> = ["test", "--no-run", "--message-format=json"]
         .map(str::to_string)
         .to_vec();
-    for (package, _) in plan {
+    for package in packages {
         args.push("-p".to_string());
         args.push(package.clone());
     }
@@ -549,6 +611,7 @@ pub fn plan_args(plan: &[(String, Vec<String>)]) -> Vec<String> {
 
 fn build_all(
     root: &Path,
+    packages: &[String],
     plan: &[(String, Vec<String>)],
     dirs: &HashMap<PathBuf, String>,
 ) -> BuildAll {
@@ -561,7 +624,7 @@ fn build_all(
     }
     let output = match cargo_command()
         .current_dir(root)
-        .args(plan_args(plan))
+        .args(plan_args(packages, plan))
         .output()
     {
         Ok(output) => output,
@@ -671,6 +734,7 @@ fn run_binary(dir: &Path, bin: &Path) -> Result<(), String> {
 
 pub struct Runner<'a> {
     root: &'a Path,
+    packages: Vec<String>,
     plan: Vec<(String, Vec<String>)>,
     dirs: HashMap<PathBuf, String>,
     build: Option<BuildAll>,
@@ -688,6 +752,7 @@ impl<'a> Runner<'a> {
         }
         Self {
             root,
+            packages: workspace_packages(root),
             plan,
             dirs,
             build: None,
@@ -697,7 +762,7 @@ impl<'a> Runner<'a> {
 
     fn resolve(&mut self, package: &str, target: &str) -> Result<PathBuf, String> {
         if self.build.is_none() {
-            self.build = Some(build_all(self.root, &self.plan, &self.dirs));
+            self.build = Some(build_all(self.root, &self.packages, &self.plan, &self.dirs));
         }
         let key = (package.to_string(), target.to_string());
         if let Some(build) = &self.build {
@@ -1115,8 +1180,13 @@ path = "tests/other.rs"
                 ("madrigal-b".to_string(), vec!["check_queue".to_string()]),
             ]
         );
+        let packages = vec![
+            "madrigal-a".to_string(),
+            "madrigal-b".to_string(),
+            "madrigal-z".to_string(),
+        ];
         assert_eq!(
-            plan_args(&plan),
+            plan_args(&packages, &plan),
             args(&[
                 "test",
                 "--no-run",
@@ -1125,12 +1195,36 @@ path = "tests/other.rs"
                 "madrigal-a",
                 "-p",
                 "madrigal-b",
+                "-p",
+                "madrigal-z",
                 "--test",
                 "check_player",
                 "--test",
                 "check_queue",
             ])
         );
+        let built = plan_args(&packages, &plan);
+        assert_eq!(built.iter().filter(|arg| *arg == "-p").count(), 3);
+        assert_eq!(built.iter().filter(|arg| *arg == "--test").count(), 2);
+    }
+
+    #[test]
+    fn workspace_incluye_todos_los_members_del_disco() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+        let packages = workspace_packages(root);
+        assert!(packages.contains(&"xtask".to_string()));
+        assert!(packages.contains(&"madrigal-ui".to_string()));
+        assert!(packages.contains(&"madrigal-core".to_string()));
+        let crates = std::fs::read_dir(root.join("crates"))
+            .unwrap()
+            .flatten()
+            .filter(|entry| entry.path().join("Cargo.toml").is_file())
+            .count();
+        assert_eq!(packages.len(), crates + 1);
+        let mut sorted = packages.clone();
+        sorted.sort();
+        assert_eq!(packages, sorted);
+        assert_eq!(parse_members(include_str!("../../Cargo.toml")).len(), 2);
     }
 
     #[test]
