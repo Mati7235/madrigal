@@ -25,137 +25,144 @@ export component DetailPage inherits Rectangle {
     background: root.palette.surface;
     accessible-role: text;
 
-    detail-col := VerticalLayout {
-        padding: 16px;
-        spacing: 12px;
+    page-flick := Flickable {
+        width: 100%;
+        height: 100%;
+        content-width: self.width;
+        content-height: detail-col.preferred-height;
 
-        detail-top := HorizontalLayout {
+        detail-col := VerticalLayout {
+            padding: 16px;
             spacing: 12px;
-            alignment: start;
-            detail-back := M3IconButton {
-                glyph: "‹";
-                content: root.palette.on-surface;
-                state-on-surface: root.palette.on-surface;
-                clicked => { root.back-requested(); }
-            }
-            detail-head := VerticalLayout {
-                spacing: 2px;
-                horizontal-stretch: 1;
-                detail-title := Text {
-                    text: root.title;
-                    color: root.palette.on-surface;
-                    font-size: Type.headline-small.size;
-                    font-weight: Type.headline-small.weight;
-                    wrap: word-wrap;
-                }
-                detail-sub := Text {
-                    text: root.subtitle;
-                    color: root.palette.on-surface-variant;
-                    font-size: Type.body-medium.size;
-                    wrap: word-wrap;
-                    visible: root.subtitle != "";
-                }
-            }
-        }
 
-        detail-desc := Text {
-            text: root.description;
-            color: root.palette.on-surface-variant;
-            font-size: Type.body-medium.size;
-            wrap: word-wrap;
-            visible: root.description != "";
-        }
-
-        detail-actions := HorizontalLayout {
-            spacing: 8px;
-            visible: root.detail.kind != DetailKind.browse && !root.is-empty;
-            detail-play := M3Button {
-                text: I18n.trl(I18n.lang, "detail.play");
-                fill: root.palette.primary;
-                content: root.palette.on-primary;
-                state-on-surface: root.palette.on-surface;
-                clicked => {
-                    if (root.tracks.length > 0) {
-                        root.play-requested(root.tracks[0].id);
+            detail-top := HorizontalLayout {
+                spacing: 12px;
+                alignment: start;
+                detail-back := M3IconButton {
+                    glyph: "‹";
+                    content: root.palette.on-surface;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.back-requested(); }
+                }
+                detail-head := VerticalLayout {
+                    spacing: 2px;
+                    horizontal-stretch: 1;
+                    detail-title := Text {
+                        text: root.title;
+                        color: root.palette.on-surface;
+                        font-size: Type.headline-small.size;
+                        font-weight: Type.headline-small.weight;
+                        wrap: word-wrap;
+                    }
+                    detail-sub := Text {
+                        text: root.subtitle;
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                        wrap: word-wrap;
+                        visible: root.subtitle != "";
                     }
                 }
             }
-        }
 
-        if (root.detail.kind == DetailKind.artist) : artist-tabs := HorizontalLayout {
-            spacing: 8px;
-            for i in 2 : artist-chip := M3Chip {
-                text: i == 0 ? I18n.trl(I18n.lang, "catalog.songs") : I18n.trl(I18n.lang, "catalog.albums");
-                selected: root.detail-tab == i;
-                selected-fill: root.palette.secondary-container;
-                selected-content: root.palette.on-secondary-container;
-                unselected-content: root.palette.on-surface-variant;
-                unselected-line: root.palette.outline-variant;
-                clicked => { root.detail-tab = i; }
+            detail-desc := Text {
+                text: root.description;
+                color: root.palette.on-surface-variant;
+                font-size: Type.body-medium.size;
+                wrap: word-wrap;
+                visible: root.description != "";
             }
-        }
 
-        if (root.detail.kind == DetailKind.artist && root.detail-tab == 0) : artist-songs := VerticalLayout {
-            spacing: 2px;
-            for track[i] in root.tracks : song-row := M3ListItem {
-                title: track.title;
-                subtitle: track.subtitle;
-                duration: track.duration;
-                row-bg: root.palette.surface-container-low;
-                active-bg: root.palette.secondary-container;
-                title-color: root.palette.on-surface;
-                subtitle-color: root.palette.on-surface-variant;
-                progress-track: root.palette.surface-container-highest;
-                progress-fill: root.palette.primary;
-                action => { root.play-requested(track.id); }
+            detail-actions := HorizontalLayout {
+                spacing: 8px;
+                visible: root.detail.kind != DetailKind.browse && !root.is-empty;
+                detail-play := M3Button {
+                    text: I18n.trl(I18n.lang, "detail.play");
+                    fill: root.palette.primary;
+                    content: root.palette.on-primary;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => {
+                        if (root.tracks.length > 0) {
+                            root.play-requested(root.tracks[0].id);
+                        }
+                    }
+                }
             }
-        }
 
-        if (root.detail.kind == DetailKind.artist && root.detail-tab == 1) : artist-albums := HorizontalLayout {
-            spacing: 12px;
-            for album[i] in root.albums : album-chip := M3Chip {
-                text: album.title;
-                selected: false;
-                selected-fill: root.palette.secondary-container;
-                selected-content: root.palette.on-secondary-container;
-                unselected-content: root.palette.on-surface-variant;
-                unselected-line: root.palette.outline-variant;
-                clicked => { root.detail-requested({ kind: album.kind, id: album.id }); }
+            if (root.detail.kind == DetailKind.artist) : artist-tabs := HorizontalLayout {
+                spacing: 8px;
+                for i in 2 : artist-chip := M3Chip {
+                    text: i == 0 ? I18n.trl(I18n.lang, "catalog.songs") : I18n.trl(I18n.lang, "catalog.albums");
+                    selected: root.detail-tab == i;
+                    selected-fill: root.palette.secondary-container;
+                    selected-content: root.palette.on-secondary-container;
+                    unselected-content: root.palette.on-surface-variant;
+                    unselected-line: root.palette.outline-variant;
+                    clicked => { root.detail-tab = i; }
+                }
             }
-        }
 
-        if (root.detail.kind != DetailKind.artist && root.detail.kind != DetailKind.browse) : detail-tracks := VerticalLayout {
-            spacing: 2px;
-            for track[i] in root.tracks : track-row := M3ListItem {
-                title: track.title;
-                subtitle: track.subtitle;
-                duration: track.duration;
-                row-bg: root.palette.surface-container-low;
-                active-bg: root.palette.secondary-container;
-                title-color: root.palette.on-surface;
-                subtitle-color: root.palette.on-surface-variant;
-                progress-track: root.palette.surface-container-highest;
-                progress-fill: root.palette.primary;
-                action => { root.play-requested(track.id); }
+            if (root.detail.kind == DetailKind.artist && root.detail-tab == 0) : artist-songs := VerticalLayout {
+                spacing: 2px;
+                for track[i] in root.tracks : song-row := M3ListItem {
+                    title: track.title;
+                    subtitle: track.subtitle;
+                    duration: track.duration;
+                    row-bg: root.palette.surface-container-low;
+                    active-bg: root.palette.secondary-container;
+                    title-color: root.palette.on-surface;
+                    subtitle-color: root.palette.on-surface-variant;
+                    progress-track: root.palette.surface-container-highest;
+                    progress-fill: root.palette.primary;
+                    action => { root.play-requested(track.id); }
+                }
             }
-        }
 
-        if (root.detail.kind == DetailKind.browse) : detail-browse := VerticalLayout {
-            spacing: 16px;
-            for sec[s] in root.sections : browse-view := SectionView {
-                palette: root.palette;
-                section: sec;
-                detail-requested(ref) => { root.detail-requested(ref); }
-                play-requested(id) => { root.play-requested(id); }
+            if (root.detail.kind == DetailKind.artist && root.detail-tab == 1) : artist-albums := HorizontalLayout {
+                spacing: 12px;
+                for album[i] in root.albums : album-chip := M3Chip {
+                    text: album.title;
+                    selected: false;
+                    selected-fill: root.palette.secondary-container;
+                    selected-content: root.palette.on-secondary-container;
+                    unselected-content: root.palette.on-surface-variant;
+                    unselected-line: root.palette.outline-variant;
+                    clicked => { root.detail-requested({ kind: album.kind, id: album.id }); }
+                }
             }
-        }
 
-        detail-empty := Text {
-            text: I18n.trl(I18n.lang, "detail.empty");
-            color: root.palette.on-surface-variant;
-            font-size: Type.body-large.size;
-            horizontal-alignment: center;
-            visible: root.is-empty;
+            if (root.detail.kind != DetailKind.artist && root.detail.kind != DetailKind.browse) : detail-tracks := VerticalLayout {
+                spacing: 2px;
+                for track[i] in root.tracks : track-row := M3ListItem {
+                    title: track.title;
+                    subtitle: track.subtitle;
+                    duration: track.duration;
+                    row-bg: root.palette.surface-container-low;
+                    active-bg: root.palette.secondary-container;
+                    title-color: root.palette.on-surface;
+                    subtitle-color: root.palette.on-surface-variant;
+                    progress-track: root.palette.surface-container-highest;
+                    progress-fill: root.palette.primary;
+                    action => { root.play-requested(track.id); }
+                }
+            }
+
+            if (root.detail.kind == DetailKind.browse) : detail-browse := VerticalLayout {
+                spacing: 16px;
+                for sec[s] in root.sections : browse-view := SectionView {
+                    palette: root.palette;
+                    section: sec;
+                    detail-requested(ref) => { root.detail-requested(ref); }
+                    play-requested(id) => { root.play-requested(id); }
+                }
+            }
+
+            detail-empty := Text {
+                text: I18n.trl(I18n.lang, "detail.empty");
+                color: root.palette.on-surface-variant;
+                font-size: Type.body-large.size;
+                horizontal-alignment: center;
+                visible: root.is-empty;
+            }
         }
     }
 }

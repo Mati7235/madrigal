@@ -267,3 +267,7 @@ group = "offline"
 [[check]]
 name = "ui_library"
 group = "offline"
+
+[[check]]
+name = "ui_settings"
+group = "offline"

@@ -25,118 +25,125 @@ export component HomePage inherits Rectangle {
     accessible-role: text;
     accessible-label: I18n.trl(I18n.lang, "nav.home");
 
-    home-col := VerticalLayout {
-        padding: 16px;
-        spacing: 16px;
+    page-flick := Flickable {
+        width: 100%;
+        height: 100%;
+        content-width: self.width;
+        content-height: home-col.preferred-height;
 
-        home-chips := HorizontalLayout {
-            spacing: 8px;
-            visible: root.chips.length > 0;
-            for label[i] in root.chips : home-chip := M3Chip {
-                text: label;
-                selected: root.current-chip == i;
-                selected-fill: root.palette.secondary-container;
-                selected-content: root.palette.on-secondary-container;
-                unselected-content: root.palette.on-surface-variant;
-                unselected-line: root.palette.outline-variant;
-                clicked => {
-                    root.current-chip = i;
-                    root.chip-selected(i);
-                }
-            }
-        }
+        home-col := VerticalLayout {
+            padding: 16px;
+            spacing: 16px;
 
-        pins-block := VerticalLayout {
-            spacing: 8px;
-            visible: root.pins.length > 0;
-            pins-title := Text {
-                text: I18n.trl(I18n.lang, "catalog.pins");
-                color: root.palette.on-surface;
-                font-size: Type.title-medium.size;
-                font-weight: Type.title-medium.weight;
-            }
-            pins-row := HorizontalLayout {
+            home-chips := HorizontalLayout {
                 spacing: 8px;
-                for pin[i] in root.pins : pin-chip := M3Chip {
-                    text: pin.title;
-                    selected: root.selected-item == 10000 + i;
-                    selected-fill: root.palette.tertiary-container;
-                    selected-content: root.palette.on-tertiary-container;
+                visible: root.chips.length > 0;
+                for label[i] in root.chips : home-chip := M3Chip {
+                    text: label;
+                    selected: root.current-chip == i;
+                    selected-fill: root.palette.secondary-container;
+                    selected-content: root.palette.on-secondary-container;
                     unselected-content: root.palette.on-surface-variant;
                     unselected-line: root.palette.outline-variant;
                     clicked => {
-                        root.selected-item = 10000 + i;
-                        root.play-requested(pin.id);
+                        root.current-chip = i;
+                        root.chip-selected(i);
                     }
                 }
             }
-        }
 
-        picks-block := VerticalLayout {
-            spacing: 8px;
-            visible: root.quick-picks.length > 0;
-            picks-title := Text {
-                text: I18n.trl(I18n.lang, "catalog.quickPicks");
-                color: root.palette.on-surface;
-                font-size: Type.title-medium.size;
-                font-weight: Type.title-medium.weight;
-            }
-            if (root.card-layout) : picks-grid := HorizontalLayout {
-                spacing: 12px;
-                for pick[i] in root.quick-picks : pick-card := M3Card {
-                    width: 200px;
-                    height: 120px;
-                    title: pick.title;
-                    subtitle: pick.subtitle;
-                    fill: root.palette.surface-container-low;
-                    title-color: root.palette.on-surface;
-                    subtitle-color: root.palette.on-surface-variant;
-                    shadow-color: root.palette.shadow;
-                    clicked => {
-                        root.selected-item = i;
-                        root.play-requested(pick.id);
+            pins-block := VerticalLayout {
+                spacing: 8px;
+                visible: root.pins.length > 0;
+                pins-title := Text {
+                    text: I18n.trl(I18n.lang, "catalog.pins");
+                    color: root.palette.on-surface;
+                    font-size: Type.title-medium.size;
+                    font-weight: Type.title-medium.weight;
+                }
+                pins-row := HorizontalLayout {
+                    spacing: 8px;
+                    for pin[i] in root.pins : pin-chip := M3Chip {
+                        text: pin.title;
+                        selected: root.selected-item == 10000 + i;
+                        selected-fill: root.palette.tertiary-container;
+                        selected-content: root.palette.on-tertiary-container;
+                        unselected-content: root.palette.on-surface-variant;
+                        unselected-line: root.palette.outline-variant;
+                        clicked => {
+                            root.selected-item = 10000 + i;
+                            root.play-requested(pin.id);
+                        }
                     }
                 }
             }
-            if (!root.card-layout) : picks-list := VerticalLayout {
-                spacing: 2px;
-                for pick[i] in root.quick-picks : pick-row := M3ListItem {
-                    title: pick.title;
-                    subtitle: pick.subtitle;
-                    duration: pick.duration;
-                    row-bg: root.palette.surface-container-low;
-                    active-bg: root.palette.secondary-container;
-                    title-color: root.palette.on-surface;
-                    subtitle-color: root.palette.on-surface-variant;
-                    progress-track: root.palette.surface-container-highest;
-                    progress-fill: root.palette.primary;
-                    action => {
-                        root.selected-item = i;
-                        root.play-requested(pick.id);
+
+            picks-block := VerticalLayout {
+                spacing: 8px;
+                visible: root.quick-picks.length > 0;
+                picks-title := Text {
+                    text: I18n.trl(I18n.lang, "catalog.quickPicks");
+                    color: root.palette.on-surface;
+                    font-size: Type.title-medium.size;
+                    font-weight: Type.title-medium.weight;
+                }
+                if (root.card-layout) : picks-grid := HorizontalLayout {
+                    spacing: 12px;
+                    for pick[i] in root.quick-picks : pick-card := M3Card {
+                        width: 200px;
+                        height: 120px;
+                        title: pick.title;
+                        subtitle: pick.subtitle;
+                        fill: root.palette.surface-container-low;
+                        title-color: root.palette.on-surface;
+                        subtitle-color: root.palette.on-surface-variant;
+                        shadow-color: root.palette.shadow;
+                        clicked => {
+                            root.selected-item = i;
+                            root.play-requested(pick.id);
+                        }
+                    }
+                }
+                if (!root.card-layout) : picks-list := VerticalLayout {
+                    spacing: 2px;
+                    for pick[i] in root.quick-picks : pick-row := M3ListItem {
+                        title: pick.title;
+                        subtitle: pick.subtitle;
+                        duration: pick.duration;
+                        row-bg: root.palette.surface-container-low;
+                        active-bg: root.palette.secondary-container;
+                        title-color: root.palette.on-surface;
+                        subtitle-color: root.palette.on-surface-variant;
+                        progress-track: root.palette.surface-container-highest;
+                        progress-fill: root.palette.primary;
+                        action => {
+                            root.selected-item = i;
+                            root.play-requested(pick.id);
+                        }
                     }
                 }
             }
-        }
 
-        sections-block := VerticalLayout {
-            spacing: 16px;
-            for sec[s] in root.sections : sec-view := SectionView {
-                palette: root.palette;
-                section: sec;
-                detail-requested(ref) => { root.detail-requested(ref); }
-                play-requested(id) => {
-                    root.selected-item = 20000 + s;
-                    root.play-requested(id);
+            sections-block := VerticalLayout {
+                spacing: 16px;
+                for sec[s] in root.sections : sec-view := SectionView {
+                    palette: root.palette;
+                    section: sec;
+                    detail-requested(ref) => { root.detail-requested(ref); }
+                    play-requested(id) => {
+                        root.selected-item = 20000 + s;
+                        root.play-requested(id);
+                    }
                 }
             }
-        }
 
-        home-empty := Text {
-            text: I18n.trl(I18n.lang, "home.empty");
-            color: root.palette.on-surface-variant;
-            font-size: Type.body-large.size;
-            horizontal-alignment: center;
-            visible: root.is-empty;
+            home-empty := Text {
+                text: I18n.trl(I18n.lang, "home.empty");
+                color: root.palette.on-surface-variant;
+                font-size: Type.body-large.size;
+                horizontal-alignment: center;
+                visible: root.is-empty;
+            }
         }
     }
 }

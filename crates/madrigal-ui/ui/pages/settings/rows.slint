@@ -1,0 +1,20 @@
+export struct SettingsRow {
+    key: string,
+    label: string,
+    kind: string,
+    val-bool: bool,
+    val-text: string,
+    display: string,
+    val-num: float,
+    val-min: float,
+    val-max: float,
+    secret: bool,
+    test: string,
+    options: [string],
+    flags: [string],
+}
+
+export struct DiagLine {
+    level: int,
+    text: string,
+}

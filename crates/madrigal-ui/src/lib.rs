@@ -2,6 +2,7 @@ slint::include_modules!();
 
 mod pages_catalog;
 mod pages_library;
+mod pages_settings;
 mod player_ui;
 mod shell;
 mod theme;
@@ -34,6 +35,12 @@ pub use player_ui::{
     QueueTabData,
 };
 
+pub use pages_settings::{
+    all_groups, apply_to_file, apply_value, detect_po_provider, field_count, group_from_index,
+    group_index, group_key, group_title_key, group_titles, kind_tag, latencies_from_marks,
+    settings_section, wire_shell, SettingsGroup, SettingKind, SettingRow, SettingsPresenter,
+    SettingsValue, DIAG_INDEX, GROUP_COUNT, MASKED_SECRET,
+};
 pub use shell::{
     apply_shell_appearance, apply_shell_theme, close_detail, dispatch_key, is_detail_open,
     overlay_from_index, overlay_index, page_from_index, page_index, set_shell_lang,

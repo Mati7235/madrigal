@@ -62,7 +62,7 @@ results into the Slint row models.
 | Detail (page-independent) | `DetailPage` behind `detail-stack`; shell callbacks `detail-requested` / `detail-opened` / `detail-closed` / `play-requested` | F8-3 |
 | 3 Library | `LibraryPage` (chips, tags, sorts, multiselect, history, stats) | F8-4 |
 | 4 Downloads | `DownloadsPage` (states, progress, actions) | F8-4 |
-| 5 Settings | placeholder | F8-6 |
+| 5 Settings | `SettingsPage` + `DiagnosticsPanel` + `OnboardingOverlay` | F8-6 |
 
 Player surface (`ui/player/`, presenter `src/player_ui.rs`, owner F8-5):
 `NowPlayingBar` replaces the shell strip (artwork thumb, title/artist,
@@ -84,3 +84,24 @@ presets), `PlaybackErrorDialog`, `StreamInfoPanel` (from
 `madrigal-player::stream_info::StreamInfo`). `PlaybackUiState` is injected
 with `apply_playback_state`; `wire_player_callbacks` owns all player state
 transitions. Asserted by `ui_player`.
+
+Settings (F8-6): `SettingsPage` is a two-pane group list plus one section
+component per group (`AppearanceSection` … `UpdatesSection`) over a generic
+`SectionView` driven by the `SettingsRow` model. `settings_section` in
+`src/pages_settings.rs` wires every `madrigal-settings` field explicitly
+(switch/slider/text/choice/apikey/providers rows, 1:1 with the settings crate).
+`OnboardingOverlay` covers first run (language, PO-provider check, optional
+login, folder stub, finish sets `updates.onboarding_done`) and
+`DiagnosticsPanel` shows the diag log (level filter, export, single-instance
+status, latency p50/p95). `PageHost` forwards the `settings-*` seam from
+`MainShell`; covered by `ui_settings`.
+
+## Files by task
+
+| Area | Task | Files |
+| ---- | ---- | ----- |
+| Shell + foundations | F8-2 | `ui/shell/*`, `ui/gallery.slint`, `src/shell.rs`, `src/theme.rs` |
+| Catalog screens | F8-3 | `ui/pages/catalog/*`, `src/pages_catalog.rs` |
+| Library + downloads | F8-4 | `ui/pages/library/*`, `src/pages_library.rs` |
+| Player surface | F8-5 | `ui/player/*`, `src/player_ui.rs` |
+| Settings + onboarding + diagnostics | F8-6 | `ui/pages/settings/*`, `src/pages_settings.rs` |

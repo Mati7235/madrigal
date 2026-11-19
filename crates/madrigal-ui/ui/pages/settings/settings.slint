@@ -1,0 +1,387 @@
+import { Palette, Type } from "../../tokens.slint";
+import { I18n } from "../../i18n.slint";
+import { SettingsRow, DiagLine } from "rows.slint";
+import { AppearanceSection, ContentSection, PlayerSection, LyricsSection, InternetSection, StorageSection, PrivacySection, AccountSection, IntegrationsSection, AiSection, UpdatesSection } from "section.slint";
+import { DiagnosticsPanel } from "diagnostics.slint";
+import { OnboardingOverlay } from "onboarding.slint";
+
+export component SettingsPage inherits Rectangle {
+    in property<Palette> palette;
+    in-out property<int> group;
+    in property<[string]> group-titles;
+    in property<[SettingsRow]> rows;
+    in-out property<bool> show-diag;
+    in property<[DiagLine]> diag-entries;
+    in property<int> diag-entry-count;
+    in-out property<int> diag-level;
+    in property<string> diag-latency;
+    in property<string> diag-single;
+    in property<string> diag-export-status;
+    in property<bool> diag-exported;
+    in property<string> test-result;
+    in property<bool> po-done;
+    in property<bool> po-ok;
+    in-out property<bool> show-onboarding;
+    in-out property<int> ob-step;
+    in-out property<string> ob-folder;
+
+    callback group-selected(int);
+    callback setting-toggled(string, bool);
+    callback setting-edited(string, string);
+    callback setting-stepped(string, float);
+    callback setting-chosen(string, string);
+    callback setting-cycled(string);
+    callback secret-toggled(string);
+    callback provider-moved(string, int, float);
+    callback provider-toggled(string, string, bool);
+    callback test-connection(string);
+    callback login-requested(string);
+    callback lang-picked(string);
+    callback scan-folder();
+    callback po-check();
+    callback onboarding-finished();
+    callback diag-level-selected(int);
+    callback diag-export();
+
+    background: root.palette.surface;
+
+    HorizontalLayout {
+        spacing: 0px;
+
+        nav-col := Rectangle {
+            width: 232px;
+            background: root.palette.surface-container-low;
+
+            nav-list := VerticalLayout {
+                padding: 12px;
+                spacing: 4px;
+
+                for title[i] in root.group-titles: group-touch := TouchArea {
+                    accessible-label: I18n.trl(I18n.lang, title);
+                    accessible-role: button;
+                    mouse-cursor: pointer;
+                    clicked => { root.group-selected(i); }
+
+                    group-row := Rectangle {
+                        height: 44px;
+                        border-radius: 22px;
+                        background: !root.show-diag && root.group == i ? root.palette.secondary-container : transparent;
+
+                        group-label := Text {
+                            text: I18n.trl(I18n.lang, title);
+                            color: !root.show-diag && root.group == i ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                            font-size: Type.label-large.size;
+                            font-weight: Type.label-large.weight;
+                            x: 16px;
+                            width: parent.width - 32px;
+                            height: 100%;
+                            vertical-alignment: center;
+                            overflow: elide;
+                        }
+                    }
+                }
+
+                diag-touch := TouchArea {
+                    accessible-label: I18n.trl(I18n.lang, "settings.diagnostics");
+                    accessible-role: button;
+                    mouse-cursor: pointer;
+                    clicked => { root.group-selected(11); }
+
+                    diag-row := Rectangle {
+                        height: 44px;
+                        border-radius: 22px;
+                        background: root.show-diag ? root.palette.secondary-container : transparent;
+
+                        diag-label := Text {
+                            text: I18n.trl(I18n.lang, "settings.diagnostics");
+                            color: root.show-diag ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                            font-size: Type.label-large.size;
+                            font-weight: Type.label-large.weight;
+                            x: 16px;
+                            width: parent.width - 32px;
+                            height: 100%;
+                            vertical-alignment: center;
+                            overflow: elide;
+                        }
+                    }
+                }
+            }
+        }
+
+        content-col := Rectangle {
+            horizontal-stretch: 1;
+            clip: true;
+
+            section-title := Text {
+                text: root.show-diag ? I18n.trl(I18n.lang, "settings.diagnostics") : I18n.trl(I18n.lang, root.group-titles[root.group]);
+                color: root.palette.on-surface;
+                font-size: Type.headline-small.size;
+                font-weight: Type.headline-small.weight;
+                x: 16px;
+                y: 8px;
+                width: parent.width - 32px;
+                height: 40px;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+
+            section-host := Rectangle {
+                y: 52px;
+                width: 100%;
+                height: parent.height - 52px;
+
+                if (!root.show-diag && root.group == 0) : appearance-sec := AppearanceSection {
+                    width: 100%;
+                    height: 100%;
+                    palette: root.palette;
+                    rows: root.rows;
+                    test-result: root.test-result;
+                    po-done: root.po-done;
+                    po-ok: root.po-ok;
+                    setting-toggled(k, v) => { root.setting-toggled(k, v); }
+                    setting-edited(k, v) => { root.setting-edited(k, v); }
+                    setting-stepped(k, v) => { root.setting-stepped(k, v); }
+                    setting-chosen(k, v) => { root.setting-chosen(k, v); }
+                    setting-cycled(k) => { root.setting-cycled(k); }
+                    secret-toggled(k) => { root.secret-toggled(k); }
+                    provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+                    provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+                    test-connection(t) => { root.test-connection(t); }
+                    login-requested(l) => { root.login-requested(l); }
+                }
+
+                if (!root.show-diag && root.group == 1) : content-sec := ContentSection {
+                    width: 100%;
+                    height: 100%;
+                    palette: root.palette;
+                    rows: root.rows;
+                    test-result: root.test-result;
+                    po-done: root.po-done;
+                    po-ok: root.po-ok;
+                    setting-toggled(k, v) => { root.setting-toggled(k, v); }
+                    setting-edited(k, v) => { root.setting-edited(k, v); }
+                    setting-stepped(k, v) => { root.setting-stepped(k, v); }
+                    setting-chosen(k, v) => { root.setting-chosen(k, v); }
+                    setting-cycled(k) => { root.setting-cycled(k); }
+                    secret-toggled(k) => { root.secret-toggled(k); }
+                    provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+                    provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+                    test-connection(t) => { root.test-connection(t); }
+                    login-requested(l) => { root.login-requested(l); }
+                }
+
+                if (!root.show-diag && root.group == 2) : player-sec := PlayerSection {
+                    width: 100%;
+                    height: 100%;
+                    palette: root.palette;
+                    rows: root.rows;
+                    test-result: root.test-result;
+                    po-done: root.po-done;
+                    po-ok: root.po-ok;
+                    setting-toggled(k, v) => { root.setting-toggled(k, v); }
+                    setting-edited(k, v) => { root.setting-edited(k, v); }
+                    setting-stepped(k, v) => { root.setting-stepped(k, v); }
+                    setting-chosen(k, v) => { root.setting-chosen(k, v); }
+                    setting-cycled(k) => { root.setting-cycled(k); }
+                    secret-toggled(k) => { root.secret-toggled(k); }
+                    provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+                    provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+                    test-connection(t) => { root.test-connection(t); }
+                    login-requested(l) => { root.login-requested(l); }
+                }
+
+                if (!root.show-diag && root.group == 3) : lyrics-sec := LyricsSection {
+                    width: 100%;
+                    height: 100%;
+                    palette: root.palette;
+                    rows: root.rows;
+                    test-result: root.test-result;
+                    po-done: root.po-done;
+                    po-ok: root.po-ok;
+                    setting-toggled(k, v) => { root.setting-toggled(k, v); }
+                    setting-edited(k, v) => { root.setting-edited(k, v); }
+                    setting-stepped(k, v) => { root.setting-stepped(k, v); }
+                    setting-chosen(k, v) => { root.setting-chosen(k, v); }
+                    setting-cycled(k) => { root.setting-cycled(k); }
+                    secret-toggled(k) => { root.secret-toggled(k); }
+                    provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+                    provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+                    test-connection(t) => { root.test-connection(t); }
+                    login-requested(l) => { root.login-requested(l); }
+                }
+
+                if (!root.show-diag && root.group == 4) : internet-sec := InternetSection {
+                    width: 100%;
+                    height: 100%;
+                    palette: root.palette;
+                    rows: root.rows;
+                    test-result: root.test-result;
+                    po-done: root.po-done;
+                    po-ok: root.po-ok;
+                    setting-toggled(k, v) => { root.setting-toggled(k, v); }
+                    setting-edited(k, v) => { root.setting-edited(k, v); }
+                    setting-stepped(k, v) => { root.setting-stepped(k, v); }
+                    setting-chosen(k, v) => { root.setting-chosen(k, v); }
+                    setting-cycled(k) => { root.setting-cycled(k); }
+                    secret-toggled(k) => { root.secret-toggled(k); }
+                    provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+                    provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+                    test-connection(t) => { root.test-connection(t); }
+                    login-requested(l) => { root.login-requested(l); }
+                }
+
+                if (!root.show-diag && root.group == 5) : storage-sec := StorageSection {
+                    width: 100%;
+                    height: 100%;
+                    palette: root.palette;
+                    rows: root.rows;
+                    test-result: root.test-result;
+                    po-done: root.po-done;
+                    po-ok: root.po-ok;
+                    setting-toggled(k, v) => { root.setting-toggled(k, v); }
+                    setting-edited(k, v) => { root.setting-edited(k, v); }
+                    setting-stepped(k, v) => { root.setting-stepped(k, v); }
+                    setting-chosen(k, v) => { root.setting-chosen(k, v); }
+                    setting-cycled(k) => { root.setting-cycled(k); }
+                    secret-toggled(k) => { root.secret-toggled(k); }
+                    provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+                    provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+                    test-connection(t) => { root.test-connection(t); }
+                    login-requested(l) => { root.login-requested(l); }
+                }
+
+                if (!root.show-diag && root.group == 6) : privacy-sec := PrivacySection {
+                    width: 100%;
+                    height: 100%;
+                    palette: root.palette;
+                    rows: root.rows;
+                    test-result: root.test-result;
+                    po-done: root.po-done;
+                    po-ok: root.po-ok;
+                    setting-toggled(k, v) => { root.setting-toggled(k, v); }
+                    setting-edited(k, v) => { root.setting-edited(k, v); }
+                    setting-stepped(k, v) => { root.setting-stepped(k, v); }
+                    setting-chosen(k, v) => { root.setting-chosen(k, v); }
+                    setting-cycled(k) => { root.setting-cycled(k); }
+                    secret-toggled(k) => { root.secret-toggled(k); }
+                    provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+                    provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+                    test-connection(t) => { root.test-connection(t); }
+                    login-requested(l) => { root.login-requested(l); }
+                }
+
+                if (!root.show-diag && root.group == 7) : account-sec := AccountSection {
+                    width: 100%;
+                    height: 100%;
+                    palette: root.palette;
+                    rows: root.rows;
+                    test-result: root.test-result;
+                    po-done: root.po-done;
+                    po-ok: root.po-ok;
+                    setting-toggled(k, v) => { root.setting-toggled(k, v); }
+                    setting-edited(k, v) => { root.setting-edited(k, v); }
+                    setting-stepped(k, v) => { root.setting-stepped(k, v); }
+                    setting-chosen(k, v) => { root.setting-chosen(k, v); }
+                    setting-cycled(k) => { root.setting-cycled(k); }
+                    secret-toggled(k) => { root.secret-toggled(k); }
+                    provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+                    provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+                    test-connection(t) => { root.test-connection(t); }
+                    login-requested(l) => { root.login-requested(l); }
+                }
+
+                if (!root.show-diag && root.group == 8) : integrations-sec := IntegrationsSection {
+                    width: 100%;
+                    height: 100%;
+                    palette: root.palette;
+                    rows: root.rows;
+                    test-result: root.test-result;
+                    po-done: root.po-done;
+                    po-ok: root.po-ok;
+                    setting-toggled(k, v) => { root.setting-toggled(k, v); }
+                    setting-edited(k, v) => { root.setting-edited(k, v); }
+                    setting-stepped(k, v) => { root.setting-stepped(k, v); }
+                    setting-chosen(k, v) => { root.setting-chosen(k, v); }
+                    setting-cycled(k) => { root.setting-cycled(k); }
+                    secret-toggled(k) => { root.secret-toggled(k); }
+                    provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+                    provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+                    test-connection(t) => { root.test-connection(t); }
+                    login-requested(l) => { root.login-requested(l); }
+                }
+
+                if (!root.show-diag && root.group == 9) : ai-sec := AiSection {
+                    width: 100%;
+                    height: 100%;
+                    palette: root.palette;
+                    rows: root.rows;
+                    test-result: root.test-result;
+                    po-done: root.po-done;
+                    po-ok: root.po-ok;
+                    setting-toggled(k, v) => { root.setting-toggled(k, v); }
+                    setting-edited(k, v) => { root.setting-edited(k, v); }
+                    setting-stepped(k, v) => { root.setting-stepped(k, v); }
+                    setting-chosen(k, v) => { root.setting-chosen(k, v); }
+                    setting-cycled(k) => { root.setting-cycled(k); }
+                    secret-toggled(k) => { root.secret-toggled(k); }
+                    provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+                    provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+                    test-connection(t) => { root.test-connection(t); }
+                    login-requested(l) => { root.login-requested(l); }
+                }
+
+                if (!root.show-diag && root.group == 10) : updates-sec := UpdatesSection {
+                    width: 100%;
+                    height: 100%;
+                    palette: root.palette;
+                    rows: root.rows;
+                    test-result: root.test-result;
+                    po-done: root.po-done;
+                    po-ok: root.po-ok;
+                    setting-toggled(k, v) => { root.setting-toggled(k, v); }
+                    setting-edited(k, v) => { root.setting-edited(k, v); }
+                    setting-stepped(k, v) => { root.setting-stepped(k, v); }
+                    setting-chosen(k, v) => { root.setting-chosen(k, v); }
+                    setting-cycled(k) => { root.setting-cycled(k); }
+                    secret-toggled(k) => { root.secret-toggled(k); }
+                    provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+                    provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+                    test-connection(t) => { root.test-connection(t); }
+                    login-requested(l) => { root.login-requested(l); }
+                }
+
+                if (root.show-diag) : diag-panel := DiagnosticsPanel {
+                    width: 100%;
+                    height: 100%;
+                    palette: root.palette;
+                    entries: root.diag-entries;
+                    entry-count: root.diag-entry-count;
+                    level <=> root.diag-level;
+                    latency: root.diag-latency;
+                    single: root.diag-single;
+                    export-status: root.diag-export-status;
+                    exported: root.diag-exported;
+                    level-selected(l) => { root.diag-level-selected(l); }
+                    export-pressed() => { root.diag-export(); }
+                }
+            }
+        }
+    }
+
+    if (root.show-onboarding) : ob-layer := OnboardingOverlay {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        step <=> root.ob-step;
+        po-done: root.po-done;
+        po-ok: root.po-ok;
+        folder <=> root.ob-folder;
+        lang-picked(l) => { root.lang-picked(l); }
+        next() => { root.ob-step += 1; }
+        back() => { root.ob-step -= 1; }
+        po-check() => { root.po-check(); }
+        login-requested(l) => { root.login-requested(l); }
+        scan-folder() => { root.scan-folder(); }
+        finished() => { root.onboarding-finished(); }
+    }
+}

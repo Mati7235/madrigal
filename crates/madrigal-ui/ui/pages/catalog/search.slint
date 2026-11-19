@@ -3,6 +3,7 @@ import { I18n } from "../../i18n.slint";
 import { M3SearchBar } from "../../components/fields.slint";
 import { M3Chip } from "../../components/cards.slint";
 import { M3ListItem } from "../../components/rows.slint";
+import { ScrollView } from "std-widgets.slint";
 import { CatalogItem, DetailRef } from "refs.slint";
 
 export component SearchPage inherits FocusScope {
@@ -113,21 +114,29 @@ export component SearchPage inherits FocusScope {
                     font-size: Type.title-medium.size;
                     font-weight: Type.title-medium.weight;
                 }
-                for sug[i] in root.suggestions : sug-row := M3ListItem {
-                    title: sug;
-                    subtitle: "";
-                    duration: "";
-                    active: root.suggestion-index == i;
-                    row-bg: root.palette.surface-container-low;
-                    active-bg: root.palette.secondary-container;
-                    title-color: root.palette.on-surface;
-                    subtitle-color: root.palette.on-surface-variant;
-                    progress-track: root.palette.surface-container-highest;
-                    progress-fill: root.palette.primary;
-                    action => {
-                        root.suggestion-index = i;
-                        root.query = sug;
-                        root.suggestion-accepted(sug);
+                suggestions-scroll := ScrollView {
+                    height: Math.min(root.suggestions.length, 3) * 64px;
+                    vertical-scrollbar-policy: ScrollBarPolicy.always-off;
+                    horizontal-scrollbar-policy: ScrollBarPolicy.always-off;
+                    suggestions-list := VerticalLayout {
+                        spacing: 2px;
+                        for sug[i] in root.suggestions : sug-row := M3ListItem {
+                            title: sug;
+                            subtitle: "";
+                            duration: "";
+                            active: root.suggestion-index == i;
+                            row-bg: root.palette.surface-container-low;
+                            active-bg: root.palette.secondary-container;
+                            title-color: root.palette.on-surface;
+                            subtitle-color: root.palette.on-surface-variant;
+                            progress-track: root.palette.surface-container-highest;
+                            progress-fill: root.palette.primary;
+                            action => {
+                                root.suggestion-index = i;
+                                root.query = sug;
+                                root.suggestion-accepted(sug);
+                            }
+                        }
                     }
                 }
             }
@@ -156,28 +165,6 @@ export component SearchPage inherits FocusScope {
                 visible: root.results.length > 0;
             }
 
-            results-list := VerticalLayout {
-                spacing: 2px;
-                for hit[i] in root.results : hit-row := M3ListItem {
-                    title: hit.title;
-                    subtitle: hit.subtitle;
-                    duration: hit.duration;
-                    row-bg: root.palette.surface-container-low;
-                    active-bg: root.palette.secondary-container;
-                    title-color: root.palette.on-surface;
-                    subtitle-color: root.palette.on-surface-variant;
-                    progress-track: root.palette.surface-container-highest;
-                    progress-fill: root.palette.primary;
-                    action => {
-                        if (hit.playable) {
-                            root.play-requested(hit.id);
-                        } else {
-                            root.detail-requested({ kind: hit.kind, id: hit.id });
-                        }
-                    }
-                }
-            }
-
             search-empty := Text {
                 text: I18n.trl(I18n.lang, "search.section.empty");
                 color: root.palette.on-surface-variant;
@@ -191,6 +178,33 @@ export component SearchPage inherits FocusScope {
                 color: root.palette.on-surface-variant;
                 font-size: Type.body-medium.size;
                 visible: root.query == "" && root.results.length == 0;
+            }
+
+            results-scroll := ScrollView {
+                vertical-stretch: 1;
+                vertical-scrollbar-policy: ScrollBarPolicy.as-needed;
+                horizontal-scrollbar-policy: ScrollBarPolicy.always-off;
+                results-list := VerticalLayout {
+                    spacing: 2px;
+                    for hit[i] in root.results : hit-row := M3ListItem {
+                        title: hit.title;
+                        subtitle: hit.subtitle;
+                        duration: hit.duration;
+                        row-bg: root.palette.surface-container-low;
+                        active-bg: root.palette.secondary-container;
+                        title-color: root.palette.on-surface;
+                        subtitle-color: root.palette.on-surface-variant;
+                        progress-track: root.palette.surface-container-highest;
+                        progress-fill: root.palette.primary;
+                        action => {
+                            if (hit.playable) {
+                                root.play-requested(hit.id);
+                            } else {
+                                root.detail-requested({ kind: hit.kind, id: hit.id });
+                            }
+                        }
+                    }
+                }
             }
         }
     }

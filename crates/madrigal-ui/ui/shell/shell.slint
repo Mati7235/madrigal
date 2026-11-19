@@ -10,6 +10,7 @@ import { FullPlayer } from "../player/full.slint";
 import { QueueDrawer } from "../player/queue.slint";
 import { SleepTimerDialog, TempoPitchDialog, EqualizerDialog, PlaybackErrorDialog, StreamInfoPanel } from "../player/dialogs.slint";
 import { QueueRow, LyricLineRow } from "../player/models.slint";
+import { SettingsRow, DiagLine } from "../pages/settings/rows.slint";
 
 export component MainShell inherits Window {
     in-out property<Palette> palette: Light.palette;
@@ -161,6 +162,23 @@ export component MainShell inherits Window {
     in property<[CatalogItem]> detail-albums;
     in property<[CatalogSection]> detail-sections;
     in-out property<int> detail-tab: 0;
+    in-out property<int> settings-group: 0;
+    in property<[string]> settings-group-titles;
+    in property<[SettingsRow]> settings-rows;
+    in-out property<bool> settings-show-diag: false;
+    in property<[DiagLine]> settings-diag-entries;
+    in property<int> settings-diag-entry-count: 0;
+    in-out property<int> settings-diag-level: -1;
+    in property<string> settings-diag-latency: "";
+    in property<string> settings-diag-single: "";
+    in property<string> settings-diag-export-status: "";
+    in property<bool> settings-diag-exported: false;
+    in property<string> settings-test-result: "";
+    in property<bool> settings-po-done: false;
+    in property<bool> settings-po-ok: false;
+    in-out property<bool> settings-show-onboarding: false;
+    in-out property<int> settings-ob-step: 0;
+    in-out property<string> settings-ob-folder: "";
 
     callback apply-theme(int);
     callback navigate(int);
@@ -315,6 +333,23 @@ export component MainShell inherits Window {
     callback detail-opened(DetailRef);
     callback play-requested(string);
     callback detail-closed();
+    callback settings-group-selected(int);
+    callback settings-toggled(string, bool);
+    callback settings-edited(string, string);
+    callback settings-stepped(string, float);
+    callback settings-chosen(string, string);
+    callback settings-cycled(string);
+    callback settings-secret-toggled(string);
+    callback settings-provider-moved(string, int, float);
+    callback settings-provider-toggled(string, string, bool);
+    callback settings-test(string);
+    callback settings-login(string);
+    callback settings-lang-picked(string);
+    callback settings-scan-folder();
+    callback settings-po-check();
+    callback settings-onboarding-finished();
+    callback settings-diag-level-selected(int);
+    callback settings-diag-export();
 
     apply-theme(k) => {
         if (k == 0) {
@@ -608,6 +643,40 @@ export component MainShell inherits Window {
                 detail-requested(ref) => { root.detail-requested(ref); }
                 play-requested(id) => { root.play-requested(id); }
                 detail-closed() => { root.detail-closed(); }
+                settings-group <=> root.settings-group;
+                settings-group-titles: root.settings-group-titles;
+                settings-rows: root.settings-rows;
+                settings-show-diag <=> root.settings-show-diag;
+                settings-diag-entries: root.settings-diag-entries;
+                settings-diag-entry-count: root.settings-diag-entry-count;
+                settings-diag-level <=> root.settings-diag-level;
+                settings-diag-latency: root.settings-diag-latency;
+                settings-diag-single: root.settings-diag-single;
+                settings-diag-export-status: root.settings-diag-export-status;
+                settings-diag-exported: root.settings-diag-exported;
+                settings-test-result: root.settings-test-result;
+                settings-po-done: root.settings-po-done;
+                settings-po-ok: root.settings-po-ok;
+                settings-show-onboarding <=> root.settings-show-onboarding;
+                settings-ob-step <=> root.settings-ob-step;
+                settings-ob-folder <=> root.settings-ob-folder;
+                settings-group-selected(i) => { root.settings-group-selected(i); }
+                settings-toggled(k, v) => { root.settings-toggled(k, v); }
+                settings-edited(k, v) => { root.settings-edited(k, v); }
+                settings-stepped(k, v) => { root.settings-stepped(k, v); }
+                settings-chosen(k, v) => { root.settings-chosen(k, v); }
+                settings-cycled(k) => { root.settings-cycled(k); }
+                settings-secret-toggled(k) => { root.settings-secret-toggled(k); }
+                settings-provider-moved(k, f, d) => { root.settings-provider-moved(k, f, d); }
+                settings-provider-toggled(k, p, v) => { root.settings-provider-toggled(k, p, v); }
+                settings-test(t) => { root.settings-test(t); }
+                settings-login(l) => { root.settings-login(l); }
+                settings-lang-picked(l) => { root.settings-lang-picked(l); }
+                settings-scan-folder() => { root.settings-scan-folder(); }
+                settings-po-check() => { root.settings-po-check(); }
+                settings-onboarding-finished() => { root.settings-onboarding-finished(); }
+                settings-diag-level-selected(l) => { root.settings-diag-level-selected(l); }
+                settings-diag-export() => { root.settings-diag-export(); }
             }
             nowbar := NowPlayingBar {
                 height: 72px;

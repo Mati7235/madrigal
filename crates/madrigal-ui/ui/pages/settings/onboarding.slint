@@ -1,0 +1,217 @@
+import { Palette, Type } from "../../tokens.slint";
+import { I18n } from "../../i18n.slint";
+import { M3Button } from "../../components/buttons.slint";
+import { M3TextField } from "../../components/fields.slint";
+
+export component OnboardingOverlay inherits Rectangle {
+    in property<Palette> palette;
+    in-out property<int> step;
+    in property<bool> po-done;
+    in property<bool> po-ok;
+    in-out property<string> folder;
+
+    callback lang-picked(string);
+    callback next();
+    callback back();
+    callback po-check();
+    callback login-requested(string);
+    callback scan-folder();
+    callback finished();
+
+    background: root.palette.surface.with-alpha(0.97);
+
+    ob-col := VerticalLayout {
+        padding: 32px;
+        spacing: 16px;
+        alignment: center;
+
+        ob-title := Text {
+            text: I18n.trl(I18n.lang, "settings.onboarding.title");
+            color: root.palette.on-surface;
+            font-size: Type.headline-medium.size;
+            font-weight: Type.headline-medium.weight;
+            horizontal-alignment: center;
+            width: 100%;
+        }
+
+        if (root.step == 0) : ob-step-lang := VerticalLayout {
+            spacing: 8px;
+            alignment: center;
+
+            ob-lang-label := Text {
+                text: I18n.trl(I18n.lang, "settings.onboarding.language");
+                color: root.palette.on-surface-variant;
+                font-size: Type.body-large.size;
+                horizontal-alignment: center;
+                width: 100%;
+            }
+
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: center;
+
+                ob-lang-es := M3Button {
+                    width: 140px;
+                    text: "Español";
+                    fill: root.palette.primary;
+                    content: root.palette.on-primary;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.lang-picked("es"); }
+                }
+
+                ob-lang-en := M3Button {
+                    width: 140px;
+                    text: "English";
+                    fill: root.palette.secondary-container;
+                    content: root.palette.on-secondary-container;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.lang-picked("en"); }
+                }
+            }
+        }
+
+        if (root.step == 1) : ob-step-po := VerticalLayout {
+            spacing: 8px;
+            alignment: center;
+
+            ob-po-label := Text {
+                text: I18n.trl(I18n.lang, "settings.onboarding.po");
+                color: root.palette.on-surface-variant;
+                font-size: Type.body-large.size;
+                horizontal-alignment: center;
+                width: 100%;
+            }
+
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: center;
+
+                ob-po-check := M3Button {
+                    width: 180px;
+                    text: I18n.trl(I18n.lang, "settings.malojaTest");
+                    fill: root.palette.secondary-container;
+                    content: root.palette.on-secondary-container;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.po-check(); }
+                }
+            }
+
+            if (root.po-done) : ob-po-status := Text {
+                text: root.po-ok ? I18n.trl(I18n.lang, "settings.potOk") : I18n.trl(I18n.lang, "settings.potMissing");
+                color: root.po-ok ? root.palette.primary : root.palette.error;
+                font-size: Type.body-medium.size;
+                horizontal-alignment: center;
+                width: 100%;
+            }
+        }
+
+        if (root.step == 2) : ob-step-login := VerticalLayout {
+            spacing: 8px;
+            alignment: center;
+
+            ob-login-label := Text {
+                text: I18n.trl(I18n.lang, "settings.onboarding.login");
+                color: root.palette.on-surface-variant;
+                font-size: Type.body-large.size;
+                horizontal-alignment: center;
+                width: 100%;
+            }
+
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: center;
+
+                ob-login-google := M3Button {
+                    width: 220px;
+                    text: I18n.trl(I18n.lang, "settings.onboarding.google");
+                    fill: root.palette.primary;
+                    content: root.palette.on-primary;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.login-requested("google"); }
+                }
+
+                ob-login-skip := M3Button {
+                    width: 140px;
+                    text: I18n.trl(I18n.lang, "settings.onboarding.skip");
+                    fill: root.palette.secondary-container;
+                    content: root.palette.on-secondary-container;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => {
+                        root.login-requested("skip");
+                        root.next();
+                    }
+                }
+            }
+        }
+
+        if (root.step == 3) : ob-step-folder := VerticalLayout {
+            spacing: 8px;
+            alignment: center;
+
+            ob-folder-label := Text {
+                text: I18n.trl(I18n.lang, "settings.onboarding.folders");
+                color: root.palette.on-surface-variant;
+                font-size: Type.body-large.size;
+                horizontal-alignment: center;
+                width: 100%;
+            }
+
+            ob-folder-field := M3TextField {
+                label: I18n.trl(I18n.lang, "settings.storage_folder_path");
+                text <=> root.folder;
+                field-bg: root.palette.surface-container-highest;
+                line: root.palette.outline-variant;
+                focus-line: root.palette.primary;
+                content: root.palette.on-surface;
+                support-color: root.palette.on-surface-variant;
+                state-on-surface: root.palette.on-surface;
+            }
+
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: center;
+
+                ob-folder-scan := M3Button {
+                    width: 140px;
+                    text: I18n.trl(I18n.lang, "settings.rescan");
+                    fill: root.palette.secondary-container;
+                    content: root.palette.on-secondary-container;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.scan-folder(); }
+                }
+
+                ob-finish := M3Button {
+                    width: 160px;
+                    text: I18n.trl(I18n.lang, "settings.onboarding.finish");
+                    fill: root.palette.primary;
+                    content: root.palette.on-primary;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.finished(); }
+                }
+            }
+        }
+
+        ob-nav := HorizontalLayout {
+            spacing: 8px;
+            alignment: center;
+
+            if (root.step > 0 && root.step < 3) : ob-back := M3Button {
+                width: 140px;
+                text: I18n.trl(I18n.lang, "action.back");
+                fill: transparent;
+                content: root.palette.on-surface-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.back(); }
+            }
+
+            if (root.step < 3) : ob-next := M3Button {
+                width: 140px;
+                text: I18n.trl(I18n.lang, "settings.onboarding.next");
+                fill: root.palette.primary;
+                content: root.palette.on-primary;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.next(); }
+            }
+        }
+    }
+}

@@ -22,120 +22,127 @@ export component ExplorePage inherits Rectangle {
     accessible-role: text;
     accessible-label: I18n.trl(I18n.lang, "nav.explore");
 
-    explore-col := VerticalLayout {
-        padding: 16px;
-        spacing: 16px;
+    page-flick := Flickable {
+        width: 100%;
+        height: 100%;
+        content-width: self.width;
+        content-height: explore-col.preferred-height;
 
-        moods-title := Text {
-            text: I18n.trl(I18n.lang, "catalog.moods");
-            color: root.palette.on-surface;
-            font-size: Type.title-medium.size;
-            font-weight: Type.title-medium.weight;
-        }
-
-        moods-grid := HorizontalLayout {
-            spacing: 12px;
-            moods-left := VerticalLayout {
-                spacing: 8px;
-                horizontal-stretch: 1;
-                for mood in root.moods-left : mood-chip-l := M3Chip {
-                    text: mood.title;
-                    selected: false;
-                    selected-fill: root.palette.secondary-container;
-                    selected-content: root.palette.on-secondary-container;
-                    unselected-content: root.palette.on-surface-variant;
-                    unselected-line: root.palette.outline-variant;
-                    clicked => { root.detail-requested({ kind: DetailKind.browse, id: mood.params }); }
-                }
-            }
-            moods-right := VerticalLayout {
-                spacing: 8px;
-                horizontal-stretch: 1;
-                for mood in root.moods-right : mood-chip-r := M3Chip {
-                    text: mood.title;
-                    selected: false;
-                    selected-fill: root.palette.secondary-container;
-                    selected-content: root.palette.on-secondary-container;
-                    unselected-content: root.palette.on-surface-variant;
-                    unselected-line: root.palette.outline-variant;
-                    clicked => { root.detail-requested({ kind: DetailKind.browse, id: mood.params }); }
-                }
-            }
-        }
-
-        charts-card := M3Card {
-            title: I18n.trl(I18n.lang, "catalog.charts");
-            subtitle: I18n.trl(I18n.lang, "explore.description");
-            fill: root.palette.surface-container-low;
-            title-color: root.palette.on-surface;
-            subtitle-color: root.palette.on-surface-variant;
-            shadow-color: root.palette.shadow;
-            clicked => { root.detail-requested({ kind: DetailKind.browse, id: root.charts-id }); }
-        }
-
-        releases-title := Text {
-            text: I18n.trl(I18n.lang, "home.section.newReleases");
-            color: root.palette.on-surface;
-            font-size: Type.title-medium.size;
-            font-weight: Type.title-medium.weight;
-        }
-
-        releases-tabs := HorizontalLayout {
-            spacing: 8px;
-            for i in 2 : rel-chip := M3Chip {
-                text: i == 0 ? I18n.trl(I18n.lang, "catalog.albums") : I18n.trl(I18n.lang, "catalog.releases.videos");
-                selected: root.releases-tab == i;
-                selected-fill: root.palette.secondary-container;
-                selected-content: root.palette.on-secondary-container;
-                unselected-content: root.palette.on-surface-variant;
-                unselected-line: root.palette.outline-variant;
-                clicked => { root.releases-tab = i; }
-            }
-        }
-
-        if (root.releases-tab == 0) : rel-albums := VerticalLayout {
+        explore-col := VerticalLayout {
+            padding: 16px;
             spacing: 16px;
-            for album[i] in root.releases-albums : rel-album-card := M3Card {
-                title: album.title;
-                subtitle: album.subtitle;
+
+            moods-title := Text {
+                text: I18n.trl(I18n.lang, "catalog.moods");
+                color: root.palette.on-surface;
+                font-size: Type.title-medium.size;
+                font-weight: Type.title-medium.weight;
+            }
+
+            moods-grid := HorizontalLayout {
+                spacing: 12px;
+                moods-left := VerticalLayout {
+                    spacing: 8px;
+                    horizontal-stretch: 1;
+                    for mood in root.moods-left : mood-chip-l := M3Chip {
+                        text: mood.title;
+                        selected: false;
+                        selected-fill: root.palette.secondary-container;
+                        selected-content: root.palette.on-secondary-container;
+                        unselected-content: root.palette.on-surface-variant;
+                        unselected-line: root.palette.outline-variant;
+                        clicked => { root.detail-requested({ kind: DetailKind.browse, id: mood.params }); }
+                    }
+                }
+                moods-right := VerticalLayout {
+                    spacing: 8px;
+                    horizontal-stretch: 1;
+                    for mood in root.moods-right : mood-chip-r := M3Chip {
+                        text: mood.title;
+                        selected: false;
+                        selected-fill: root.palette.secondary-container;
+                        selected-content: root.palette.on-secondary-container;
+                        unselected-content: root.palette.on-surface-variant;
+                        unselected-line: root.palette.outline-variant;
+                        clicked => { root.detail-requested({ kind: DetailKind.browse, id: mood.params }); }
+                    }
+                }
+            }
+
+            charts-card := M3Card {
+                title: I18n.trl(I18n.lang, "catalog.charts");
+                subtitle: I18n.trl(I18n.lang, "explore.description");
                 fill: root.palette.surface-container-low;
                 title-color: root.palette.on-surface;
                 subtitle-color: root.palette.on-surface-variant;
                 shadow-color: root.palette.shadow;
-                clicked => { root.detail-requested({ kind: album.kind, id: album.id }); }
+                clicked => { root.detail-requested({ kind: DetailKind.browse, id: root.charts-id }); }
             }
-        }
 
-        if (root.releases-tab == 1) : rel-videos := VerticalLayout {
-            spacing: 16px;
-            for video[i] in root.releases-videos : rel-video-card := M3Card {
-                title: video.title;
-                subtitle: video.subtitle;
-                fill: root.palette.surface-container-low;
-                title-color: root.palette.on-surface;
-                subtitle-color: root.palette.on-surface-variant;
-                shadow-color: root.palette.shadow;
-                clicked => { root.play-requested(video.id); }
+            releases-title := Text {
+                text: I18n.trl(I18n.lang, "home.section.newReleases");
+                color: root.palette.on-surface;
+                font-size: Type.title-medium.size;
+                font-weight: Type.title-medium.weight;
             }
-        }
 
-        browse-block := VerticalLayout {
-            spacing: 16px;
-            visible: root.browse-sections.length > 0;
-            for sec[s] in root.browse-sections : browse-view := SectionView {
-                palette: root.palette;
-                section: sec;
-                detail-requested(ref) => { root.detail-requested(ref); }
-                play-requested(id) => { root.play-requested(id); }
+            releases-tabs := HorizontalLayout {
+                spacing: 8px;
+                for i in 2 : rel-chip := M3Chip {
+                    text: i == 0 ? I18n.trl(I18n.lang, "catalog.albums") : I18n.trl(I18n.lang, "catalog.releases.videos");
+                    selected: root.releases-tab == i;
+                    selected-fill: root.palette.secondary-container;
+                    selected-content: root.palette.on-secondary-container;
+                    unselected-content: root.palette.on-surface-variant;
+                    unselected-line: root.palette.outline-variant;
+                    clicked => { root.releases-tab = i; }
+                }
             }
-        }
 
-        explore-empty := Text {
-            text: I18n.trl(I18n.lang, "explore.empty");
-            color: root.palette.on-surface-variant;
-            font-size: Type.body-large.size;
-            horizontal-alignment: center;
-            visible: root.moods-left.length == 0 && root.moods-right.length == 0 && root.browse-sections.length == 0 && root.releases-albums.length == 0;
+            if (root.releases-tab == 0) : rel-albums := VerticalLayout {
+                spacing: 16px;
+                for album[i] in root.releases-albums : rel-album-card := M3Card {
+                    title: album.title;
+                    subtitle: album.subtitle;
+                    fill: root.palette.surface-container-low;
+                    title-color: root.palette.on-surface;
+                    subtitle-color: root.palette.on-surface-variant;
+                    shadow-color: root.palette.shadow;
+                    clicked => { root.detail-requested({ kind: album.kind, id: album.id }); }
+                }
+            }
+
+            if (root.releases-tab == 1) : rel-videos := VerticalLayout {
+                spacing: 16px;
+                for video[i] in root.releases-videos : rel-video-card := M3Card {
+                    title: video.title;
+                    subtitle: video.subtitle;
+                    fill: root.palette.surface-container-low;
+                    title-color: root.palette.on-surface;
+                    subtitle-color: root.palette.on-surface-variant;
+                    shadow-color: root.palette.shadow;
+                    clicked => { root.play-requested(video.id); }
+                }
+            }
+
+            browse-block := VerticalLayout {
+                spacing: 16px;
+                visible: root.browse-sections.length > 0;
+                for sec[s] in root.browse-sections : browse-view := SectionView {
+                    palette: root.palette;
+                    section: sec;
+                    detail-requested(ref) => { root.detail-requested(ref); }
+                    play-requested(id) => { root.play-requested(id); }
+                }
+            }
+
+            explore-empty := Text {
+                text: I18n.trl(I18n.lang, "explore.empty");
+                color: root.palette.on-surface-variant;
+                font-size: Type.body-large.size;
+                horizontal-alignment: center;
+                visible: root.moods-left.length == 0 && root.moods-right.length == 0 && root.browse-sections.length == 0 && root.releases-albums.length == 0;
+            }
         }
     }
 }

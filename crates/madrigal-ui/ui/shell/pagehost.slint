@@ -9,6 +9,8 @@ import { HomePage } from "../pages/catalog/home.slint";
 import { SearchPage } from "../pages/catalog/search.slint";
 import { ExplorePage } from "../pages/catalog/explore.slint";
 import { DetailPage } from "../pages/catalog/detail.slint";
+import { SettingsPage } from "../pages/settings/settings.slint";
+import { SettingsRow, DiagLine } from "../pages/settings/rows.slint";
 
 export component PageHost inherits Rectangle {
     in property<int> page;
@@ -108,6 +110,41 @@ export component PageHost inherits Rectangle {
     callback detail-requested(DetailRef);
     callback play-requested(string);
     callback detail-closed();
+    in-out property<int> settings-group;
+    in property<[string]> settings-group-titles;
+    in property<[SettingsRow]> settings-rows;
+    in-out property<bool> settings-show-diag;
+    in property<[DiagLine]> settings-diag-entries;
+    in property<int> settings-diag-entry-count;
+    in-out property<int> settings-diag-level;
+    in property<string> settings-diag-latency;
+    in property<string> settings-diag-single;
+    in property<string> settings-diag-export-status;
+    in property<bool> settings-diag-exported;
+    in property<string> settings-test-result;
+    in property<bool> settings-po-done;
+    in property<bool> settings-po-ok;
+    in-out property<bool> settings-show-onboarding;
+    in-out property<int> settings-ob-step;
+    in-out property<string> settings-ob-folder;
+
+    callback settings-group-selected(int);
+    callback settings-toggled(string, bool);
+    callback settings-edited(string, string);
+    callback settings-stepped(string, float);
+    callback settings-chosen(string, string);
+    callback settings-cycled(string);
+    callback settings-secret-toggled(string);
+    callback settings-provider-moved(string, int, float);
+    callback settings-provider-toggled(string, string, bool);
+    callback settings-test(string);
+    callback settings-login(string);
+    callback settings-lang-picked(string);
+    callback settings-scan-folder();
+    callback settings-po-check();
+    callback settings-onboarding-finished();
+    callback settings-diag-level-selected(int);
+    callback settings-diag-export();
 
     property<string> title: root.page == 0 ? I18n.trl(I18n.lang, "nav.home") : root.page == 1 ? I18n.trl(I18n.lang, "explore.search") : root.page == 2 ? I18n.trl(I18n.lang, "nav.explore") : root.page == 3 ? I18n.trl(I18n.lang, "nav.lists") : root.page == 4 ? I18n.trl(I18n.lang, "nav.downloads") : I18n.trl(I18n.lang, "settings.title");
 
@@ -232,19 +269,44 @@ export component PageHost inherits Rectangle {
         dl-retry-all() => { root.dl-retry-all(); }
     }
 
-    if (root.page == 5) : settings-ph := Rectangle {
-        ph-settings-label := Text {
-            x: 0px;
-            y: 0px;
-            width: 100%;
-            height: 100%;
-            text: I18n.trl(I18n.lang, "settings.title");
-            color: root.palette.on-surface;
-            font-size: Type.headline-small.size;
-            font-weight: Type.headline-small.weight;
-            horizontal-alignment: center;
-            vertical-alignment: center;
-        }
+    if (root.page == 5) : settings-page := SettingsPage {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        group <=> root.settings-group;
+        group-titles: root.settings-group-titles;
+        rows: root.settings-rows;
+        show-diag <=> root.settings-show-diag;
+        diag-entries: root.settings-diag-entries;
+        diag-entry-count: root.settings-diag-entry-count;
+        diag-level <=> root.settings-diag-level;
+        diag-latency: root.settings-diag-latency;
+        diag-single: root.settings-diag-single;
+        diag-export-status: root.settings-diag-export-status;
+        diag-exported: root.settings-diag-exported;
+        test-result: root.settings-test-result;
+        po-done: root.settings-po-done;
+        po-ok: root.settings-po-ok;
+        show-onboarding <=> root.settings-show-onboarding;
+        ob-step <=> root.settings-ob-step;
+        ob-folder <=> root.settings-ob-folder;
+        group-selected(i) => { root.settings-group-selected(i); }
+        setting-toggled(k, v) => { root.settings-toggled(k, v); }
+        setting-edited(k, v) => { root.settings-edited(k, v); }
+        setting-stepped(k, v) => { root.settings-stepped(k, v); }
+        setting-chosen(k, v) => { root.settings-chosen(k, v); }
+        setting-cycled(k) => { root.settings-cycled(k); }
+        secret-toggled(k) => { root.settings-secret-toggled(k); }
+        provider-moved(k, f, d) => { root.settings-provider-moved(k, f, d); }
+        provider-toggled(k, p, v) => { root.settings-provider-toggled(k, p, v); }
+        test-connection(t) => { root.settings-test(t); }
+        login-requested(l) => { root.settings-login(l); }
+        lang-picked(l) => { root.settings-lang-picked(l); }
+        scan-folder() => { root.settings-scan-folder(); }
+        po-check() => { root.settings-po-check(); }
+        onboarding-finished() => { root.settings-onboarding-finished(); }
+        diag-level-selected(l) => { root.settings-diag-level-selected(l); }
+        diag-export() => { root.settings-diag-export(); }
     }
 
     if (root.detail-stack == 1) : detail-view := DetailPage {

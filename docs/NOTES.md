@@ -2,7 +2,7 @@
 
 ## Catalog screens port (F8-3)
 
-Oracle (local Python app): `upstream_desktop/ui/qml/{Home,Search,Explore,Detail}Page.qml`
+Oracle: the local Python app (`ui/qml/{Home,Search,Explore,Detail}Page.qml`)
 (port structure/behavior only; no Qt in the product).
 `madrigal-ui` hosts `HomePage`/`SearchPage`/`ExplorePage`/`DetailPage`
 (`ui/pages/catalog/`) inside `PageHost` branches 0-2; `MainShell` mirrors

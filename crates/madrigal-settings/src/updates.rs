@@ -56,6 +56,8 @@ pub struct Updates {
     #[serde(deserialize_with = "or_default")]
     pub onboarding_completed: bool,
     #[serde(deserialize_with = "or_default")]
+    pub onboarding_done: bool,
+    #[serde(deserialize_with = "or_default")]
     pub has_pressed_star: bool,
     #[serde(deserialize_with = "or_default")]
     pub remind_after: i32,
@@ -72,6 +74,7 @@ impl Default for Updates {
             redownload_on_restore: true,
             launch_count: 0,
             onboarding_completed: false,
+            onboarding_done: false,
             has_pressed_star: false,
             remind_after: 0,
         }

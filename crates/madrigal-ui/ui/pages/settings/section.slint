@@ -1,0 +1,721 @@
+import { Palette, Type } from "../../tokens.slint";
+import { I18n } from "../../i18n.slint";
+import { M3Button, M3IconButton } from "../../components/buttons.slint";
+import { M3TextField } from "../../components/fields.slint";
+import { M3Switch, M3Slider } from "../../components/selection.slint";
+import { SettingsRow } from "rows.slint";
+
+export component SectionView inherits Rectangle {
+    in property<Palette> palette;
+    in property<int> group;
+    in property<[SettingsRow]> rows;
+    in property<string> test-result;
+    in property<bool> po-done;
+    in property<bool> po-ok;
+
+    callback setting-toggled(string, bool);
+    callback setting-edited(string, string);
+    callback setting-stepped(string, float);
+    callback setting-chosen(string, string);
+    callback setting-cycled(string);
+    callback secret-toggled(string);
+    callback provider-moved(string, int, float);
+    callback provider-toggled(string, string, bool);
+    callback test-connection(string);
+    callback login-requested(string);
+
+    background: root.palette.surface;
+
+    rows-flick := Flickable {
+        width: 100%;
+        height: 100%;
+
+        rows-col := VerticalLayout {
+            width: 100%;
+            spacing: 8px;
+            padding: 16px;
+
+            for row[i] in root.rows: row-block := VerticalLayout {
+                spacing: 4px;
+
+                row-label := Text {
+                    text: I18n.trl(I18n.lang, row.label);
+                    color: root.palette.on-surface;
+                    font-size: Type.label-large.size;
+                    font-weight: Type.label-large.weight;
+                    width: 100%;
+                    wrap: word-wrap;
+                }
+
+                if (row.kind == "switch") : row-toggle := M3Switch {
+                    label: I18n.trl(I18n.lang, row.label);
+                    checked: row.val-bool;
+                    on-track: root.palette.primary;
+                    on-thumb: root.palette.on-primary;
+                    off-track: root.palette.surface-container-highest;
+                    off-line: root.palette.outline-variant;
+                    off-thumb: root.palette.outline-variant;
+                    state-on-surface: root.palette.on-surface;
+                    toggled(v) => { root.setting-toggled(row.key, v); }
+                }
+
+                if (row.kind == "text") : row-field := M3TextField {
+                    label: I18n.trl(I18n.lang, row.label);
+                    text: row.display;
+                    field-bg: root.palette.surface-container-highest;
+                    line: root.palette.outline-variant;
+                    focus-line: root.palette.primary;
+                    content: root.palette.on-surface;
+                    support-color: root.palette.on-surface-variant;
+                    state-on-surface: root.palette.on-surface;
+                    accepted(t) => { root.setting-edited(row.key, t); }
+                }
+
+                if (row.kind == "slider") : row-slider := M3Slider {
+                    label: I18n.trl(I18n.lang, row.label);
+                    value: (row.val-num - row.val-min) / (row.val-max - row.val-min);
+                    active-track: root.palette.primary;
+                    inactive-track: root.palette.surface-container-highest;
+                    handle-color: root.palette.primary;
+                    state-on-surface: root.palette.on-surface;
+                    changed(v) => { root.setting-stepped(row.key, row.val-min + v * (row.val-max - row.val-min)); }
+                }
+
+                if (row.kind == "choice") : choice-col := VerticalLayout {
+                    spacing: 4px;
+
+                    row-choice-cycle := M3Button {
+                        text: row.val-text + " ▾";
+                        fill: root.palette.secondary-container;
+                        content: root.palette.on-secondary-container;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.setting-cycled(row.key); }
+                    }
+
+                    choice-opts := VerticalLayout {
+                        spacing: 6px;
+                        for opt in row.options: row-option := M3Button {
+                            text: opt;
+                            fill: opt == row.val-text ? root.palette.primary : root.palette.secondary-container;
+                            content: opt == row.val-text ? root.palette.on-primary : root.palette.on-secondary-container;
+                            state-on-surface: root.palette.on-surface;
+                            clicked => { root.setting-chosen(row.key, opt); }
+                        }
+                    }
+                }
+
+                if (row.kind == "apikey") : apikey-col := HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+
+                    if (!row.secret) : apikey-masked := Text {
+                        text: row.display;
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-large.size;
+                        vertical-alignment: center;
+                        height: 40px;
+                    }
+
+                    if (row.secret) : row-secret-field := M3TextField {
+                        label: I18n.trl(I18n.lang, row.label);
+                        text: row.display;
+                        horizontal-stretch: 1;
+                        field-bg: root.palette.surface-container-highest;
+                        line: root.palette.outline-variant;
+                        focus-line: root.palette.primary;
+                        content: root.palette.on-surface;
+                        support-color: root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        accepted(t) => { root.setting-edited(row.key, t); }
+                    }
+
+                    row-reveal := M3Button {
+                        width: 120px;
+                        text: row.secret ? I18n.trl(I18n.lang, "settings.hideSecret") : I18n.trl(I18n.lang, "settings.showSecret");
+                        fill: root.palette.secondary-container;
+                        content: root.palette.on-secondary-container;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.secret-toggled(row.key); }
+                    }
+                }
+
+                if (row.kind == "providers") : prov-col := VerticalLayout {
+                    spacing: 4px;
+
+                    for prov[j] in row.options: prov-row := Rectangle {
+                        height: 52px;
+                        background: root.palette.surface-container;
+                        border-radius: 8px;
+
+                        prov-drag := TouchArea {
+                            property<length> press-y: 0px;
+                            property<bool> committed: false;
+                            width: 100%;
+                            height: 100%;
+                            mouse-cursor: grab;
+                            moved => {
+                                if (self.pressed && !self.committed) {
+                                    if (self.mouse-y - self.press-y > 4px) {
+                                        self.committed = true;
+                                        root.provider-moved(row.key, j, 52.0);
+                                    } else if (self.press-y - self.mouse-y > 4px) {
+                                        self.committed = true;
+                                        root.provider-moved(row.key, j, -52.0);
+                                    }
+                                }
+                            }
+                            pointer-event(e) => {
+                                if (e.kind == PointerEventKind.down) {
+                                    self.committed = false;
+                                    self.press-y = self.mouse-y;
+                                }
+                                if (e.kind == PointerEventKind.up) {
+                                    self.committed = false;
+                                }
+                            }
+                        }
+
+                        HorizontalLayout {
+                            width: 100%;
+                            height: 100%;
+                            padding-left: 8px;
+                            padding-right: 8px;
+                            spacing: 8px;
+                            alignment: center;
+
+                            prov-toggle := M3Switch {
+                                label: prov;
+                                checked: row.flags[j] == "1";
+                                on-track: root.palette.primary;
+                                on-thumb: root.palette.on-primary;
+                                off-track: root.palette.surface-container-highest;
+                                off-line: root.palette.outline-variant;
+                                off-thumb: root.palette.outline-variant;
+                                state-on-surface: root.palette.on-surface;
+                                toggled(v) => { root.provider-toggled(row.key, prov, v); }
+                            }
+
+                            prov-name := Text {
+                                text: I18n.trl(I18n.lang, "lyrics.provider." + prov);
+                                color: root.palette.on-surface;
+                                font-size: Type.body-medium.size;
+                                horizontal-stretch: 1;
+                                vertical-alignment: center;
+                                overflow: elide;
+                            }
+
+                            prov-up := M3IconButton {
+                                glyph: "▲";
+                                content: root.palette.on-surface-variant;
+                                state-on-surface: root.palette.on-surface;
+                                clicked => { root.provider-moved(row.key, j, -52.0); }
+                            }
+
+                            prov-down := M3IconButton {
+                                glyph: "▼";
+                                content: root.palette.on-surface-variant;
+                                state-on-surface: root.palette.on-surface;
+                                clicked => { root.provider-moved(row.key, j, 52.0); }
+                            }
+                        }
+                    }
+                }
+
+                if (row.test != "") : row-test := M3Button {
+                    text: I18n.trl(I18n.lang, "settings.malojaTest");
+                    fill: root.palette.secondary-container;
+                    content: root.palette.on-secondary-container;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.test-connection(row.test); }
+                }
+            }
+
+            if (root.group == 3) : lyrics-help := VerticalLayout {
+                spacing: 4px;
+
+                lyrics-help-text := Text {
+                    text: I18n.trl(I18n.lang, "settings.lyricsProvidersHelp");
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.body-small.size;
+                    width: 100%;
+                    wrap: word-wrap;
+                }
+
+                lyrics-note-text := Text {
+                    text: I18n.trl(I18n.lang, "settings.lyricsYoutubeNote");
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.body-small.size;
+                    width: 100%;
+                    wrap: word-wrap;
+                }
+            }
+
+            if (root.group == 4 && root.po-done) : po-status := Text {
+                text: root.po-ok ? I18n.trl(I18n.lang, "settings.potOk") : I18n.trl(I18n.lang, "settings.potMissing");
+                color: root.po-ok ? root.palette.primary : root.palette.error;
+                font-size: Type.body-medium.size;
+                width: 100%;
+                wrap: word-wrap;
+            }
+
+            if (root.group == 7) : account-actions := HorizontalLayout {
+                spacing: 8px;
+
+                acct-signin := M3Button {
+                    width: 180px;
+                    text: I18n.trl(I18n.lang, "settings.signIn");
+                    fill: root.palette.primary;
+                    content: root.palette.on-primary;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.login-requested("google"); }
+                }
+
+                acct-signout := M3Button {
+                    width: 180px;
+                    text: I18n.trl(I18n.lang, "settings.signOut");
+                    fill: root.palette.secondary-container;
+                    content: root.palette.on-secondary-container;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.login-requested("signout"); }
+                }
+            }
+
+            if (root.test-result != "") : test-result-text := Text {
+                text: root.test-result;
+                color: root.palette.on-surface-variant;
+                font-size: Type.body-medium.size;
+                width: 100%;
+                wrap: word-wrap;
+            }
+        }
+    }
+}
+
+export component AppearanceSection inherits Rectangle {
+    in property<Palette> palette;
+    in property<[SettingsRow]> rows;
+    in property<string> test-result;
+    in property<bool> po-done;
+    in property<bool> po-ok;
+    callback setting-toggled(string, bool);
+    callback setting-edited(string, string);
+    callback setting-stepped(string, float);
+    callback setting-chosen(string, string);
+    callback setting-cycled(string);
+    callback secret-toggled(string);
+    callback provider-moved(string, int, float);
+    callback provider-toggled(string, string, bool);
+    callback test-connection(string);
+    callback login-requested(string);
+
+    SectionView {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        group: 0;
+        rows: root.rows;
+        test-result: root.test-result;
+        po-done: root.po-done;
+        po-ok: root.po-ok;
+        setting-toggled(k, v) => { root.setting-toggled(k, v); }
+        setting-edited(k, v) => { root.setting-edited(k, v); }
+        setting-stepped(k, v) => { root.setting-stepped(k, v); }
+        setting-chosen(k, v) => { root.setting-chosen(k, v); }
+        setting-cycled(k) => { root.setting-cycled(k); }
+        secret-toggled(k) => { root.secret-toggled(k); }
+        provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+        provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+        test-connection(t) => { root.test-connection(t); }
+        login-requested(l) => { root.login-requested(l); }
+    }
+}
+
+export component ContentSection inherits Rectangle {
+    in property<Palette> palette;
+    in property<[SettingsRow]> rows;
+    in property<string> test-result;
+    in property<bool> po-done;
+    in property<bool> po-ok;
+    callback setting-toggled(string, bool);
+    callback setting-edited(string, string);
+    callback setting-stepped(string, float);
+    callback setting-chosen(string, string);
+    callback setting-cycled(string);
+    callback secret-toggled(string);
+    callback provider-moved(string, int, float);
+    callback provider-toggled(string, string, bool);
+    callback test-connection(string);
+    callback login-requested(string);
+
+    SectionView {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        group: 1;
+        rows: root.rows;
+        test-result: root.test-result;
+        po-done: root.po-done;
+        po-ok: root.po-ok;
+        setting-toggled(k, v) => { root.setting-toggled(k, v); }
+        setting-edited(k, v) => { root.setting-edited(k, v); }
+        setting-stepped(k, v) => { root.setting-stepped(k, v); }
+        setting-chosen(k, v) => { root.setting-chosen(k, v); }
+        setting-cycled(k) => { root.setting-cycled(k); }
+        secret-toggled(k) => { root.secret-toggled(k); }
+        provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+        provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+        test-connection(t) => { root.test-connection(t); }
+        login-requested(l) => { root.login-requested(l); }
+    }
+}
+
+export component PlayerSection inherits Rectangle {
+    in property<Palette> palette;
+    in property<[SettingsRow]> rows;
+    in property<string> test-result;
+    in property<bool> po-done;
+    in property<bool> po-ok;
+    callback setting-toggled(string, bool);
+    callback setting-edited(string, string);
+    callback setting-stepped(string, float);
+    callback setting-chosen(string, string);
+    callback setting-cycled(string);
+    callback secret-toggled(string);
+    callback provider-moved(string, int, float);
+    callback provider-toggled(string, string, bool);
+    callback test-connection(string);
+    callback login-requested(string);
+
+    SectionView {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        group: 2;
+        rows: root.rows;
+        test-result: root.test-result;
+        po-done: root.po-done;
+        po-ok: root.po-ok;
+        setting-toggled(k, v) => { root.setting-toggled(k, v); }
+        setting-edited(k, v) => { root.setting-edited(k, v); }
+        setting-stepped(k, v) => { root.setting-stepped(k, v); }
+        setting-chosen(k, v) => { root.setting-chosen(k, v); }
+        setting-cycled(k) => { root.setting-cycled(k); }
+        secret-toggled(k) => { root.secret-toggled(k); }
+        provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+        provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+        test-connection(t) => { root.test-connection(t); }
+        login-requested(l) => { root.login-requested(l); }
+    }
+}
+
+export component LyricsSection inherits Rectangle {
+    in property<Palette> palette;
+    in property<[SettingsRow]> rows;
+    in property<string> test-result;
+    in property<bool> po-done;
+    in property<bool> po-ok;
+    callback setting-toggled(string, bool);
+    callback setting-edited(string, string);
+    callback setting-stepped(string, float);
+    callback setting-chosen(string, string);
+    callback setting-cycled(string);
+    callback secret-toggled(string);
+    callback provider-moved(string, int, float);
+    callback provider-toggled(string, string, bool);
+    callback test-connection(string);
+    callback login-requested(string);
+
+    SectionView {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        group: 3;
+        rows: root.rows;
+        test-result: root.test-result;
+        po-done: root.po-done;
+        po-ok: root.po-ok;
+        setting-toggled(k, v) => { root.setting-toggled(k, v); }
+        setting-edited(k, v) => { root.setting-edited(k, v); }
+        setting-stepped(k, v) => { root.setting-stepped(k, v); }
+        setting-chosen(k, v) => { root.setting-chosen(k, v); }
+        setting-cycled(k) => { root.setting-cycled(k); }
+        secret-toggled(k) => { root.secret-toggled(k); }
+        provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+        provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+        test-connection(t) => { root.test-connection(t); }
+        login-requested(l) => { root.login-requested(l); }
+    }
+}
+
+export component InternetSection inherits Rectangle {
+    in property<Palette> palette;
+    in property<[SettingsRow]> rows;
+    in property<string> test-result;
+    in property<bool> po-done;
+    in property<bool> po-ok;
+    callback setting-toggled(string, bool);
+    callback setting-edited(string, string);
+    callback setting-stepped(string, float);
+    callback setting-chosen(string, string);
+    callback setting-cycled(string);
+    callback secret-toggled(string);
+    callback provider-moved(string, int, float);
+    callback provider-toggled(string, string, bool);
+    callback test-connection(string);
+    callback login-requested(string);
+
+    SectionView {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        group: 4;
+        rows: root.rows;
+        test-result: root.test-result;
+        po-done: root.po-done;
+        po-ok: root.po-ok;
+        setting-toggled(k, v) => { root.setting-toggled(k, v); }
+        setting-edited(k, v) => { root.setting-edited(k, v); }
+        setting-stepped(k, v) => { root.setting-stepped(k, v); }
+        setting-chosen(k, v) => { root.setting-chosen(k, v); }
+        setting-cycled(k) => { root.setting-cycled(k); }
+        secret-toggled(k) => { root.secret-toggled(k); }
+        provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+        provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+        test-connection(t) => { root.test-connection(t); }
+        login-requested(l) => { root.login-requested(l); }
+    }
+}
+
+export component StorageSection inherits Rectangle {
+    in property<Palette> palette;
+    in property<[SettingsRow]> rows;
+    in property<string> test-result;
+    in property<bool> po-done;
+    in property<bool> po-ok;
+    callback setting-toggled(string, bool);
+    callback setting-edited(string, string);
+    callback setting-stepped(string, float);
+    callback setting-chosen(string, string);
+    callback setting-cycled(string);
+    callback secret-toggled(string);
+    callback provider-moved(string, int, float);
+    callback provider-toggled(string, string, bool);
+    callback test-connection(string);
+    callback login-requested(string);
+
+    SectionView {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        group: 5;
+        rows: root.rows;
+        test-result: root.test-result;
+        po-done: root.po-done;
+        po-ok: root.po-ok;
+        setting-toggled(k, v) => { root.setting-toggled(k, v); }
+        setting-edited(k, v) => { root.setting-edited(k, v); }
+        setting-stepped(k, v) => { root.setting-stepped(k, v); }
+        setting-chosen(k, v) => { root.setting-chosen(k, v); }
+        setting-cycled(k) => { root.setting-cycled(k); }
+        secret-toggled(k) => { root.secret-toggled(k); }
+        provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+        provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+        test-connection(t) => { root.test-connection(t); }
+        login-requested(l) => { root.login-requested(l); }
+    }
+}
+
+export component PrivacySection inherits Rectangle {
+    in property<Palette> palette;
+    in property<[SettingsRow]> rows;
+    in property<string> test-result;
+    in property<bool> po-done;
+    in property<bool> po-ok;
+    callback setting-toggled(string, bool);
+    callback setting-edited(string, string);
+    callback setting-stepped(string, float);
+    callback setting-chosen(string, string);
+    callback setting-cycled(string);
+    callback secret-toggled(string);
+    callback provider-moved(string, int, float);
+    callback provider-toggled(string, string, bool);
+    callback test-connection(string);
+    callback login-requested(string);
+
+    SectionView {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        group: 6;
+        rows: root.rows;
+        test-result: root.test-result;
+        po-done: root.po-done;
+        po-ok: root.po-ok;
+        setting-toggled(k, v) => { root.setting-toggled(k, v); }
+        setting-edited(k, v) => { root.setting-edited(k, v); }
+        setting-stepped(k, v) => { root.setting-stepped(k, v); }
+        setting-chosen(k, v) => { root.setting-chosen(k, v); }
+        setting-cycled(k) => { root.setting-cycled(k); }
+        secret-toggled(k) => { root.secret-toggled(k); }
+        provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+        provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+        test-connection(t) => { root.test-connection(t); }
+        login-requested(l) => { root.login-requested(l); }
+    }
+}
+
+export component AccountSection inherits Rectangle {
+    in property<Palette> palette;
+    in property<[SettingsRow]> rows;
+    in property<string> test-result;
+    in property<bool> po-done;
+    in property<bool> po-ok;
+    callback setting-toggled(string, bool);
+    callback setting-edited(string, string);
+    callback setting-stepped(string, float);
+    callback setting-chosen(string, string);
+    callback setting-cycled(string);
+    callback secret-toggled(string);
+    callback provider-moved(string, int, float);
+    callback provider-toggled(string, string, bool);
+    callback test-connection(string);
+    callback login-requested(string);
+
+    SectionView {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        group: 7;
+        rows: root.rows;
+        test-result: root.test-result;
+        po-done: root.po-done;
+        po-ok: root.po-ok;
+        setting-toggled(k, v) => { root.setting-toggled(k, v); }
+        setting-edited(k, v) => { root.setting-edited(k, v); }
+        setting-stepped(k, v) => { root.setting-stepped(k, v); }
+        setting-chosen(k, v) => { root.setting-chosen(k, v); }
+        setting-cycled(k) => { root.setting-cycled(k); }
+        secret-toggled(k) => { root.secret-toggled(k); }
+        provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+        provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+        test-connection(t) => { root.test-connection(t); }
+        login-requested(l) => { root.login-requested(l); }
+    }
+}
+
+export component IntegrationsSection inherits Rectangle {
+    in property<Palette> palette;
+    in property<[SettingsRow]> rows;
+    in property<string> test-result;
+    in property<bool> po-done;
+    in property<bool> po-ok;
+    callback setting-toggled(string, bool);
+    callback setting-edited(string, string);
+    callback setting-stepped(string, float);
+    callback setting-chosen(string, string);
+    callback setting-cycled(string);
+    callback secret-toggled(string);
+    callback provider-moved(string, int, float);
+    callback provider-toggled(string, string, bool);
+    callback test-connection(string);
+    callback login-requested(string);
+
+    SectionView {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        group: 8;
+        rows: root.rows;
+        test-result: root.test-result;
+        po-done: root.po-done;
+        po-ok: root.po-ok;
+        setting-toggled(k, v) => { root.setting-toggled(k, v); }
+        setting-edited(k, v) => { root.setting-edited(k, v); }
+        setting-stepped(k, v) => { root.setting-stepped(k, v); }
+        setting-chosen(k, v) => { root.setting-chosen(k, v); }
+        setting-cycled(k) => { root.setting-cycled(k); }
+        secret-toggled(k) => { root.secret-toggled(k); }
+        provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+        provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+        test-connection(t) => { root.test-connection(t); }
+        login-requested(l) => { root.login-requested(l); }
+    }
+}
+
+export component AiSection inherits Rectangle {
+    in property<Palette> palette;
+    in property<[SettingsRow]> rows;
+    in property<string> test-result;
+    in property<bool> po-done;
+    in property<bool> po-ok;
+    callback setting-toggled(string, bool);
+    callback setting-edited(string, string);
+    callback setting-stepped(string, float);
+    callback setting-chosen(string, string);
+    callback setting-cycled(string);
+    callback secret-toggled(string);
+    callback provider-moved(string, int, float);
+    callback provider-toggled(string, string, bool);
+    callback test-connection(string);
+    callback login-requested(string);
+
+    SectionView {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        group: 9;
+        rows: root.rows;
+        test-result: root.test-result;
+        po-done: root.po-done;
+        po-ok: root.po-ok;
+        setting-toggled(k, v) => { root.setting-toggled(k, v); }
+        setting-edited(k, v) => { root.setting-edited(k, v); }
+        setting-stepped(k, v) => { root.setting-stepped(k, v); }
+        setting-chosen(k, v) => { root.setting-chosen(k, v); }
+        setting-cycled(k) => { root.setting-cycled(k); }
+        secret-toggled(k) => { root.secret-toggled(k); }
+        provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+        provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+        test-connection(t) => { root.test-connection(t); }
+        login-requested(l) => { root.login-requested(l); }
+    }
+}
+
+export component UpdatesSection inherits Rectangle {
+    in property<Palette> palette;
+    in property<[SettingsRow]> rows;
+    in property<string> test-result;
+    in property<bool> po-done;
+    in property<bool> po-ok;
+    callback setting-toggled(string, bool);
+    callback setting-edited(string, string);
+    callback setting-stepped(string, float);
+    callback setting-chosen(string, string);
+    callback setting-cycled(string);
+    callback secret-toggled(string);
+    callback provider-moved(string, int, float);
+    callback provider-toggled(string, string, bool);
+    callback test-connection(string);
+    callback login-requested(string);
+
+    SectionView {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        group: 10;
+        rows: root.rows;
+        test-result: root.test-result;
+        po-done: root.po-done;
+        po-ok: root.po-ok;
+        setting-toggled(k, v) => { root.setting-toggled(k, v); }
+        setting-edited(k, v) => { root.setting-edited(k, v); }
+        setting-stepped(k, v) => { root.setting-stepped(k, v); }
+        setting-chosen(k, v) => { root.setting-chosen(k, v); }
+        setting-cycled(k) => { root.setting-cycled(k); }
+        secret-toggled(k) => { root.secret-toggled(k); }
+        provider-moved(k, f, d) => { root.provider-moved(k, f, d); }
+        provider-toggled(k, p, v) => { root.provider-toggled(k, p, v); }
+        test-connection(t) => { root.test-connection(t); }
+        login-requested(l) => { root.login-requested(l); }
+    }
+}
