@@ -17,14 +17,22 @@ path = "src/main.rs"
 
 [dependencies]
 madrigal-db = { path = "../madrigal-db" }
+madrigal-i18n = { path = "../madrigal-i18n" }
 madrigal-paths = { path = "../madrigal-paths" }
 madrigal-player = { path = "../madrigal-player" }
 madrigal-settings = { path = "../madrigal-settings" }
+madrigal-ui = { path = "../madrigal-ui" }
 rusqlite = "0.41"
+slint = "=1.19.0"
 
 [dev-dependencies]
+madrigal-testkit = { path = "../madrigal-testkit" }
 tempfile = "3"
 
 [[test]]
 name = "check_app_startup"
 path = "tests/checks/check_app_startup.rs"
+
+[[test]]
+name = "check_app_shell"
+path = "tests/checks/check_app_shell.rs"

@@ -11,6 +11,7 @@ export component M3ListItem inherits Rectangle {
     in property<color> active-bg;
     in property<color> title-color;
     in property<color> subtitle-color;
+    in property<color> accent;
     in property<color> progress-track;
     in property<color> progress-fill;
     callback action();
@@ -18,20 +19,20 @@ export component M3ListItem inherits Rectangle {
     accessible-label: root.title;
     accessible-role: AccessibleRole.list-item;
 
-    height: 64px;
-    border-radius: Shape.medium;
+    height: 54px;
+    border-radius: Shape.small;
     background: root.active ? root.active-bg : item-touch.has-hover ? root.row-bg : transparent;
     animate background { duration: 100ms; easing: ease-in-out; }
 
     HorizontalLayout {
-        padding-left: 16px;
-        padding-right: 16px;
+        padding-left: 10px;
+        padding-right: 10px;
         spacing: 12px;
         alignment: center;
 
         art := Rectangle {
-            width: 38px;
-            height: 38px;
+            width: 36px;
+            height: 36px;
             border-radius: Shape.small;
             background: root.progress-track;
         }
@@ -43,16 +44,17 @@ export component M3ListItem inherits Rectangle {
 
             item-title := Text {
                 text: root.title;
-                color: root.title-color;
-                font-size: Type.body-large.size;
-                font-weight: root.active ? Type.body-large-emphasized.weight : Type.body-large.weight;
+                color: root.active ? root.accent : root.title-color;
+                font-size: Type.title-small.size;
+                font-weight: Type.title-small.weight;
                 overflow: elide;
             }
 
             item-sub := Text {
                 text: root.subtitle;
                 color: root.subtitle-color;
-                font-size: Type.body-medium.size;
+                font-size: Type.label-small.size;
+                font-weight: 400;
                 overflow: elide;
             }
         }
@@ -75,7 +77,8 @@ export component M3ListItem inherits Rectangle {
         item-duration := Text {
             text: root.duration;
             color: root.subtitle-color;
-            font-size: Type.body-medium.size;
+            font-size: Type.label-small.size;
+            font-weight: 400;
             vertical-alignment: center;
         }
 

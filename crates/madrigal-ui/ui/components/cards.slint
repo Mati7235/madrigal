@@ -5,7 +5,9 @@ export component M3Card inherits Rectangle {
     in property<string> title;
     in property<string> subtitle;
     in property<bool> elevated: true;
+    in property<bool> media: false;
     in property<color> fill;
+    in property<color> art-fill;
     in property<color> title-color;
     in property<color> subtitle-color;
     in property<color> shadow-color;
@@ -14,7 +16,7 @@ export component M3Card inherits Rectangle {
     accessible-label: root.title;
     accessible-role: AccessibleRole.button;
 
-    border-radius: Shape.large;
+    border-radius: root.media ? Shape.medium : Shape.large;
     background: root.fill;
     drop-shadow-color: root.shadow-color;
     drop-shadow-blur: !root.elevated ? 0px : card-touch.has-hover ? 12px : 3px;
@@ -28,11 +30,60 @@ export component M3Card inherits Rectangle {
         height: 100%;
         border-radius: root.border-radius;
         background: root.title-color;
-        opacity: card-touch.has-hover ? 0.05 : 0;
+        opacity: card-touch.has-hover ? (root.media ? 0.14 : 0.05) : 0;
         animate opacity { duration: 100ms; easing: ease-in-out; }
     }
 
-    VerticalLayout {
+    if (root.media) : media-col := VerticalLayout {
+        padding: 8px;
+        spacing: 6px;
+        alignment: start;
+
+        media-art := Rectangle {
+            height: 118px;
+            border-radius: Shape.small;
+            background: root.art-fill;
+
+            HorizontalLayout {
+                width: 100%;
+                height: 100%;
+                alignment: center;
+
+                VerticalLayout {
+                    width: 100%;
+                    alignment: center;
+
+                    HorizontalLayout {
+                        alignment: center;
+
+                        Icon {
+                            source: Icons.music-2;
+                            colorize: root.subtitle-color;
+                            icon-size: 32px;
+                        }
+                    }
+                }
+            }
+        }
+
+        media-title := Text {
+            text: root.title;
+            color: root.title-color;
+            font-size: 13px;
+            font-weight: 600;
+            overflow: elide;
+        }
+
+        media-sub := Text {
+            text: root.subtitle;
+            color: root.subtitle-color;
+            font-size: Type.label-small.size;
+            font-weight: 400;
+            overflow: elide;
+        }
+    }
+
+    if (!root.media) : text-col := VerticalLayout {
         padding: 16px;
         spacing: 4px;
         alignment: start;

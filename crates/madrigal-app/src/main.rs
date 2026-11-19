@@ -1,9 +1,9 @@
 use std::process::ExitCode;
-use std::thread;
 use std::time::Duration;
 
-use madrigal_app::{boot_headless, cli};
+use madrigal_app::cli;
 use madrigal_player::single_instance::{acquire, InstanceRole};
+use slint::ComponentHandle;
 
 fn main() -> ExitCode {
     let opts = match cli::parse(std::env::args().skip(1)) {
@@ -20,6 +20,9 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
+    if !profile_dir.as_os_str().is_empty() {
+        std::env::set_var(madrigal_paths::PROFILE_ROOT_ENV, &profile_dir);
+    }
     let _instance = match acquire() {
         Ok(InstanceRole::Primary(guard)) => guard,
         Ok(InstanceRole::Secondary) => {
@@ -31,16 +34,31 @@ fn main() -> ExitCode {
             return ExitCode::from(1);
         }
     };
-    let boot = match boot_headless(&profile_dir) {
-        Ok(boot) => boot,
+    let ui = match madrigal_app::ui::boot_ui() {
+        Ok(ui) => ui,
         Err(err) => {
             eprintln!("arranque: {err}");
             return ExitCode::from(1);
         }
     };
-    println!("READY {}", boot.startup_ms);
     if let Some(ms) = opts.smoke_quit_after_ms {
-        thread::sleep(Duration::from_millis(ms));
+        slint::Timer::single_shot(Duration::from_millis(ms), || {
+            let _ = slint::quit_event_loop();
+        });
+        if let Err(err) = slint::run_event_loop() {
+            eprintln!("event loop: {err}");
+            return ExitCode::from(1);
+        }
+        println!("READY");
+        return ExitCode::SUCCESS;
+    }
+    if let Err(err) = ui.shell.show() {
+        eprintln!("ventana: {err}");
+        return ExitCode::from(1);
+    }
+    if let Err(err) = slint::run_event_loop() {
+        eprintln!("event loop: {err}");
+        return ExitCode::from(1);
     }
     ExitCode::SUCCESS
 }

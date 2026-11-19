@@ -11,11 +11,11 @@ export component SideNav inherits Rectangle {
     background: root.palette.surface-container-low;
 
     nav-col := VerticalLayout {
-        padding: 12px;
-        spacing: 4px;
+        padding: 16px;
+        spacing: 6px;
 
         home-btn := Rectangle {
-            height: 44px;
+            height: 48px;
             border-radius: Shape.full;
             background: root.page == 0 ? root.palette.secondary-container : transparent;
             border-width: root.focused && root.page == 0 ? 2px : 0px;
@@ -45,7 +45,7 @@ export component SideNav inherits Rectangle {
         }
 
         search-btn := Rectangle {
-            height: 44px;
+            height: 48px;
             border-radius: Shape.full;
             background: root.page == 1 ? root.palette.secondary-container : transparent;
             border-width: root.focused && root.page == 1 ? 2px : 0px;
@@ -75,7 +75,7 @@ export component SideNav inherits Rectangle {
         }
 
         explore-btn := Rectangle {
-            height: 44px;
+            height: 48px;
             border-radius: Shape.full;
             background: root.page == 2 ? root.palette.secondary-container : transparent;
             border-width: root.focused && root.page == 2 ? 2px : 0px;
@@ -105,7 +105,7 @@ export component SideNav inherits Rectangle {
         }
 
         library-btn := Rectangle {
-            height: 44px;
+            height: 48px;
             border-radius: Shape.full;
             background: root.page == 3 ? root.palette.secondary-container : transparent;
             border-width: root.focused && root.page == 3 ? 2px : 0px;
@@ -135,7 +135,7 @@ export component SideNav inherits Rectangle {
         }
 
         downloads-btn := Rectangle {
-            height: 44px;
+            height: 48px;
             border-radius: Shape.full;
             background: root.page == 4 ? root.palette.secondary-container : transparent;
             border-width: root.focused && root.page == 4 ? 2px : 0px;
@@ -165,7 +165,7 @@ export component SideNav inherits Rectangle {
         }
 
         settings-btn := Rectangle {
-            height: 44px;
+            height: 48px;
             border-radius: Shape.full;
             background: root.page == 5 ? root.palette.secondary-container : transparent;
             border-width: root.focused && root.page == 5 ? 2px : 0px;

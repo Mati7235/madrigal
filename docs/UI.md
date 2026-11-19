@@ -104,6 +104,17 @@ login, folder stub, finish sets `updates.onboarding_done`) and
 status, latency p50/p95). `PageHost` forwards the `settings-*` seam from
 `MainShell`; covered by `ui_settings`.
 
+## Density (ui-density)
+
+Catalog density follows the oracle: `M3ListItem` rows are 54px (title 14/500,
+accent when active; subtitle/duration 11px), `M3Card` media cells are 150x190
+(118px art placeholder `music-2` on `surface-container-high`, title 13/600,
+subtitle 11px, hover veil 0.14) inside 190px horizontal `Flickable` rails
+(spacing 12px). Text `M3Card` keeps its large padded variant for non-media use.
+Search non-track results and explore charts/releases render as card rails;
+track rows stay 54px lists. Sidebar is 244px wide (padding 16, item spacing 6,
+item height 48).
+
 ## Files by task
 
 | Area | Task | Files |

@@ -536,13 +536,14 @@ export component MainShell inherits Window {
 
     title: "madrigal-shell";
     width: 960px;
-    height: 640px;
+    // 664 = 640 + 24 for the taller mini-player; keeps page viewports unchanged.
+    height: 664px;
     background: root.palette.surface;
 
     main-row := HorizontalLayout {
         spacing: 0px;
         nav := SideNav {
-            width: 232px;
+            width: 244px;
             palette: root.palette;
             page: root.page;
             focused: root.sidebar-focused;
@@ -679,7 +680,7 @@ export component MainShell inherits Window {
                 settings-diag-export() => { root.settings-diag-export(); }
             }
             nowbar := NowPlayingBar {
-                height: 72px;
+                height: 96px;
                 palette: root.palette;
                 title: root.track-title;
                 artist: root.track-artist;
@@ -689,11 +690,15 @@ export component MainShell inherits Window {
                 paused: root.paused;
                 liked: root.liked;
                 queue-count: root.queue-count;
+                volume: root.volume;
                 play-clicked => { root.play-toggle-count += 1; root.play-pause-toggled(); }
                 prev-clicked => { root.prev-count += 1; root.prev-requested(); }
                 next-clicked => { root.next-count += 1; root.next-requested(); }
                 like-clicked => { root.like-toggled(); }
                 queue-clicked => { root.queue-open = true; root.queue-opened(); }
+                seek-requested(ms) => { root.seek-to-requested(ms); }
+                volume-changed(v) => { root.volume-changed(v); }
+                            expand-clicked => { root.full-player-opened(); }
             }
         }
     }

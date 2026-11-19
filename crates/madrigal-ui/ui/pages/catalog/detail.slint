@@ -1,8 +1,8 @@
-import { Palette, Type } from "../../tokens.slint";
+import { Palette, Shape, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { M3IconButton, M3Button } from "../../components/buttons.slint";
 import { M3Chip } from "../../components/cards.slint";
-import { Icons } from "../../components/icons.slint";
+import { Icon, Icons } from "../../components/icons.slint";
 import { M3ListItem } from "../../components/rows.slint";
 import { CatalogItem, CatalogSection, DetailKind, DetailRef } from "refs.slint";
 import { SectionView } from "section.slint";
@@ -37,7 +37,7 @@ export component DetailPage inherits Rectangle {
             spacing: 12px;
 
             detail-top := HorizontalLayout {
-                spacing: 12px;
+                spacing: 14px;
                 alignment: start;
                 detail-back := M3IconButton {
                     icon: Icons.arrow-left;
@@ -46,20 +46,49 @@ export component DetailPage inherits Rectangle {
                     state-on-surface: root.palette.on-surface;
                     clicked => { root.back-requested(); }
                 }
+                detail-cover := Rectangle {
+                    width: 120px;
+                    height: 120px;
+                    border-radius: Shape.small;
+                    background: root.palette.surface-container-high;
+
+                    HorizontalLayout {
+                        width: 100%;
+                        height: 100%;
+                        alignment: center;
+
+                        VerticalLayout {
+                            width: 100%;
+                            alignment: center;
+
+                            HorizontalLayout {
+                                alignment: center;
+
+                                Icon {
+                                    source: Icons.music-2;
+                                    colorize: root.palette.on-surface-variant;
+                                    icon-size: 48px;
+                                }
+                            }
+                        }
+                    }
+                }
                 detail-head := VerticalLayout {
                     spacing: 2px;
+                    alignment: center;
                     horizontal-stretch: 1;
                     detail-title := Text {
                         text: root.title;
                         color: root.palette.on-surface;
-                        font-size: Type.headline-small.size;
-                        font-weight: Type.headline-small.weight;
+                        font-size: 26px;
+                        font-weight: 700;
                         wrap: word-wrap;
                     }
                     detail-sub := Text {
                         text: root.subtitle;
                         color: root.palette.on-surface-variant;
-                        font-size: Type.body-medium.size;
+                        font-size: 13px;
+                        font-weight: 400;
                         wrap: word-wrap;
                         visible: root.subtitle != "";
                     }
@@ -113,22 +142,74 @@ export component DetailPage inherits Rectangle {
                     active-bg: root.palette.secondary-container;
                     title-color: root.palette.on-surface;
                     subtitle-color: root.palette.on-surface-variant;
+                    accent: root.palette.primary;
                     progress-track: root.palette.surface-container-highest;
                     progress-fill: root.palette.primary;
                     action => { root.play-requested(track.id); }
                 }
             }
 
-            if (root.detail.kind == DetailKind.artist && root.detail-tab == 1) : artist-albums := HorizontalLayout {
-                spacing: 12px;
-                for album[i] in root.albums : album-chip := M3Chip {
-                    text: album.title;
-                    selected: false;
-                    selected-fill: root.palette.secondary-container;
-                    selected-content: root.palette.on-secondary-container;
-                    unselected-content: root.palette.on-surface-variant;
-                    unselected-line: root.palette.outline-variant;
-                    clicked => { root.detail-requested({ kind: album.kind, id: album.id }); }
+            if (root.detail.kind == DetailKind.artist && root.detail-tab == 1) : artist-albums-rail := Flickable {
+                height: 140px;
+
+                artist-albums := HorizontalLayout {
+                    spacing: 12px;
+                    for album[i] in root.albums : album-chip := Rectangle {
+                    width: 110px;
+                    background: transparent;
+
+                    album-cell := VerticalLayout {
+                        spacing: 4px;
+                        alignment: start;
+
+                        album-art := Rectangle {
+                            width: 100px;
+                            height: 100px;
+                            border-radius: Shape.small;
+                            background: root.palette.surface-container-high;
+
+                            HorizontalLayout {
+                                width: 100%;
+                                height: 100%;
+                                alignment: center;
+
+                                VerticalLayout {
+                                    width: 100%;
+                                    alignment: center;
+
+                                    HorizontalLayout {
+                                        alignment: center;
+
+                                        Icon {
+                                            source: Icons.music-2;
+                                            colorize: root.palette.on-surface-variant;
+                                            icon-size: 28px;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        album-title := Text {
+                            text: album.title;
+                            color: root.palette.on-surface;
+                            font-size: Type.label-small.size;
+                            overflow: elide;
+                        }
+
+                        album-year := Text {
+                            text: album.subtitle;
+                            color: root.palette.on-surface-variant;
+                            font-size: 10px;
+                            overflow: elide;
+                        }
+                    }
+
+                    album-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { root.detail-requested({ kind: album.kind, id: album.id }); }
+                    }
+                    }
                 }
             }
 
@@ -142,6 +223,7 @@ export component DetailPage inherits Rectangle {
                     active-bg: root.palette.secondary-container;
                     title-color: root.palette.on-surface;
                     subtitle-color: root.palette.on-surface-variant;
+                    accent: root.palette.primary;
                     progress-track: root.palette.surface-container-highest;
                     progress-fill: root.palette.primary;
                     action => { root.play-requested(track.id); }

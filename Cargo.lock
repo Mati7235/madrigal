@@ -3528,10 +3528,14 @@ name = "madrigal-app"
 version = "0.1.0"
 dependencies = [
  "madrigal-db",
+ "madrigal-i18n",
  "madrigal-paths",
  "madrigal-player",
  "madrigal-settings",
+ "madrigal-testkit",
+ "madrigal-ui",
  "rusqlite",
+ "slint",
  "tempfile",
 ]
 

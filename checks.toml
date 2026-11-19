@@ -275,3 +275,7 @@ group = "offline"
 [[check]]
 name = "app_startup"
 group = "offline"
+
+[[check]]
+name = "app_shell"
+group = "offline"

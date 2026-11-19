@@ -1,5 +1,6 @@
 pub mod cli;
 pub mod store;
+pub mod ui;
 
 use std::path::Path;
 use std::time::Instant;

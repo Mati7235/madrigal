@@ -15,8 +15,8 @@ export component SectionView inherits VerticalLayout {
     sec-title := Text {
         text: root.section.title;
         color: root.palette.on-surface;
-        font-size: Type.title-medium.size;
-        font-weight: Type.title-medium.weight;
+        font-size: 20px;
+        font-weight: 700;
     }
 
     if (!root.cards) : sec-list := VerticalLayout {
@@ -29,6 +29,7 @@ export component SectionView inherits VerticalLayout {
             active-bg: root.palette.secondary-container;
             title-color: root.palette.on-surface;
             subtitle-color: root.palette.on-surface-variant;
+            accent: root.palette.primary;
             progress-track: root.palette.surface-container-highest;
             progress-fill: root.palette.primary;
             action => {
@@ -41,22 +42,28 @@ export component SectionView inherits VerticalLayout {
         }
     }
 
-    if (root.cards) : sec-grid := HorizontalLayout {
-        spacing: 12px;
-        for item[i] in root.section.items : sec-card := M3Card {
-            width: 200px;
-            height: 120px;
-            title: item.title;
-            subtitle: item.subtitle;
-            fill: root.palette.surface-container-low;
-            title-color: root.palette.on-surface;
-            subtitle-color: root.palette.on-surface-variant;
-            shadow-color: root.palette.shadow;
-            clicked => {
-                if (item.playable) {
-                    root.play-requested(item.id);
-                } else {
-                    root.detail-requested({ kind: item.kind, id: item.id });
+    if (root.cards) : sec-rail := Flickable {
+        height: 190px;
+
+        sec-cards := HorizontalLayout {
+            spacing: 12px;
+            for item[i] in root.section.items : sec-card := M3Card {
+                width: 150px;
+                height: 190px;
+                media: true;
+                title: item.title;
+                subtitle: item.subtitle;
+                fill: root.palette.surface-container-low;
+                art-fill: root.palette.surface-container-high;
+                title-color: root.palette.on-surface;
+                subtitle-color: root.palette.on-surface-variant;
+                shadow-color: root.palette.shadow;
+                clicked => {
+                    if (item.playable) {
+                        root.play-requested(item.id);
+                    } else {
+                        root.detail-requested({ kind: item.kind, id: item.id });
+                    }
                 }
             }
         }

@@ -33,6 +33,7 @@ export component HomePage inherits Rectangle {
 
         home-col := VerticalLayout {
             padding: 16px;
+            padding-bottom: 20px;
             spacing: 16px;
 
             home-chips := HorizontalLayout {
@@ -87,20 +88,26 @@ export component HomePage inherits Rectangle {
                     font-size: Type.title-medium.size;
                     font-weight: Type.title-medium.weight;
                 }
-                if (root.card-layout) : picks-grid := HorizontalLayout {
-                    spacing: 12px;
-                    for pick[i] in root.quick-picks : pick-card := M3Card {
-                        width: 200px;
-                        height: 120px;
-                        title: pick.title;
-                        subtitle: pick.subtitle;
-                        fill: root.palette.surface-container-low;
-                        title-color: root.palette.on-surface;
-                        subtitle-color: root.palette.on-surface-variant;
-                        shadow-color: root.palette.shadow;
-                        clicked => {
-                            root.selected-item = i;
-                            root.play-requested(pick.id);
+                if (root.card-layout) : picks-rail := Flickable {
+                    height: 190px;
+
+                    picks-row := HorizontalLayout {
+                        spacing: 12px;
+                        for pick[i] in root.quick-picks : pick-card := M3Card {
+                            width: 150px;
+                            height: 190px;
+                            media: true;
+                            title: pick.title;
+                            subtitle: pick.subtitle;
+                            fill: root.palette.surface-container-low;
+                            art-fill: root.palette.surface-container-high;
+                            title-color: root.palette.on-surface;
+                            subtitle-color: root.palette.on-surface-variant;
+                            shadow-color: root.palette.shadow;
+                            clicked => {
+                                root.selected-item = i;
+                                root.play-requested(pick.id);
+                            }
                         }
                     }
                 }
@@ -114,6 +121,7 @@ export component HomePage inherits Rectangle {
                         active-bg: root.palette.secondary-container;
                         title-color: root.palette.on-surface;
                         subtitle-color: root.palette.on-surface-variant;
+                        accent: root.palette.primary;
                         progress-track: root.palette.surface-container-highest;
                         progress-fill: root.palette.primary;
                         action => {
@@ -125,10 +133,11 @@ export component HomePage inherits Rectangle {
             }
 
             sections-block := VerticalLayout {
-                spacing: 16px;
+                spacing: 24px;
                 for sec[s] in root.sections : sec-view := SectionView {
                     palette: root.palette;
                     section: sec;
+                    cards: sec.items.length > 0 ? !sec.items[0].playable : false;
                     detail-requested(ref) => { root.detail-requested(ref); }
                     play-requested(id) => {
                         root.selected-item = 20000 + s;

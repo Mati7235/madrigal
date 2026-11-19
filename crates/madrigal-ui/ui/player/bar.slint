@@ -1,7 +1,48 @@
 import { Palette, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
 import { M3IconButton } from "../components/buttons.slint";
-import { Icons } from "../components/icons.slint";
+import { Icon, Icons } from "../components/icons.slint";
+
+component BarMiniButton inherits Rectangle {
+    in property<image> icon;
+    in property<color> icon-color;
+    in property<bool> selected: false;
+    in property<color> fill;
+    in property<color> content;
+    in property<color> state-on-surface;
+    callback clicked();
+
+    accessible-role: AccessibleRole.button;
+
+    width: 34px;
+    height: 40px;
+    border-radius: root.selected ? 8px : 17px;
+    background: root.fill;
+
+    hover-layer := Rectangle {
+        width: 100%;
+        height: 100%;
+        border-radius: root.border-radius;
+        background: root.content;
+        opacity: touch.has-hover ? 0.08 : 0;
+        animate opacity { duration: 100ms; easing: ease-in-out; }
+    }
+
+    icon-view := Icon {
+        icon-size: 18px;
+        source: root.icon;
+        colorize: root.icon-color;
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+    }
+
+    touch := TouchArea {
+        width: 100%;
+        height: 100%;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
 
 export component NowPlayingBar inherits Rectangle {
     in property<Palette> palette;
@@ -13,130 +54,254 @@ export component NowPlayingBar inherits Rectangle {
     in property<bool> paused: true;
     in property<bool> liked: false;
     in property<int> queue-count: 0;
+    in property<float> volume: 0.7;
 
     callback play-clicked();
     callback prev-clicked();
     callback next-clicked();
     callback like-clicked();
     callback queue-clicked();
+    callback seek-requested(int);
+    callback volume-changed(float);
+    callback expand-clicked();
 
     accessible-role: AccessibleRole.content-info;
     accessible-label: I18n.trl(I18n.lang, "player.nowPlaying");
 
     property<float> frac: root.duration-ms > 0 ? (1.0 * root.position-ms) / root.duration-ms : 0;
+    property<int> pos-s: Math.floor(root.position-ms / 1000);
+    property<int> dur-s: Math.floor(root.duration-ms / 1000);
+    property<string> pos-text: Math.floor(root.pos-s / 60) + ":" + (Math.mod(root.pos-s, 60) < 10 ? "0" : "") + Math.mod(root.pos-s, 60);
+    property<string> dur-text: Math.floor(root.dur-s / 60) + ":" + (Math.mod(root.dur-s, 60) < 10 ? "0" : "") + Math.mod(root.dur-s, 60);
 
-    bar-thumb := Rectangle {
-        x: 12px;
-        y: 14px;
-        width: 44px;
-        height: 44px;
-        border-radius: 22px;
-        background: root.palette.secondary-container;
+    bar-card := Rectangle {
+        x: 8px;
+        y: 8px;
+        width: parent.width - 16px;
+        height: parent.height - 16px;
+        border-radius: 24px;
+        background: root.palette.surface-container-low;
+        border-width: 0.5px;
+        border-color: root.palette.outline-variant;
 
-        bar-initial := Text {
-            text: root.has-track ? root.title : "?";
-            color: root.palette.on-secondary-container;
-            font-size: Type.title-large.size;
-            horizontal-alignment: center;
-            vertical-alignment: center;
-            width: 100%;
-            height: 100%;
-            overflow: clip;
+        bar-row := HorizontalLayout {
+            x: 16px;
+            y: 16px;
+            width: parent.width - 32px;
+            height: parent.height - 32px;
+            spacing: 8px;
+
+            bar-thumb := Rectangle {
+                width: 48px;
+                height: 48px;
+                border-radius: 10px;
+                background: root.palette.surface-container-high;
+
+                bar-cover-icon := Icon {
+                    source: Icons.music-2;
+                    colorize: root.palette.on-surface-variant;
+                    icon-size: 20px;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                }
+
+                bar-open-touch := TouchArea {
+                    width: 100%;
+                    height: 100%;
+                    mouse-cursor: pointer;
+                    clicked => { root.expand-clicked(); }
+                }
+            }
+
+            bar-texts := VerticalLayout {
+                horizontal-stretch: 1;
+                spacing: 2px;
+                alignment: center;
+
+                bar-title := Text {
+                    text: root.has-track ? root.title : I18n.trl(I18n.lang, "player.noTrack");
+                    color: root.palette.on-surface;
+                    font-size: 13px;
+                    font-weight: 700;
+                    width: 100%;
+                    overflow: elide;
+                }
+
+                Text {
+                    text: root.has-track ? root.artist : "";
+                    color: root.palette.on-surface-variant;
+                    font-size: 11px;
+                    width: 100%;
+                    overflow: elide;
+                }
+
+                Text {
+                    text: root.has-track ? I18n.trl(I18n.lang, "player.tab.queue") + " · " + root.queue-count : "";
+                    color: root.palette.on-surface-variant;
+                    font-size: 10px;
+                    width: 100%;
+                    overflow: elide;
+                }
+            }
+
+            bar-pos := Text {
+                text: root.pos-text;
+                color: root.palette.on-surface-variant;
+                font-size: 11px;
+                vertical-alignment: center;
+            }
+
+            bar-seek := Rectangle {
+                horizontal-stretch: 1;
+                min-width: 80px;
+                height: 48px;
+                background: transparent;
+
+                property<length> bar-w: self.width - 16px;
+
+                Rectangle {
+                    x: 8px;
+                    y: (parent.height - 4px) / 2;
+                    width: parent.bar-w;
+                    height: 4px;
+                    border-radius: 2px;
+                    background: root.palette.surface-container-highest;
+                }
+
+                Rectangle {
+                    x: 8px;
+                    y: (parent.height - 4px) / 2;
+                    width: parent.bar-w * clamp(root.frac, 0, 1);
+                    height: 4px;
+                    border-radius: 2px;
+                    background: root.palette.primary;
+                }
+
+                bar-seek-touch := TouchArea {
+                    width: 100%;
+                    height: 100%;
+                    enabled: root.has-track;
+                    mouse-cursor: pointer;
+                    clicked => {
+                        root.seek-requested(Math.round(clamp((self.mouse-x - 8px) / parent.bar-w, 0, 1) * root.duration-ms));
+                    }
+                    moved => {
+                        if (self.pressed) {
+                            root.seek-requested(Math.round(clamp((self.mouse-x - 8px) / parent.bar-w, 0, 1) * root.duration-ms));
+                        }
+                    }
+                }
+            }
+
+            bar-dur := Text {
+                text: root.dur-text;
+                color: root.palette.on-surface-variant;
+                font-size: 11px;
+                vertical-alignment: center;
+            }
+
+            bar-vol-icon := Icon {
+                source: Icons.volume-2;
+                colorize: root.palette.on-surface-variant;
+                icon-size: 18px;
+            }
+
+            bar-vol := Rectangle {
+                width: 88px;
+                height: 48px;
+                background: transparent;
+
+                property<length> vbar-w: self.width - 16px;
+
+                Rectangle {
+                    x: 8px;
+                    y: (parent.height - 4px) / 2;
+                    width: parent.vbar-w;
+                    height: 4px;
+                    border-radius: 2px;
+                    background: root.palette.surface-container-highest;
+                }
+
+                Rectangle {
+                    x: 8px;
+                    y: (parent.height - 4px) / 2;
+                    width: parent.vbar-w * clamp(root.volume, 0, 1);
+                    height: 4px;
+                    border-radius: 2px;
+                    background: root.palette.primary;
+                }
+
+                bar-vol-touch := TouchArea {
+                    width: 100%;
+                    height: 100%;
+                    mouse-cursor: pointer;
+                    clicked => {
+                        root.volume-changed(clamp((self.mouse-x - 8px) / parent.vbar-w, 0, 1));
+                    }
+                    moved => {
+                        if (self.pressed) {
+                            root.volume-changed(clamp((self.mouse-x - 8px) / parent.vbar-w, 0, 1));
+                        }
+                    }
+                }
+            }
+
+            bar-prev := M3IconButton {
+                icon: Icons.skip-back;
+                icon-size: 18px;
+                icon-color: root.palette.on-surface-variant;
+                content: root.palette.on-surface-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.prev-clicked(); }
+            }
+
+            bar-play := M3IconButton {
+                icon: root.paused ? Icons.play : Icons.pause;
+                icon-size: 20px;
+                icon-color: root.paused ? root.palette.on-surface-variant : root.palette.on-primary;
+                selected: !root.paused;
+                fill: root.palette.primary;
+                content: root.paused ? root.palette.on-surface-variant : root.palette.on-primary;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.play-clicked(); }
+            }
+
+            bar-next := M3IconButton {
+                icon: Icons.skip-forward;
+                icon-size: 18px;
+                icon-color: root.palette.on-surface-variant;
+                content: root.palette.on-surface-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.next-clicked(); }
+            }
+
+            bar-expand := M3IconButton {
+                icon: Icons.chevron-up;
+                icon-size: 20px;
+                icon-color: root.palette.on-surface-variant;
+                content: root.palette.on-surface-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.expand-clicked(); }
+            }
+
+            bar-like := BarMiniButton {
+                icon: root.liked ? Icons.star-filled : Icons.heart;
+                icon-color: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
+                selected: root.liked;
+                fill: root.liked ? root.palette.primary : transparent;
+                content: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.like-clicked(); }
+            }
+
+            bar-queue := BarMiniButton {
+                icon: Icons.list-music;
+                icon-color: root.palette.on-surface-variant;
+                fill: transparent;
+                content: root.palette.on-surface-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.queue-clicked(); }
+            }
         }
-    }
-
-    bar-texts := VerticalLayout {
-        x: 64px;
-        y: 12px;
-        width: 220px;
-        height: 40px;
-        spacing: 0px;
-
-        bar-title := Text {
-            text: root.has-track ? root.title : I18n.trl(I18n.lang, "player.noTrack");
-            color: root.palette.on-surface;
-            font-size: Type.body-large.size;
-            overflow: elide;
-        }
-
-        bar-sub := Text {
-            text: root.has-track ? root.artist + " · " + root.queue-count : "";
-            color: root.palette.on-surface-variant;
-            font-size: Type.body-medium.size;
-            overflow: elide;
-        }
-    }
-
-    bar-progress := Rectangle {
-        x: 64px;
-        y: 58px;
-        width: 220px;
-        height: 4px;
-        border-radius: 2px;
-        background: root.palette.surface-container-highest;
-
-        bar-fill := Rectangle {
-            width: parent.width * clamp(root.frac, 0, 1);
-            height: 100%;
-            border-radius: 2px;
-            background: root.palette.primary;
-        }
-    }
-
-    bar-transport := HorizontalLayout {
-        x: 300px;
-        y: 0px;
-        width: 150px;
-        height: 100%;
-        spacing: 0px;
-        alignment: center;
-
-        bar-prev := M3IconButton {
-            icon: Icons.skip-back;
-            icon-color: root.palette.on-surface-variant;
-            content: root.palette.on-surface-variant;
-            state-on-surface: root.palette.on-surface;
-            clicked => { root.prev-clicked(); }
-        }
-
-        bar-play := M3IconButton {
-            icon: root.paused ? Icons.play : Icons.pause;
-            icon-color: root.paused ? root.palette.on-surface-variant : root.palette.on-primary;
-            selected: !root.paused;
-            fill: root.palette.primary;
-            content: root.paused ? root.palette.on-surface-variant : root.palette.on-primary;
-            state-on-surface: root.palette.on-surface;
-            clicked => { root.play-clicked(); }
-        }
-
-        bar-next := M3IconButton {
-            icon: Icons.skip-forward;
-            icon-color: root.palette.on-surface-variant;
-            content: root.palette.on-surface-variant;
-            state-on-surface: root.palette.on-surface;
-            clicked => { root.next-clicked(); }
-        }
-    }
-
-    bar-like := M3IconButton {
-        x: 456px;
-        y: 16px;
-        icon: root.liked ? Icons.star-filled : Icons.heart;
-        icon-color: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
-        selected: root.liked;
-        fill: root.liked ? root.palette.primary : transparent;
-        content: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
-        state-on-surface: root.palette.on-surface;
-        clicked => { root.like-clicked(); }
-    }
-
-    bar-queue := M3IconButton {
-        x: 504px;
-        y: 16px;
-        icon: Icons.list-music;
-        icon-color: root.palette.on-surface-variant;
-        content: root.palette.on-surface-variant;
-        state-on-surface: root.palette.on-surface;
-        clicked => { root.queue-clicked(); }
     }
 }
