@@ -1,5 +1,6 @@
 import { Palette, Light, Dark, PureBlack, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
+import { LibSongRow, LibPlaylistRow, LibCardRow, HistoryRow, StatRow, DownloadRow } from "../pages/library/models.slint";
 import { SideNav } from "sidebar.slint";
 import { PageHost } from "pagehost.slint";
 import { ConfirmOverlay, PromptOverlay } from "overlays.slint";
@@ -12,6 +13,36 @@ export component MainShell inherits Window {
     in-out property<bool> sidebar-focused: false;
     in-out property<bool> search-focused: false;
     in-out property<int> queue-count: 0;
+    in-out property<[string]> lib-chips;
+    in-out property<int> lib-tab: 0;
+    in-out property<bool> lib-chip-edit: false;
+    in-out property<[string]> lib-tags;
+    in-out property<string> lib-active-tag: "";
+    in-out property<[LibSongRow]> lib-songs;
+    in-out property<[LibPlaylistRow]> lib-playlists;
+    in-out property<[LibCardRow]> lib-cards;
+    in-out property<[string]> lib-sort-options;
+    in-out property<int> lib-sort: 0;
+    in-out property<bool> lib-sort-open: false;
+    in-out property<bool> lib-multiselect: false;
+    in-out property<int> lib-selected-count: 0;
+    in-out property<bool> lib-tags-open: false;
+    in-out property<string> lib-tag-input: "";
+    in-out property<[HistoryRow]> lib-history;
+    in-out property<bool> lib-history-paused: false;
+    in-out property<[StatRow]> lib-stat-tracks;
+    in-out property<[StatRow]> lib-stat-artists;
+    in-out property<[StatRow]> lib-stat-albums;
+    in-out property<string> lib-stats-totals: "";
+    in-out property<string> lib-stats-streaks: "";
+    in-out property<[string]> lib-years;
+    in-out property<int> lib-year: 0;
+    in-out property<[DownloadRow]> dl-rows;
+    in-out property<[DownloadRow]> dl-failed;
+    in-out property<int> lib-action-count: 0;
+    in-out property<string> lib-last-action: "";
+    in-out property<int> dl-action-count: 0;
+    in-out property<string> dl-last-action: "";
     in-out property<string> confirm-title: "";
     in-out property<string> confirm-body: "";
     in-out property<int> confirm-result: -1;
@@ -43,6 +74,105 @@ export component MainShell inherits Window {
     callback prev-requested();
     callback full-player-opened();
     callback search-focus-requested();
+    callback lib-chip-selected(int);
+    callback lib-chip-move-left();
+    callback lib-chip-move-right();
+    callback lib-chip-edit-toggled();
+    callback lib-tag-selected(string);
+    callback lib-tags-opened();
+    callback lib-tags-closed();
+    callback lib-tag-created(string);
+    callback lib-tag-removed(string);
+    callback lib-sort-opened();
+    callback lib-sort-closed();
+    callback lib-sort-selected(int);
+    callback lib-song-toggled(string);
+    callback lib-song-chosen(string);
+    callback lib-multiselect-toggled();
+    callback lib-selection-cleared();
+    callback lib-playlist-opened(string);
+    callback lib-history-cleared();
+    callback lib-year-prev();
+    callback lib-year-next();
+    callback dl-pause(string);
+    callback dl-resume(string);
+    callback dl-cancel(string);
+    callback dl-retry(string);
+    callback dl-retry-all();
+
+    function lib-record(action: string) {
+        root.lib-action-count += 1;
+        root.lib-last-action = action;
+    }
+
+    function dl-record(action: string) {
+        root.dl-action-count += 1;
+        root.dl-last-action = action;
+    }
+
+    lib-chip-selected(i) => {
+        root.lib-record("chip-selected");
+        root.lib-tab = i;
+    }
+    lib-chip-move-left() => { root.lib-record("chip-move-left"); }
+    lib-chip-move-right() => { root.lib-record("chip-move-right"); }
+    lib-chip-edit-toggled() => {
+        root.lib-record("chip-edit-toggled");
+        root.lib-chip-edit = !root.lib-chip-edit;
+    }
+    lib-tag-selected(t) => {
+        root.lib-record("tag-selected");
+        root.lib-active-tag = t;
+    }
+    lib-tags-opened() => {
+        root.lib-record("tags-opened");
+        root.lib-tags-open = true;
+    }
+    lib-tags-closed() => {
+        root.lib-record("tags-closed");
+        root.lib-tags-open = false;
+    }
+    lib-tag-created(t) => { root.lib-record("tag-created"); }
+    lib-tag-removed(t) => { root.lib-record("tag-removed"); }
+    lib-sort-opened() => {
+        root.lib-record("sort-opened");
+        root.lib-sort-open = true;
+    }
+    lib-sort-closed() => {
+        root.lib-record("sort-closed");
+        root.lib-sort-open = false;
+    }
+    lib-sort-selected(i) => {
+        root.lib-record("sort-selected");
+        root.lib-sort = i;
+        root.lib-sort-open = false;
+    }
+    lib-song-toggled(id) => { root.lib-record("song-toggled"); }
+    lib-song-chosen(id) => { root.lib-record("song-chosen"); }
+    lib-multiselect-toggled() => {
+        root.lib-record("multiselect-toggled");
+        root.lib-multiselect = !root.lib-multiselect;
+    }
+    lib-selection-cleared() => { root.lib-record("selection-cleared"); }
+    lib-playlist-opened(id) => { root.lib-record("playlist-opened"); }
+    lib-history-cleared() => { root.lib-record("history-cleared"); }
+    lib-year-prev() => {
+        root.lib-record("year-prev");
+        if (root.lib-year > 0) {
+            root.lib-year -= 1;
+        }
+    }
+    lib-year-next() => {
+        root.lib-record("year-next");
+        if (root.lib-year < root.lib-years.length - 1) {
+            root.lib-year += 1;
+        }
+    }
+    dl-pause(id) => { root.dl-record("dl-pause"); }
+    dl-resume(id) => { root.dl-record("dl-resume"); }
+    dl-cancel(id) => { root.dl-record("dl-cancel"); }
+    dl-retry(id) => { root.dl-record("dl-retry"); }
+    dl-retry-all() => { root.dl-record("dl-retry-all"); }
 
     apply-theme(k) => {
         if (k == 0) {
@@ -213,6 +343,57 @@ export component MainShell inherits Window {
                 vertical-stretch: 1;
                 palette: root.palette;
                 page: root.page;
+                lib-chips: root.lib-chips;
+                lib-tab: root.lib-tab;
+                lib-chip-edit: root.lib-chip-edit;
+                lib-tags: root.lib-tags;
+                lib-active-tag: root.lib-active-tag;
+                lib-songs: root.lib-songs;
+                lib-playlists: root.lib-playlists;
+                lib-cards: root.lib-cards;
+                lib-sort-options: root.lib-sort-options;
+                lib-sort: root.lib-sort;
+                lib-sort-open: root.lib-sort-open;
+                lib-multiselect: root.lib-multiselect;
+                lib-selected-count: root.lib-selected-count;
+                lib-tags-open: root.lib-tags-open;
+                lib-tag-input <=> root.lib-tag-input;
+                lib-history: root.lib-history;
+                lib-history-paused: root.lib-history-paused;
+                lib-stat-tracks: root.lib-stat-tracks;
+                lib-stat-artists: root.lib-stat-artists;
+                lib-stat-albums: root.lib-stat-albums;
+                lib-stats-totals: root.lib-stats-totals;
+                lib-stats-streaks: root.lib-stats-streaks;
+                lib-years: root.lib-years;
+                lib-year: root.lib-year;
+                dl-rows: root.dl-rows;
+                dl-failed: root.dl-failed;
+                lib-chip-selected(i) => { root.lib-chip-selected(i); }
+                lib-chip-move-left() => { root.lib-chip-move-left(); }
+                lib-chip-move-right() => { root.lib-chip-move-right(); }
+                lib-chip-edit-toggled() => { root.lib-chip-edit-toggled(); }
+                lib-tag-selected(t) => { root.lib-tag-selected(t); }
+                lib-tags-opened() => { root.lib-tags-opened(); }
+                lib-tags-closed() => { root.lib-tags-closed(); }
+                lib-tag-created(t) => { root.lib-tag-created(t); }
+                lib-tag-removed(t) => { root.lib-tag-removed(t); }
+                lib-sort-opened() => { root.lib-sort-opened(); }
+                lib-sort-closed() => { root.lib-sort-closed(); }
+                lib-sort-selected(i) => { root.lib-sort-selected(i); }
+                lib-song-toggled(id) => { root.lib-song-toggled(id); }
+                lib-song-chosen(id) => { root.lib-song-chosen(id); }
+                lib-multiselect-toggled() => { root.lib-multiselect-toggled(); }
+                lib-selection-cleared() => { root.lib-selection-cleared(); }
+                lib-playlist-opened(id) => { root.lib-playlist-opened(id); }
+                lib-history-cleared() => { root.lib-history-cleared(); }
+                lib-year-prev() => { root.lib-year-prev(); }
+                lib-year-next() => { root.lib-year-next(); }
+                dl-pause(id) => { root.dl-pause(id); }
+                dl-resume(id) => { root.dl-resume(id); }
+                dl-cancel(id) => { root.dl-cancel(id); }
+                dl-retry(id) => { root.dl-retry(id); }
+                dl-retry-all() => { root.dl-retry-all(); }
             }
             nowbar := Rectangle {
                 height: 72px;

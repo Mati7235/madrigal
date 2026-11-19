@@ -1,0 +1,40 @@
+export struct LibSongRow {
+    id: string,
+    title: string,
+    subtitle: string,
+    liked: bool,
+    selected: bool,
+}
+
+export struct LibPlaylistRow {
+    id: string,
+    title: string,
+    subtitle: string,
+    tags: string,
+}
+
+export struct LibCardRow {
+    id: string,
+    title: string,
+    subtitle: string,
+}
+
+export struct HistoryRow {
+    id: string,
+    title: string,
+    subtitle: string,
+}
+
+export struct StatRow {
+    title: string,
+    value: string,
+}
+
+export struct DownloadRow {
+    id: string,
+    title: string,
+    subtitle: string,
+    state: int,
+    progress: float,
+    speed: string,
+}

@@ -167,9 +167,14 @@ fn stats_counts_streaks_and_listen_time() {
     assert_eq!(albums[1].plays, 3);
 
     let day = lib.top_tracks(TopRange::Day, 10).expect("day tops");
-    assert_eq!(day.len(), 2);
-    assert!(day.iter().all(|top| top.track.identity == second.identity
-        || top.track.identity == third.identity));
+    let day_cutoff = now_unix() - 86_400;
+    let expected_day: std::collections::HashSet<_> = plays
+        .iter()
+        .filter(|event| event.played_at >= day_cutoff)
+        .map(|event| event.track.clone())
+        .collect();
+    assert_eq!(day.len(), expected_day.len());
+    assert!(day.iter().all(|top| expected_day.contains(&top.track.identity)));
 
     let playlists = lib.top_playlists(10).expect("top playlists");
     assert!(playlists.is_empty());

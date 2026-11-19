@@ -45,3 +45,20 @@ its page component in place, keeping the property names and the branch order;
 `MainShell` only reads `page` and never reaches into page internals. The
 queue drawer seam is `queue-count`, synced from `madrigal-player` `Queue`
 length via `sync_queue_seam` until the real drawer lands.
+
+Page state lives on `MainShell` as `in-out` mirror properties that `PageHost`
+binds through; page callbacks record `lib-action-count` / `dl-action-count`
+plus `lib-last-action` / `dl-last-action` for the checks. The presenter
+(`src/pages_library.rs`) maps `madrigal-library` / `madrigal-downloads`
+results into the Slint row models.
+
+## Screen ownership (F8-3..F8-6)
+
+| PageHost branch | Screen | Owner |
+| --------------- | ------ | ----- |
+| 0 Home | placeholder | F8-3 |
+| 1 Search | placeholder | F8-3 |
+| 2 Explore | placeholder | F8-5 |
+| 3 Library | `LibraryPage` (chips, tags, sorts, multiselect, history, stats) | F8-4 |
+| 4 Downloads | `DownloadsPage` (states, progress, actions) | F8-4 |
+| 5 Settings | placeholder | F8-6 |

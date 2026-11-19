@@ -1,0 +1,904 @@
+import { Palette, Type } from "../../tokens.slint";
+import { I18n } from "../../i18n.slint";
+import { M3Chip, M3Card } from "../../components/cards.slint";
+import { M3TextField } from "../../components/fields.slint";
+import { LibSongRow, LibPlaylistRow, LibCardRow, HistoryRow, StatRow } from "models.slint";
+
+export component LibraryPage inherits Rectangle {
+    in property<Palette> palette;
+    in property<[string]> chips;
+    in property<int> tab;
+    in property<bool> chip-edit;
+    in property<[string]> tags;
+    in property<string> active-tag;
+    in property<[LibSongRow]> songs;
+    in property<[LibPlaylistRow]> playlists;
+    in property<[LibCardRow]> cards;
+    in property<[string]> sort-options;
+    in property<int> sort;
+    in property<bool> sort-open;
+    in property<bool> multiselect;
+    in property<int> selected-count;
+    in property<bool> tags-open;
+    in-out property<string> tag-input;
+    in property<[HistoryRow]> history;
+    in property<bool> history-paused;
+    in property<[StatRow]> stat-tracks;
+    in property<[StatRow]> stat-artists;
+    in property<[StatRow]> stat-albums;
+    in property<string> stats-totals;
+    in property<string> stats-streaks;
+    in property<[string]> years;
+    in property<int> year;
+
+    callback chip-selected(int);
+    callback chip-move-left();
+    callback chip-move-right();
+    callback chip-edit-toggled();
+    callback tag-selected(string);
+    callback tags-opened();
+    callback tags-closed();
+    callback tag-created(string);
+    callback tag-removed(string);
+    callback sort-opened();
+    callback sort-closed();
+    callback sort-selected(int);
+    callback song-toggled(string);
+    callback song-chosen(string);
+    callback multiselect-toggled();
+    callback selection-cleared();
+    callback playlist-opened(string);
+    callback history-cleared();
+    callback year-prev();
+    callback year-next();
+
+    property<string> current: root.chips[root.tab];
+    property<string> year-label: root.years[root.year];
+    property<string> sort-label: root.sort-options[root.sort];
+
+    function chip-label(value: string) -> string {
+        return value == "playlists" ? I18n.trl(I18n.lang, "library.tabs.playlists") : value == "songs" ? I18n.trl(I18n.lang, "library.tabs.songs") : value == "artists" ? I18n.trl(I18n.lang, "library.tabs.artists") : value == "albums" ? I18n.trl(I18n.lang, "library.tabs.albums") : value == "history" ? I18n.trl(I18n.lang, "library.tabs.history") : value == "stats" ? I18n.trl(I18n.lang, "library.tabs.stats") : I18n.trl(I18n.lang, "library.tabs.library");
+    }
+
+    background: root.palette.surface;
+    accessible-role: text;
+    accessible-label: root.chip-label(root.current);
+
+    VerticalLayout {
+        spacing: 0px;
+
+        chip-row := HorizontalLayout {
+            padding: 12px;
+            spacing: 8px;
+            alignment: start;
+
+            lib-chip-0 := M3Chip { text: root.chip-label(root.chips[0]); selected: root.tab == 0; selected-fill: root.palette.secondary-container; selected-content: root.palette.on-secondary-container; unselected-content: root.palette.on-surface-variant; unselected-line: root.palette.outline-variant; clicked => { root.chip-selected(0); } }
+            lib-chip-1 := M3Chip { text: root.chip-label(root.chips[1]); selected: root.tab == 1; selected-fill: root.palette.secondary-container; selected-content: root.palette.on-secondary-container; unselected-content: root.palette.on-surface-variant; unselected-line: root.palette.outline-variant; clicked => { root.chip-selected(1); } }
+            lib-chip-2 := M3Chip { text: root.chip-label(root.chips[2]); selected: root.tab == 2; selected-fill: root.palette.secondary-container; selected-content: root.palette.on-secondary-container; unselected-content: root.palette.on-surface-variant; unselected-line: root.palette.outline-variant; clicked => { root.chip-selected(2); } }
+            lib-chip-3 := M3Chip { text: root.chip-label(root.chips[3]); selected: root.tab == 3; selected-fill: root.palette.secondary-container; selected-content: root.palette.on-secondary-container; unselected-content: root.palette.on-surface-variant; unselected-line: root.palette.outline-variant; clicked => { root.chip-selected(3); } }
+            lib-chip-4 := M3Chip { text: root.chip-label(root.chips[4]); selected: root.tab == 4; selected-fill: root.palette.secondary-container; selected-content: root.palette.on-secondary-container; unselected-content: root.palette.on-surface-variant; unselected-line: root.palette.outline-variant; clicked => { root.chip-selected(4); } }
+            lib-chip-5 := M3Chip { text: root.chip-label(root.chips[5]); selected: root.tab == 5; selected-fill: root.palette.secondary-container; selected-content: root.palette.on-secondary-container; unselected-content: root.palette.on-surface-variant; unselected-line: root.palette.outline-variant; clicked => { root.chip-selected(5); } }
+            lib-chip-6 := M3Chip { text: root.chip-label(root.chips[6]); selected: root.tab == 6; selected-fill: root.palette.secondary-container; selected-content: root.palette.on-secondary-container; unselected-content: root.palette.on-surface-variant; unselected-line: root.palette.outline-variant; clicked => { root.chip-selected(6); } }
+
+            edit-wrap := Rectangle {
+                width: 40px;
+                height: 32px;
+                visible: true;
+                edit-label := Text {
+                    x: 0px;
+                    y: 0px;
+                    width: 100%;
+                    height: 100%;
+                    text: "⋮";
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.title-medium.size;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                edit-touch := TouchArea {
+                    accessible-label: I18n.trl(I18n.lang, "action.reorder");
+                    accessible-role: button;
+                    mouse-cursor: pointer;
+                    clicked => { root.chip-edit-toggled(); }
+                }
+            }
+
+            move-left-wrap := Rectangle {
+                width: 40px;
+                height: 32px;
+                visible: root.chip-edit;
+                move-left-label := Text {
+                    x: 0px;
+                    y: 0px;
+                    width: 100%;
+                    height: 100%;
+                    text: "‹";
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.title-medium.size;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                move-left-touch := TouchArea {
+                    accessible-label: I18n.trl(I18n.lang, "action.moveUp");
+                    accessible-role: button;
+                    mouse-cursor: pointer;
+                    clicked => { root.chip-move-left(); }
+                }
+            }
+
+            move-right-wrap := Rectangle {
+                width: 40px;
+                height: 32px;
+                visible: root.chip-edit;
+                move-right-label := Text {
+                    x: 0px;
+                    y: 0px;
+                    width: 100%;
+                    height: 100%;
+                    text: "›";
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.title-medium.size;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                move-right-touch := TouchArea {
+                    accessible-label: I18n.trl(I18n.lang, "action.moveDown");
+                    accessible-role: button;
+                    mouse-cursor: pointer;
+                    clicked => { root.chip-move-right(); }
+                }
+            }
+        }
+
+        tag-row := HorizontalLayout {
+            padding-left: 12px;
+            padding-right: 12px;
+            padding-bottom: 8px;
+            spacing: 8px;
+            alignment: start;
+            visible: root.current == "playlists" || root.current == "library";
+
+            all-chip := M3Chip {
+                text: I18n.trl(I18n.lang, "library.tags.all");
+                selected: root.active-tag == "";
+                selected-fill: root.palette.secondary-container;
+                selected-content: root.palette.on-secondary-container;
+                unselected-content: root.palette.on-surface-variant;
+                unselected-line: root.palette.outline-variant;
+                clicked => { root.tag-selected(""); }
+            }
+
+            for tag in root.tags: M3Chip {
+                text: tag;
+                selected: tag == root.active-tag;
+                selected-fill: root.palette.secondary-container;
+                selected-content: root.palette.on-secondary-container;
+                unselected-content: root.palette.on-surface-variant;
+                unselected-line: root.palette.outline-variant;
+                clicked => { root.tag-selected(tag); }
+            }
+
+            manage-wrap := Rectangle {
+                width: 40px;
+                height: 32px;
+                manage-label := Text {
+                    x: 0px;
+                    y: 0px;
+                    width: 100%;
+                    height: 100%;
+                    text: "#";
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.title-medium.size;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                manage-touch := TouchArea {
+                    accessible-label: I18n.trl(I18n.lang, "library.tags.title");
+                    accessible-role: button;
+                    mouse-cursor: pointer;
+                    clicked => { root.tags-opened(); }
+                }
+            }
+        }
+
+        tool-row := HorizontalLayout {
+            padding-left: 12px;
+            padding-right: 12px;
+            padding-bottom: 8px;
+            spacing: 8px;
+            alignment: start;
+            visible: root.current == "songs" || root.current == "library" || root.current == "playlists";
+
+            sort-wrap := Rectangle {
+                height: 32px;
+                width: 180px;
+                border-radius: 16px;
+                border-width: 1px;
+                border-color: root.palette.outline-variant;
+                sort-label := Text {
+                    x: 16px;
+                    y: 0px;
+                    width: parent.width - 32px;
+                    height: 100%;
+                    text: root.sort-label;
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.label-large.size;
+                    vertical-alignment: center;
+                    overflow: elide;
+                }
+                sort-touch := TouchArea {
+                    accessible-label: I18n.trl(I18n.lang, "library.sort.title");
+                    accessible-role: button;
+                    mouse-cursor: pointer;
+                    clicked => { root.sort-opened(); }
+                }
+            }
+
+            multi-wrap := Rectangle {
+                height: 32px;
+                width: 120px;
+                border-radius: 16px;
+                border-width: 1px;
+                border-color: root.palette.outline-variant;
+                multi-label := Text {
+                    x: 0px;
+                    y: 0px;
+                    width: 100%;
+                    height: 100%;
+                    text: I18n.trl(I18n.lang, "action.select");
+                    color: root.multiselect ? root.palette.primary : root.palette.on-surface-variant;
+                    font-size: Type.label-large.size;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                multi-touch := TouchArea {
+                    accessible-label: I18n.trl(I18n.lang, "action.select");
+                    accessible-role: button;
+                    mouse-cursor: pointer;
+                    clicked => { root.multiselect-toggled(); }
+                }
+            }
+        }
+
+        select-bar := Rectangle {
+            height: 40px;
+            background: root.palette.surface-container;
+            visible: root.multiselect;
+            select-text := Text {
+                x: 16px;
+                y: 0px;
+                width: parent.width - 120px;
+                height: 100%;
+                text: root.selected-count + " " + I18n.trl(I18n.lang, "library.selected");
+                color: root.palette.on-surface-variant;
+                font-size: Type.body-medium.size;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+            clear-wrap := Rectangle {
+                x: parent.width - 104px;
+                y: 4px;
+                width: 96px;
+                height: 32px;
+                clear-label := Text {
+                    x: 0px;
+                    y: 0px;
+                    width: 100%;
+                    height: 100%;
+                    text: I18n.trl(I18n.lang, "playlists.selection.clear");
+                    color: root.palette.primary;
+                    font-size: Type.label-large.size;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                clear-touch := TouchArea {
+                    accessible-label: I18n.trl(I18n.lang, "playlists.selection.clear");
+                    accessible-role: button;
+                    mouse-cursor: pointer;
+                    clicked => { root.selection-cleared(); }
+                }
+            }
+        }
+
+        body := Rectangle {
+            vertical-stretch: 1;
+            clip: true;
+
+            if (root.current == "songs" || root.current == "library") : songs-list := Flickable {
+                x: 0px;
+                y: 0px;
+                width: 100%;
+                height: 100%;
+                content-height: songs-col.preferred-height;
+
+                songs-col := VerticalLayout {
+                    width: 100%;
+                    spacing: 2px;
+                    padding: 8px;
+
+                    songs-empty := Text {
+                        text: I18n.trl(I18n.lang, "library.empty.songs");
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                        horizontal-alignment: center;
+                        visible: root.songs.length == 0;
+                    }
+
+                    for song in root.songs: Rectangle {
+                        height: 64px;
+                        border-radius: 12px;
+                        background: song-touch.has-hover ? root.palette.surface-container : transparent;
+
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            spacing: 12px;
+                            alignment: center;
+
+                            check-wrap := Rectangle {
+                                width: 24px;
+                                height: 32px;
+                                visible: root.multiselect;
+                                check-label := Text {
+                                    x: 0px;
+                                    y: 0px;
+                                    width: 100%;
+                                    height: 100%;
+                                    text: song.selected ? "☑" : "☐";
+                                    color: root.palette.primary;
+                                    font-size: 18px;
+                                    vertical-alignment: center;
+                                }
+                            }
+
+                            song-texts := VerticalLayout {
+                                spacing: 2px;
+                                alignment: center;
+                                horizontal-stretch: 1;
+                                song-title := Text {
+                                    text: song.title;
+                                    color: root.palette.on-surface;
+                                    font-size: Type.body-large.size;
+                                    overflow: elide;
+                                }
+                                song-sub := Text {
+                                    text: song.subtitle;
+                                    color: root.palette.on-surface-variant;
+                                    font-size: Type.body-medium.size;
+                                    overflow: elide;
+                                }
+                            }
+
+                            like-label := Text {
+                                width: 32px;
+                                text: song.liked ? "♥" : "♡";
+                                color: song.liked ? root.palette.primary : root.palette.on-surface-variant;
+                                font-size: 18px;
+                                vertical-alignment: center;
+                                horizontal-alignment: center;
+                            }
+
+                            like-touch := TouchArea {
+                                accessible-label: I18n.trl(I18n.lang, "action.favorite");
+                                accessible-role: button;
+                                mouse-cursor: pointer;
+                                clicked => { root.song-toggled(song.id); }
+                            }
+                        }
+
+                        song-touch := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.song-chosen(song.id); }
+                        }
+                    }
+                }
+            }
+
+            if (root.current == "playlists") : playlists-list := Flickable {
+                x: 0px;
+                y: 0px;
+                width: 100%;
+                height: 100%;
+                content-height: playlists-col.preferred-height;
+
+                playlists-col := VerticalLayout {
+                    width: 100%;
+                    spacing: 8px;
+                    padding: 12px;
+
+                    playlists-empty := Text {
+                        text: I18n.trl(I18n.lang, "library.empty.playlists");
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                        horizontal-alignment: center;
+                        visible: root.playlists.length == 0;
+                    }
+
+                    for pl in root.playlists: M3Card {
+                        title: pl.title;
+                        subtitle: pl.subtitle + (pl.tags == "" ? "" : " · " + pl.tags);
+                        fill: root.palette.surface-container;
+                        title-color: root.palette.on-surface;
+                        subtitle-color: root.palette.on-surface-variant;
+                        shadow-color: transparent;
+                        clicked => { root.playlist-opened(pl.id); }
+                    }
+                }
+            }
+
+            if (root.current == "artists" || root.current == "albums") : cards-list := Flickable {
+                x: 0px;
+                y: 0px;
+                width: 100%;
+                height: 100%;
+                content-height: cards-col.preferred-height;
+
+                cards-col := VerticalLayout {
+                    width: 100%;
+                    spacing: 8px;
+                    padding: 12px;
+
+                    for card in root.cards: M3Card {
+                        title: card.title;
+                        subtitle: card.subtitle;
+                        fill: root.palette.surface-container;
+                        title-color: root.palette.on-surface;
+                        subtitle-color: root.palette.on-surface-variant;
+                        shadow-color: transparent;
+                        clicked => { root.playlist-opened(card.id); }
+                    }
+                }
+            }
+
+            if (root.current == "history") : history-list := Flickable {
+                x: 0px;
+                y: 0px;
+                width: 100%;
+                height: 100%;
+                content-height: history-col.preferred-height;
+
+                history-col := VerticalLayout {
+                    width: 100%;
+                    spacing: 2px;
+                    padding: 8px;
+
+                    history-head := HorizontalLayout {
+                        padding-left: 12px;
+                        padding-right: 12px;
+                        spacing: 8px;
+                        alignment: center;
+
+                        paused-label := Text {
+                            text: I18n.trl(I18n.lang, "library.history.paused");
+                            color: root.palette.on-surface-variant;
+                            font-size: Type.body-medium.size;
+                            horizontal-stretch: 1;
+                            visible: root.history-paused;
+                        }
+
+                        history-clear-wrap := Rectangle {
+                            height: 36px;
+                            width: 160px;
+                            border-radius: 18px;
+                            background: root.palette.surface-container-highest;
+                            history-clear-label := Text {
+                                x: 0px;
+                                y: 0px;
+                                width: 100%;
+                                height: 100%;
+                                text: I18n.trl(I18n.lang, "library.history.clear");
+                                color: root.palette.on-surface;
+                                font-size: Type.label-large.size;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                            history-clear-touch := TouchArea {
+                                accessible-label: I18n.trl(I18n.lang, "library.history.clear");
+                                accessible-role: button;
+                                mouse-cursor: pointer;
+                                clicked => { root.history-cleared(); }
+                            }
+                        }
+                    }
+
+                    history-empty := Text {
+                        text: I18n.trl(I18n.lang, "library.history.empty");
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                        horizontal-alignment: center;
+                        visible: root.history.length == 0;
+                    }
+
+                    for entry in root.history: Rectangle {
+                        height: 56px;
+
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            spacing: 12px;
+                            alignment: center;
+
+                            entry-texts := VerticalLayout {
+                                spacing: 2px;
+                                alignment: center;
+                                horizontal-stretch: 1;
+                                entry-title := Text {
+                                    text: entry.title;
+                                    color: root.palette.on-surface;
+                                    font-size: Type.body-large.size;
+                                    overflow: elide;
+                                }
+                                entry-sub := Text {
+                                    text: entry.subtitle;
+                                    color: root.palette.on-surface-variant;
+                                    font-size: Type.body-medium.size;
+                                    overflow: elide;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (root.current == "stats") : stats-list := Flickable {
+                x: 0px;
+                y: 0px;
+                width: 100%;
+                height: 100%;
+                content-height: stats-col.preferred-height;
+
+                stats-col := VerticalLayout {
+                    width: 100%;
+                    spacing: 8px;
+                    padding: 12px;
+
+                    stats-totals := Text {
+                        text: root.stats-totals;
+                        color: root.palette.on-surface;
+                        font-size: Type.title-medium.size;
+                        font-weight: Type.title-medium.weight;
+                    }
+
+                    stats-streaks := Text {
+                        text: root.stats-streaks;
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                    }
+
+                    year-row := HorizontalLayout {
+                        spacing: 8px;
+                        alignment: center;
+
+                        year-prev-wrap := Rectangle {
+                            width: 40px;
+                            height: 32px;
+                            year-prev-label := Text {
+                                x: 0px;
+                                y: 0px;
+                                width: 100%;
+                                height: 100%;
+                                text: "‹";
+                                color: root.palette.on-surface-variant;
+                                font-size: Type.title-medium.size;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                            year-prev-touch := TouchArea {
+                                accessible-label: I18n.trl(I18n.lang, "action.back");
+                                accessible-role: button;
+                                mouse-cursor: pointer;
+                                clicked => { root.year-prev(); }
+                            }
+                        }
+
+                        year-label := Text {
+                            text: I18n.trl(I18n.lang, "library.stats.year") + " " + root.year-label;
+                            color: root.palette.on-surface;
+                            font-size: Type.title-medium.size;
+                            horizontal-stretch: 1;
+                            horizontal-alignment: center;
+                        }
+
+                        year-next-wrap := Rectangle {
+                            width: 40px;
+                            height: 32px;
+                            year-next-label := Text {
+                                x: 0px;
+                                y: 0px;
+                                width: 100%;
+                                height: 100%;
+                                text: "›";
+                                color: root.palette.on-surface-variant;
+                                font-size: Type.title-medium.size;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                            year-next-touch := TouchArea {
+                                accessible-label: I18n.trl(I18n.lang, "action.play");
+                                accessible-role: button;
+                                mouse-cursor: pointer;
+                                clicked => { root.year-next(); }
+                            }
+                        }
+                    }
+
+                    stats-top-label := Text {
+                        text: I18n.trl(I18n.lang, "library.stats.top");
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.title-small.size;
+                    }
+
+                    for row in root.stat-tracks: Rectangle {
+                        height: 48px;
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            spacing: 12px;
+                            alignment: center;
+                            stat-track-title := Text {
+                                text: row.title;
+                                color: root.palette.on-surface;
+                                font-size: Type.body-medium.size;
+                                horizontal-stretch: 1;
+                                overflow: elide;
+                            }
+                            stat-track-value := Text {
+                                text: row.value;
+                                color: root.palette.on-surface-variant;
+                                font-size: Type.body-medium.size;
+                            }
+                        }
+                    }
+
+                    for row in root.stat-artists: Rectangle {
+                        height: 48px;
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            spacing: 12px;
+                            alignment: center;
+                            stat-artist-title := Text {
+                                text: row.title;
+                                color: root.palette.on-surface;
+                                font-size: Type.body-medium.size;
+                                horizontal-stretch: 1;
+                                overflow: elide;
+                            }
+                            stat-artist-value := Text {
+                                text: row.value;
+                                color: root.palette.on-surface-variant;
+                                font-size: Type.body-medium.size;
+                            }
+                        }
+                    }
+
+                    for row in root.stat-albums: Rectangle {
+                        height: 48px;
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 12px;
+                            spacing: 12px;
+                            alignment: center;
+                            stat-album-title := Text {
+                                text: row.title;
+                                color: root.palette.on-surface;
+                                font-size: Type.body-medium.size;
+                                horizontal-stretch: 1;
+                                overflow: elide;
+                            }
+                            stat-album-value := Text {
+                                text: row.value;
+                                color: root.palette.on-surface-variant;
+                                font-size: Type.body-medium.size;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (root.current != "songs" && root.current != "library" && root.current != "playlists" && root.current != "artists" && root.current != "albums" && root.current != "history" && root.current != "stats") : fallback-label := Text {
+                x: 0px;
+                y: 0px;
+                width: 100%;
+                height: 100%;
+                text: root.chip-label(root.current);
+                color: root.palette.on-surface;
+                font-size: Type.headline-small.size;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+    }
+
+    if (root.sort-open) : sort-layer := Rectangle {
+        x: 0px;
+        y: 0px;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+
+        sort-scrim-touch := TouchArea {
+            mouse-cursor: pointer;
+            clicked => { root.sort-closed(); }
+        }
+
+        sort-card := Rectangle {
+            x: 12px;
+            y: 120px;
+            width: 220px;
+            height: 48px + 48px * 5;
+            border-radius: 12px;
+            background: root.palette.surface-container-high;
+
+            VerticalLayout {
+                padding: 8px;
+                spacing: 0px;
+
+                sort-title := Text {
+                    text: I18n.trl(I18n.lang, "library.sort.title");
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.label-large.size;
+                    height: 40px;
+                    vertical-alignment: center;
+                }
+
+                for i in 5: Rectangle {
+                    height: 48px;
+                    option-label := Text {
+                        x: 12px;
+                        y: 0px;
+                        width: parent.width - 24px;
+                        height: 100%;
+                        text: root.sort-options[i];
+                        color: i == root.sort ? root.palette.primary : root.palette.on-surface;
+                        font-size: Type.body-large.size;
+                        vertical-alignment: center;
+                        overflow: elide;
+                    }
+                    option-touch := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { root.sort-selected(i); }
+                    }
+                }
+            }
+        }
+    }
+
+    if (root.tags-open) : tags-layer := Rectangle {
+        x: 0px;
+        y: 0px;
+        width: 100%;
+        height: 100%;
+        background: root.palette.scrim.with-alpha(0.4);
+
+        tags-scrim-touch := TouchArea {
+            mouse-cursor: pointer;
+            clicked => { root.tags-closed(); }
+        }
+
+        tags-card := Rectangle {
+            x: 48px;
+            y: 96px;
+            width: parent.width - 96px;
+            height: parent.height - 192px;
+            border-radius: 16px;
+            background: root.palette.surface-container-high;
+
+            VerticalLayout {
+                padding: 20px;
+                spacing: 12px;
+
+                tags-title := Text {
+                    text: I18n.trl(I18n.lang, "library.tags.title");
+                    color: root.palette.on-surface;
+                    font-size: Type.title-large.size;
+                    font-weight: Type.title-large.weight;
+                }
+
+                tags-field := M3TextField {
+                    label: I18n.trl(I18n.lang, "library.tags.new");
+                    text <=> root.tag-input;
+                    field-bg: root.palette.surface-container-highest;
+                    line: root.palette.outline-variant;
+                    focus-line: root.palette.primary;
+                    error-color: root.palette.error;
+                    content: root.palette.on-surface;
+                    support-color: root.palette.on-surface-variant;
+                    state-on-surface: root.palette.on-surface;
+                    accepted(input) => { root.tag-created(input); }
+                }
+
+                tags-create-wrap := Rectangle {
+                    height: 40px;
+                    border-radius: 20px;
+                    background: root.palette.primary;
+                    tags-create-label := Text {
+                        x: 0px;
+                        y: 0px;
+                        width: 100%;
+                        height: 100%;
+                        text: I18n.trl(I18n.lang, "playlists.create");
+                        color: root.palette.on-primary;
+                        font-size: Type.label-large.size;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                    tags-create-touch := TouchArea {
+                        accessible-label: I18n.trl(I18n.lang, "playlists.create");
+                        accessible-role: button;
+                        mouse-cursor: pointer;
+                        clicked => { root.tag-created(root.tag-input); }
+                    }
+                }
+
+                tags-list := Flickable {
+                    vertical-stretch: 1;
+                    content-height: tags-col.preferred-height;
+
+                    tags-col := VerticalLayout {
+                        width: 100%;
+                        spacing: 2px;
+
+                        for tag in root.tags: Rectangle {
+                            height: 48px;
+                            HorizontalLayout {
+                                padding-left: 12px;
+                                padding-right: 12px;
+                                spacing: 8px;
+                                alignment: center;
+                                tag-name := Text {
+                                    text: tag;
+                                    color: tag == root.active-tag ? root.palette.primary : root.palette.on-surface;
+                                    font-size: Type.body-large.size;
+                                    horizontal-stretch: 1;
+                                    overflow: elide;
+                                }
+                                tag-remove-label := Text {
+                                    width: 40px;
+                                    text: "✕";
+                                    color: root.palette.on-surface-variant;
+                                    font-size: 16px;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                                tag-remove-touch := TouchArea {
+                                    accessible-label: I18n.trl(I18n.lang, "action.remove");
+                                    accessible-role: button;
+                                    mouse-cursor: pointer;
+                                    clicked => { root.tag-removed(tag); }
+                                }
+                            }
+                            tag-touch := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.tag-selected(tag); }
+                            }
+                        }
+                    }
+                }
+
+                tags-close-wrap := Rectangle {
+                    height: 40px;
+                    border-radius: 20px;
+                    background: root.palette.surface-container-highest;
+                    tags-close-label := Text {
+                        x: 0px;
+                        y: 0px;
+                        width: 100%;
+                        height: 100%;
+                        text: I18n.trl(I18n.lang, "action.close");
+                        color: root.palette.on-surface;
+                        font-size: Type.label-large.size;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                    tags-close-touch := TouchArea {
+                        accessible-label: I18n.trl(I18n.lang, "action.close");
+                        accessible-role: button;
+                        mouse-cursor: pointer;
+                        clicked => { root.tags-closed(); }
+                    }
+                }
+            }
+        }
+    }
+}

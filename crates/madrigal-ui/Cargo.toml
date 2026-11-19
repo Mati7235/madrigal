@@ -8,10 +8,17 @@ license.workspace = true
 all = "warn"
 
 [dependencies]
+madrigal-core = { path = "../madrigal-core" }
+madrigal-db = { path = "../madrigal-db" }
+madrigal-downloads = { path = "../madrigal-downloads" }
 madrigal-i18n = { path = "../madrigal-i18n" }
+madrigal-library = { path = "../madrigal-library" }
+madrigal-paths = { path = "../madrigal-paths" }
 madrigal-player = { path = "../madrigal-player" }
 madrigal-settings = { path = "../madrigal-settings" }
+rusqlite = { version = "0.41", features = ["bundled"] }
 slint = { version = "=1.19.0", features = ["mcp"] }
+tempfile = "3"
 
 [dev-dependencies]
 madrigal-testkit = { path = "../madrigal-testkit" }
@@ -27,3 +34,7 @@ path = "tests/checks/check_ui_foundations.rs"
 [[test]]
 name = "check_ui_shell"
 path = "tests/checks/check_ui_shell.rs"
+
+[[test]]
+name = "check_ui_library"
+path = "tests/checks/check_ui_library.rs"

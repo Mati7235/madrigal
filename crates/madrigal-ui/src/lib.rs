@@ -1,7 +1,17 @@
 slint::include_modules!();
 
+mod pages_library;
 mod shell;
 mod theme;
+
+pub use pages_library::{
+    LibraryFixture, album_cards, artist_cards, chip_order, default_chip_order, download_models,
+    download_state_index, event_years, history_rows, load_downloads_fixture, load_library_fixture,
+    move_chip, playlist_rows, save_chip_order, song_rows, song_sort_for_settings, stats_streaks,
+    stats_totals, top_album_rows, top_artist_rows, top_track_rows, year_index, year_model,
+    DownloadItem, CHIP_ALBUMS, CHIP_ARTISTS, CHIP_HISTORY, CHIP_LIBRARY, CHIP_PLAYLISTS, CHIP_SONGS,
+    CHIP_STATS,
+};
 
 pub use shell::{
     apply_shell_appearance, apply_shell_theme, dispatch_key, overlay_from_index, overlay_index,

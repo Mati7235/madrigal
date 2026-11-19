@@ -255,3 +255,7 @@ group = "offline"
 [[check]]
 name = "cast_protocol"
 group = "offline"
+
+[[check]]
+name = "ui_library"
+group = "offline"

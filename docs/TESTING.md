@@ -100,6 +100,7 @@ Without `cargo` available the check is FAIL.
 | `ui_shell` | offline | MainShell: sidebar pages, overlays, shortcuts, i18n/theme flips, PNG snapshot |
 | `spotify_import` | offline | Cookie TOTP auth exchange, 0600 token store, GQL playlist/track parses, YTM mapper over the real search fixture, mapping cache, unresolved reporting, clean cookie errors |
 | `cast_protocol` | offline | CastV2 framing, CONNECT/LOAD/volume shapes, session state machine, device mapping; mock transport, no TLS |
+| `ui_library` | offline | Library/History/Stats/Downloads pages via MainShell: chip order+tabs, tags, sorts, multiselect, history clear, tops, Year in Music, download rows; Es/En; PNG-sane |
 
 ## Visual verification
 

@@ -1,9 +1,64 @@
 import { Palette, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
+import { LibSongRow, LibPlaylistRow, LibCardRow, HistoryRow, StatRow, DownloadRow } from "../pages/library/models.slint";
+import { LibraryPage } from "../pages/library/library.slint";
+import { DownloadsPage } from "../pages/library/downloads.slint";
 
 export component PageHost inherits Rectangle {
     in property<int> page;
     in property<Palette> palette;
+    in property<[string]> lib-chips;
+    in property<int> lib-tab;
+    in property<bool> lib-chip-edit;
+    in property<[string]> lib-tags;
+    in property<string> lib-active-tag;
+    in property<[LibSongRow]> lib-songs;
+    in property<[LibPlaylistRow]> lib-playlists;
+    in property<[LibCardRow]> lib-cards;
+    in property<[string]> lib-sort-options;
+    in property<int> lib-sort;
+    in property<bool> lib-sort-open;
+    in property<bool> lib-multiselect;
+    in property<int> lib-selected-count;
+    in property<bool> lib-tags-open;
+    in-out property<string> lib-tag-input;
+    in property<[HistoryRow]> lib-history;
+    in property<bool> lib-history-paused;
+    in property<[StatRow]> lib-stat-tracks;
+    in property<[StatRow]> lib-stat-artists;
+    in property<[StatRow]> lib-stat-albums;
+    in property<string> lib-stats-totals;
+    in property<string> lib-stats-streaks;
+    in property<[string]> lib-years;
+    in property<int> lib-year;
+    in property<[DownloadRow]> dl-rows;
+    in property<[DownloadRow]> dl-failed;
+
+    callback lib-chip-selected(int);
+    callback lib-chip-move-left();
+    callback lib-chip-move-right();
+    callback lib-chip-edit-toggled();
+    callback lib-tag-selected(string);
+    callback lib-tags-opened();
+    callback lib-tags-closed();
+    callback lib-tag-created(string);
+    callback lib-tag-removed(string);
+    callback lib-sort-opened();
+    callback lib-sort-closed();
+    callback lib-sort-selected(int);
+    callback lib-song-toggled(string);
+    callback lib-song-chosen(string);
+    callback lib-multiselect-toggled();
+    callback lib-selection-cleared();
+    callback lib-playlist-opened(string);
+    callback lib-history-cleared();
+    callback lib-year-prev();
+    callback lib-year-next();
+    callback dl-pause(string);
+    callback dl-resume(string);
+    callback dl-cancel(string);
+    callback dl-retry(string);
+    callback dl-retry-all();
 
     property<string> title: root.page == 0 ? I18n.trl(I18n.lang, "nav.home") : root.page == 1 ? I18n.trl(I18n.lang, "explore.search") : root.page == 2 ? I18n.trl(I18n.lang, "nav.explore") : root.page == 3 ? I18n.trl(I18n.lang, "nav.lists") : root.page == 4 ? I18n.trl(I18n.lang, "nav.downloads") : I18n.trl(I18n.lang, "settings.title");
 
@@ -56,34 +111,71 @@ export component PageHost inherits Rectangle {
         }
     }
 
-    if (root.page == 3) : library-ph := Rectangle {
-        ph-library-label := Text {
-            x: 0px;
-            y: 0px;
-            width: 100%;
-            height: 100%;
-            text: I18n.trl(I18n.lang, "nav.lists");
-            color: root.palette.on-surface;
-            font-size: Type.headline-small.size;
-            font-weight: Type.headline-small.weight;
-            horizontal-alignment: center;
-            vertical-alignment: center;
-        }
+    if (root.page == 3) : library-host := LibraryPage {
+        x: 0px;
+        y: 0px;
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        chips: root.lib-chips;
+        tab: root.lib-tab;
+        chip-edit: root.lib-chip-edit;
+        tags: root.lib-tags;
+        active-tag: root.lib-active-tag;
+        songs: root.lib-songs;
+        playlists: root.lib-playlists;
+        cards: root.lib-cards;
+        sort-options: root.lib-sort-options;
+        sort: root.lib-sort;
+        sort-open: root.lib-sort-open;
+        multiselect: root.lib-multiselect;
+        selected-count: root.lib-selected-count;
+        tags-open: root.lib-tags-open;
+        tag-input <=> root.lib-tag-input;
+        history: root.lib-history;
+        history-paused: root.lib-history-paused;
+        stat-tracks: root.lib-stat-tracks;
+        stat-artists: root.lib-stat-artists;
+        stat-albums: root.lib-stat-albums;
+        stats-totals: root.lib-stats-totals;
+        stats-streaks: root.lib-stats-streaks;
+        years: root.lib-years;
+        year: root.lib-year;
+        chip-selected(i) => { root.lib-chip-selected(i); }
+        chip-move-left() => { root.lib-chip-move-left(); }
+        chip-move-right() => { root.lib-chip-move-right(); }
+        chip-edit-toggled() => { root.lib-chip-edit-toggled(); }
+        tag-selected(t) => { root.lib-tag-selected(t); }
+        tags-opened() => { root.lib-tags-opened(); }
+        tags-closed() => { root.lib-tags-closed(); }
+        tag-created(t) => { root.lib-tag-created(t); }
+        tag-removed(t) => { root.lib-tag-removed(t); }
+        sort-opened() => { root.lib-sort-opened(); }
+        sort-closed() => { root.lib-sort-closed(); }
+        sort-selected(i) => { root.lib-sort-selected(i); }
+        song-toggled(id) => { root.lib-song-toggled(id); }
+        song-chosen(id) => { root.lib-song-chosen(id); }
+        multiselect-toggled() => { root.lib-multiselect-toggled(); }
+        selection-cleared() => { root.lib-selection-cleared(); }
+        playlist-opened(id) => { root.lib-playlist-opened(id); }
+        history-cleared() => { root.lib-history-cleared(); }
+        year-prev() => { root.lib-year-prev(); }
+        year-next() => { root.lib-year-next(); }
     }
 
-    if (root.page == 4) : downloads-ph := Rectangle {
-        ph-downloads-label := Text {
-            x: 0px;
-            y: 0px;
-            width: 100%;
-            height: 100%;
-            text: I18n.trl(I18n.lang, "nav.downloads");
-            color: root.palette.on-surface;
-            font-size: Type.headline-small.size;
-            font-weight: Type.headline-small.weight;
-            horizontal-alignment: center;
-            vertical-alignment: center;
-        }
+    if (root.page == 4) : downloads-host := DownloadsPage {
+        x: 0px;
+        y: 0px;
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        rows: root.dl-rows;
+        failed: root.dl-failed;
+        dl-pause(id) => { root.dl-pause(id); }
+        dl-resume(id) => { root.dl-resume(id); }
+        dl-cancel(id) => { root.dl-cancel(id); }
+        dl-retry(id) => { root.dl-retry(id); }
+        dl-retry-all() => { root.dl-retry-all(); }
     }
 
     if (root.page == 5) : settings-ph := Rectangle {
