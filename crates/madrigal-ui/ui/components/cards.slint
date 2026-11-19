@@ -1,4 +1,5 @@
 import { Shape, Type } from "../tokens.slint";
+import { Cover } from "cover.slint";
 import { Icon, Icons } from "icons.slint";
 
 export component M3Card inherits Rectangle {
@@ -6,6 +7,7 @@ export component M3Card inherits Rectangle {
     in property<string> subtitle;
     in property<bool> elevated: true;
     in property<bool> media: false;
+    in property<image> cover;
     in property<color> fill;
     in property<color> art-fill;
     in property<color> title-color;
@@ -39,31 +41,12 @@ export component M3Card inherits Rectangle {
         spacing: 6px;
         alignment: start;
 
-        media-art := Rectangle {
+        media-art := Cover {
+            width: 100%;
             height: 118px;
-            border-radius: Shape.small;
-            background: root.art-fill;
-
-            HorizontalLayout {
-                width: 100%;
-                height: 100%;
-                alignment: center;
-
-                VerticalLayout {
-                    width: 100%;
-                    alignment: center;
-
-                    HorizontalLayout {
-                        alignment: center;
-
-                        Icon {
-                            source: Icons.music-2;
-                            colorize: root.subtitle-color;
-                            icon-size: 32px;
-                        }
-                    }
-                }
-            }
+            size: 118px;
+            radius: 8px;
+            source: root.cover;
         }
 
         media-title := Text {

@@ -193,6 +193,10 @@ name = "ui_foundations"
 group = "offline"
 
 [[check]]
+name = "artwork"
+group = "offline"
+
+[[check]]
 name = "sponsorblock"
 group = "offline"
 

@@ -5,6 +5,7 @@ import { Icons } from "components/icons.slint";
 import { M3TextField, M3SearchBar } from "components/fields.slint";
 import { M3Switch, M3Checkbox, M3Slider } from "components/selection.slint";
 import { M3Card, M3Chip } from "components/cards.slint";
+import { Cover } from "components/cover.slint";
 import { M3ListItem } from "components/rows.slint";
 
 export component DemoGallery inherits Window {
@@ -300,5 +301,24 @@ export component DemoGallery inherits Window {
             progress-fill: root.palette.primary;
             action => { root.row-clicks += 1; }
         }
+    }
+}
+
+export component CoverTestWindow inherits Window {
+    in-out property<image> source;
+    in property<Palette> palette: Light.palette;
+
+    title: "madrigal-cover-test";
+    width: 96px;
+    height: 96px;
+    background: root.palette.surface;
+
+    Cover {
+        x: 8px;
+        y: 8px;
+        size: 80px;
+        radius: 8px;
+        source: root.source;
+        palette: root.palette;
     }
 }

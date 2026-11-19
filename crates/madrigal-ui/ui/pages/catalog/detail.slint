@@ -2,6 +2,7 @@ import { Palette, Shape, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { M3IconButton, M3Button } from "../../components/buttons.slint";
 import { M3Chip } from "../../components/cards.slint";
+import { Cover } from "../../components/cover.slint";
 import { Icon, Icons } from "../../components/icons.slint";
 import { M3ListItem } from "../../components/rows.slint";
 import { CatalogItem, CatalogSection, DetailKind, DetailRef } from "refs.slint";
@@ -13,6 +14,7 @@ export component DetailPage inherits Rectangle {
     in property<string> title: "";
     in property<string> subtitle: "";
     in property<string> description: "";
+    in property<image> cover;
     in property<[CatalogItem]> tracks;
     in property<[CatalogItem]> albums;
     in property<[CatalogSection]> sections;
@@ -46,32 +48,11 @@ export component DetailPage inherits Rectangle {
                     state-on-surface: root.palette.on-surface;
                     clicked => { root.back-requested(); }
                 }
-                detail-cover := Rectangle {
-                    width: 120px;
-                    height: 120px;
-                    border-radius: Shape.small;
-                    background: root.palette.surface-container-high;
-
-                    HorizontalLayout {
-                        width: 100%;
-                        height: 100%;
-                        alignment: center;
-
-                        VerticalLayout {
-                            width: 100%;
-                            alignment: center;
-
-                            HorizontalLayout {
-                                alignment: center;
-
-                                Icon {
-                                    source: Icons.music-2;
-                                    colorize: root.palette.on-surface-variant;
-                                    icon-size: 48px;
-                                }
-                            }
-                        }
-                    }
+                detail-cover := Cover {
+                    size: 120px;
+                    radius: 8px;
+                    source: root.cover;
+                    palette: root.palette;
                 }
                 detail-head := VerticalLayout {
                     spacing: 2px;

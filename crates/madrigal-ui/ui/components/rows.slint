@@ -1,10 +1,12 @@
 import { Shape, Type } from "../tokens.slint";
+import { Cover } from "cover.slint";
 
 export component M3ListItem inherits Rectangle {
     in property<string> title;
     in property<string> subtitle;
     in property<string> duration;
     in property<string> action-label;
+    in property<image> cover;
     in property<bool> active: false;
     in property<float> progress: -1;
     in property<color> row-bg;
@@ -30,11 +32,10 @@ export component M3ListItem inherits Rectangle {
         spacing: 12px;
         alignment: center;
 
-        art := Rectangle {
-            width: 36px;
-            height: 36px;
-            border-radius: Shape.small;
-            background: root.progress-track;
+        art := Cover {
+            size: 36px;
+            radius: 8px;
+            source: root.cover;
         }
 
         texts := VerticalLayout {

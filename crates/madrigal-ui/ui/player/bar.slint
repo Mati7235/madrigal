@@ -1,6 +1,7 @@
 import { Palette, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
 import { M3IconButton } from "../components/buttons.slint";
+import { Cover } from "../components/cover.slint";
 import { Icon, Icons } from "../components/icons.slint";
 
 component BarMiniButton inherits Rectangle {
@@ -53,6 +54,7 @@ export component NowPlayingBar inherits Rectangle {
     in property<int> duration-ms: 0;
     in property<bool> paused: true;
     in property<bool> liked: false;
+    in property<image> cover;
     in property<int> queue-count: 0;
     in property<float> volume: 0.7;
 
@@ -94,15 +96,12 @@ export component NowPlayingBar inherits Rectangle {
             bar-thumb := Rectangle {
                 width: 48px;
                 height: 48px;
-                border-radius: 10px;
-                background: root.palette.surface-container-high;
 
-                bar-cover-icon := Icon {
-                    source: Icons.music-2;
-                    colorize: root.palette.on-surface-variant;
-                    icon-size: 20px;
-                    x: (parent.width - self.width) / 2;
-                    y: (parent.height - self.height) / 2;
+                Cover {
+                    size: 48px;
+                    radius: 10px;
+                    source: root.cover;
+                    palette: root.palette;
                 }
 
                 bar-open-touch := TouchArea {
@@ -177,6 +176,15 @@ export component NowPlayingBar inherits Rectangle {
                     background: root.palette.primary;
                 }
 
+                Rectangle {
+                    x: 8px + parent.bar-w * clamp(root.frac, 0, 1) - 2px;
+                    y: (parent.height - 44px) / 2;
+                    width: 4px;
+                    height: 44px;
+                    border-radius: 2px;
+                    background: root.palette.primary;
+                }
+
                 bar-seek-touch := TouchArea {
                     width: 100%;
                     height: 100%;
@@ -227,6 +235,15 @@ export component NowPlayingBar inherits Rectangle {
                     y: (parent.height - 4px) / 2;
                     width: parent.vbar-w * clamp(root.volume, 0, 1);
                     height: 4px;
+                    border-radius: 2px;
+                    background: root.palette.primary;
+                }
+
+                Rectangle {
+                    x: 8px + parent.vbar-w * clamp(root.volume, 0, 1) - 2px;
+                    y: (parent.height - 44px) / 2;
+                    width: 4px;
+                    height: 44px;
                     border-radius: 2px;
                     background: root.palette.primary;
                 }

@@ -1,0 +1,22 @@
+[package]
+name = "madrigal-artwork"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints.clippy]
+all = "warn"
+
+[dependencies]
+clru = "0.6"
+image = "0.25"
+madrigal-files = { path = "../madrigal-files" }
+madrigal-paths = { path = "../madrigal-paths" }
+reqwest = { version = "0.12", features = ["blocking"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[[test]]
+name = "check_artwork"
+path = "tests/checks/check_artwork.rs"

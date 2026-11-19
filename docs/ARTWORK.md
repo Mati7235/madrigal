@@ -262,3 +262,25 @@ Acceptance: `cargo xtask checks --group offline` green; `check_ui_shell`, `check
 - New setting `appearance.artwork_memory_mb` vs. hardcoding 24 MB. *(Recommend: hardcode for v1, no settings churn; the disk budget already exists at `crates/madrigal-settings/src/storage.rs:14`.)*
 - Whether `Lyrics`/queue rows also get art (`crates/madrigal-ui/ui/player/queue.slint`) — out of scope here, but `QueueRowData` has no id today (`crates/madrigal-ui/src/player_ui.rs:54-59`), so it would need a new field.
 - Whether artwork rendering should wait for `madrigal-app` to actually link `madrigal-ui` (today it does not: `crates/madrigal-app/Cargo.toml`), i.e. whether T3 is verifiable only through tests until the shell is wired to the binary.
+
+---
+
+## Implemented status
+
+`crates/madrigal-artwork` provides `ArtworkCache::get(key, Source, bucket)` with
+URL/file/bytes sources, 96/128/384/640 center-cropped RGBA buckets, a byte-budgeted
+`clru` LRU and a disk cache under `<dir>/artwork/<hash>-<bucket>.rgba` (plus a
+20-byte metadata file, 30-day TTL, prune to the byte budget). URL fetches use
+`reqwest::blocking` with an 8 s timeout and must run off the UI thread.
+
+`crates/madrigal-ui/src/artwork.rs` exposes `to_slint_image` and `apply_cover`;
+the latter receives `RgbaImage` (not `slint::Image`, which is not `Send` in 1.19),
+builds the Slint image inside a single `invoke_from_event_loop` call and drops
+stale results via a per-slot generation counter. The caller supplies the setter
+closure so `shell.slint` stays owned by another task.
+
+`Cover` slots are wired in `player/bar.slint` (48/10), `components/cards.slint`
+(118/8), `components/rows.slint` (36/8), `pages/catalog/detail.slint` (120/8) and
+`player/full.slint` (300, round on bg-style 2). All `cover` properties default to
+empty, so placeholders render until the catalog fetch path (T3) is connected.
+Offline `artwork` check covers cache hits, LRU, prune and a headless Cover PNG.

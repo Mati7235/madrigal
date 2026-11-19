@@ -30,6 +30,8 @@ export component SectionView inherits Rectangle {
     rows-flick := Flickable {
         width: 100%;
         height: 100%;
+        content-width: self.width;
+        content-height: rows-col.preferred-height;
 
         rows-col := VerticalLayout {
             width: 100%;

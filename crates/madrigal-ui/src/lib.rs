@@ -1,11 +1,14 @@
 slint::include_modules!();
 
+mod artwork;
 mod pages_catalog;
 mod pages_library;
 mod pages_settings;
 mod player_ui;
 mod shell;
 mod theme;
+
+pub use artwork::{apply_cover, to_slint_image};
 
 pub use pages_catalog::{
     album_results, apply_album_detail, apply_artist_detail, apply_browse, apply_browse_detail,

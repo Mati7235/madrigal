@@ -16,6 +16,8 @@ via caller-supplied colors), `M3IconButton`, `M3TextField`, `M3SearchBar`,
 `M3Switch`, `M3Checkbox`, `M3Slider` (standard geometry), `M3Card`
 (elevated/filled), `M3Chip`, `M3ListItem` (active/download states). All take
 text via parameters and set `accessible-label` + `accessible-role`.
+`Cover` (`ui/components/cover.slint`) draws artwork with a `music-2` fallback;
+bar, cards, rows, detail and full player expose empty `cover` image slots until catalog wiring.
 
 Icons: Lucide (ISC) in ui/icons, tinted via Image.colorize.
 

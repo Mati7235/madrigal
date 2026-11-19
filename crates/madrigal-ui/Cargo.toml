@@ -18,6 +18,7 @@ madrigal-lyrics = { path = "../madrigal-lyrics" }
 madrigal-paths = { path = "../madrigal-paths" }
 madrigal-player = { path = "../madrigal-player" }
 madrigal-settings = { path = "../madrigal-settings" }
+image = "0.25"
 rusqlite = { version = "0.41", features = ["bundled"] }
 serde = "1"
 serde_json = "1"
@@ -26,6 +27,7 @@ tempfile = "3"
 
 [dev-dependencies]
 madrigal-account = { path = "../madrigal-account" }
+madrigal-artwork = { path = "../madrigal-artwork" }
 madrigal-core = { path = "../madrigal-core" }
 madrigal-i18n = { path = "../madrigal-i18n" }
 madrigal-player = { path = "../madrigal-player" }
@@ -60,3 +62,7 @@ path = "tests/checks/check_ui_player.rs"
 [[test]]
 name = "check_ui_catalog"
 path = "tests/checks/check_ui_catalog.rs"
+
+[[test]]
+name = "check_artwork"
+path = "tests/checks/check_artwork.rs"
