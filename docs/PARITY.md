@@ -169,7 +169,7 @@ Legend: `implemented` = code + wiring present · `partial` = code exists but a p
 | PKGBUILD + AppImage (Flatpak optional) | IN | not found in repo root/listings | missing | F11-1 not started |
 | Update check (GitHub releases) | IN | settings fields only (J-row); no fetch code found | missing | implement or mark missing |
 | User docs | IN | `docs/` (CONVENTIONS/TESTING/NOTES per functionality) | partial | end-user docs (F11-1) pending |
-| Zero upstream/upstream references (F11-3) | IN | NOT VERIFIED in this audit (no grep run — repo excluded from `cargo` runs per instructions; run `grep -ri` at F11-3) | unknown | run at close |
+| Zero upstream/app references (F11-3) | IN | NOT VERIFIED in this audit (no grep run — repo excluded from `cargo` runs per instructions; run `grep -ri` at F11-3) | unknown | run at close |
 
 ## Special-watch summary (as requested)
 
@@ -216,4 +216,4 @@ Legend: `implemented` = code + wiring present · `partial` = code exists but a p
 ## Check coverage gaps (`checks.toml`, 63 checks)
 
 Covered: core/i18n/paths/files/secrets/db/streams×3/settings/lyrics×4/net×2/library×3/account×3/scrobble×3/innertube×4/localmedia/downloads×2/backup×3/player×7/mpris/notify/sponsorblock/tidal/shazam×2/discord/ai/together/curation/canvas/spotify/cast/ui×5/app_startup/lives×2.
-No check covers: podcast fetch (no code either), crossfade behavior, queue Autoplaying tab, romanization transliteration, lyrics named animations, history-pause gate, `use-login-for-browse`, Tidal mixed queue, Canvas player wiring, Cast local proxy (explicitly untested TLS), update-check fetch, `.desktop`/tray install, PKGBUILD/AppImage, startup-RAM/soak numbers, matugen derivation, `grep -ri upstream|upstream` zero-hit gate (F11-3), name-collision verdict (F0-1).
+No check covers: podcast fetch (no code either), crossfade behavior, queue Autoplaying tab, romanization transliteration, lyrics named animations, history-pause gate, `use-login-for-browse`, Tidal mixed queue, Canvas player wiring, Cast local proxy (explicitly untested TLS), update-check fetch, `.desktop`/tray install, PKGBUILD/AppImage, startup-RAM/soak numbers, matugen derivation, `grep -ri <upstream names>` zero-hit gate (F11-3), name-collision verdict (F0-1).

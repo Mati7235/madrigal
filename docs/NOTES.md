@@ -509,3 +509,9 @@ friendly name, connect (port 8009), launch the default receiver,
 LOAD an http(s) stream URL, check audio starts, set volume, stop,
 disconnect.
 
+
+## Provenance
+
+Madrigal is an independent reimplementation of the Android app's behavior and
+design; no source code, strings or assets from it are used. Third-party assets:
+Lucide icons (ISC, `crates/madrigal-ui/ui/icons/LICENSE`). License: GPL-3.0-or-later.

@@ -6,3 +6,6 @@
 - `UI.md`: M3E token port, themes, components, motion, i18n seam.
 - `LYRICS.md`: lyrics parsing model, oracle differences, fixture provenance.
 - `PARITY.md` — auditoría F11-3: estado real de cada feature IN/OUT contra el código.
+- `ARTWORK.md`: artwork pipeline plan (fetch, cache, decode, Slint delivery).
+- `A11Y.md`: accessibility audit and fix plan.
+- `THEMES.md`: matugen detection, file format and palette mapping.
