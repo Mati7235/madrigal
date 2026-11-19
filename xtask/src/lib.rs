@@ -578,7 +578,6 @@ fn build_all(
         }
     };
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let stderr = String::from_utf8_lossy(&output.stderr);
     let report = parse_report(&stdout);
     for artifact in &report.artifacts {
         let Some(executable) = &artifact.executable else {
@@ -593,7 +592,6 @@ fn build_all(
             .insert((package, artifact.target.clone()), executable.clone());
     }
     if !output.status.success() || report.finished == Some(false) {
-        let fallback = build_error(&report, &stderr);
         for diagnostic in &report.diagnostics {
             let Some(target) = diagnostic.target.as_deref() else {
                 continue;
@@ -615,14 +613,6 @@ fn build_all(
                     entry.push('\n');
                 }
                 entry.push_str(diagnostic.rendered.trim_end());
-            }
-        }
-        for (package, targets) in plan {
-            for target in targets {
-                let key = (package.clone(), target.clone());
-                if !state.bins.contains_key(&key) && !state.errors.contains_key(&key) {
-                    state.errors.insert(key, fallback.clone());
-                }
             }
         }
     }
