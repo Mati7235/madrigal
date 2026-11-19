@@ -1,6 +1,7 @@
 slint::include_modules!();
 
 mod pages_library;
+mod player_ui;
 mod shell;
 mod theme;
 
@@ -11,6 +12,15 @@ pub use pages_library::{
     stats_totals, top_album_rows, top_artist_rows, top_track_rows, year_index, year_model,
     DownloadItem, CHIP_ALBUMS, CHIP_ARTISTS, CHIP_HISTORY, CHIP_LIBRARY, CHIP_PLAYLISTS, CHIP_SONGS,
     CHIP_STATS,
+};
+
+pub use player_ui::{
+    active_lyric_at, apply_background_style, apply_lyrics_settings, apply_playback_state,
+    apply_player_settings, background_from_appearance, background_index, clear_lyrics, dialog_index,
+    eq_preset_gains, lyric_progress_at, open_player_dialog, queue_tabs_from_queue, render_share_png,
+    repeat_from_index, repeat_index, set_lyrics, set_queue_models, set_stream_info, show_error,
+    wire_player_callbacks, PlaybackUiState, PlayerBackgroundStyle, PlayerDialog, QueueRowData,
+    QueueTabData,
 };
 
 pub use shell::{

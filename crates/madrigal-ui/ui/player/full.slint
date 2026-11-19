@@ -1,0 +1,463 @@
+import { Palette, Type } from "../tokens.slint";
+import { I18n } from "../i18n.slint";
+import { M3IconButton } from "../components/buttons.slint";
+import { LyricsView } from "lyrics.slint";
+import { LyricLineRow } from "models.slint";
+
+export component FullPlayer inherits Rectangle {
+    in property<Palette> palette;
+    in property<string> title;
+    in property<string> artist;
+    in property<string> album;
+    in property<bool> has-track: false;
+    in property<int> position-ms: 0;
+    in property<int> duration-ms: 0;
+    in property<bool> paused: true;
+    in property<bool> liked: false;
+    in property<int> repeat-mode: 0;
+    in property<bool> shuffle: false;
+    in property<float> volume: 0.7;
+    in property<int> bg-style: 0;
+    in property<int> panel: 0;
+    in property<[LyricLineRow]> lyric-rows;
+    in property<int> active-line: -1;
+    in property<float> word-progress: 0;
+    in property<float> lyrics-font-px: 16;
+    in property<float> lyrics-spacing: 1.5;
+
+    callback close-clicked();
+    callback play-clicked();
+    callback prev-clicked();
+    callback next-clicked();
+    callback like-clicked();
+    callback shuffle-clicked();
+    callback repeat-clicked();
+    callback volume-changed(float);
+    callback seek-to(int);
+    callback panel-selected(int);
+    callback info-clicked();
+    callback sleep-clicked();
+    callback tempo-clicked();
+    callback eq-clicked();
+    callback lyric-seek(int);
+    callback lyric-share();
+    callback line-at(int) -> int;
+    callback line-progress(int) -> float;
+
+    accessible-role: AccessibleRole.region;
+    accessible-label: I18n.trl(I18n.lang, "player.fullscreen");
+
+    property<float> frac: root.duration-ms > 0 ? (1.0 * root.position-ms) / root.duration-ms : 0;
+    property<int> pos-s: Math.floor(root.position-ms / 1000);
+    property<int> dur-s: Math.floor(root.duration-ms / 1000);
+    property<string> pos-text: Math.floor(root.pos-s / 60) + ":" + (Math.mod(root.pos-s, 60) < 10 ? "0" : "") + Math.mod(root.pos-s, 60);
+    property<string> dur-text: Math.floor(root.dur-s / 60) + ":" + (Math.mod(root.dur-s, 60) < 10 ? "0" : "") + Math.mod(root.dur-s, 60);
+    property<string> repeat-glyph: root.repeat-mode == 1 ? "1" : root.repeat-mode == 2 ? "A" : "o";
+
+    tick := Timer {
+        interval: 16ms;
+        running: root.visible && !root.paused && root.duration-ms > 0;
+        triggered() => {
+            root.seek-to(root.position-ms + 16 > root.duration-ms ? root.duration-ms : root.position-ms + 16);
+        }
+    }
+
+    bg-base := Rectangle {
+        width: 100%;
+        height: 100%;
+        background: root.palette.surface;
+    }
+
+    bg-alt := Rectangle {
+        width: 100%;
+        height: 100%;
+        background: root.bg-style == 1 ? root.palette.primary-container : root.bg-style == 2 ? root.palette.secondary-container : root.bg-style == 3 ? root.palette.tertiary-container : transparent;
+        opacity: root.bg-style == 0 ? 0 : 0.55;
+    }
+
+    bg-glow := Rectangle {
+        x: 60px;
+        y: 90px;
+        width: 320px;
+        height: 320px;
+        border-radius: 40px;
+        background: transparent;
+        border-width: root.bg-style == 3 ? 3px : 0px;
+        border-color: root.palette.primary;
+        visible: root.bg-style == 3;
+    }
+
+    VerticalLayout {
+        padding: 20px;
+        spacing: 10px;
+
+        full-head := HorizontalLayout {
+            spacing: 8px;
+
+            full-close := M3IconButton {
+                glyph: "v";
+                content: root.palette.on-surface-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.close-clicked(); }
+            }
+
+            full-head-texts := VerticalLayout {
+                spacing: 0px;
+                horizontal-stretch: 1;
+
+                full-head-title := Text {
+                    text: I18n.trl(I18n.lang, "player.fullscreen");
+                    color: root.palette.on-surface;
+                    font-size: Type.title-large.size;
+                    vertical-alignment: center;
+                }
+
+                full-head-album := Text {
+                    text: root.has-track ? root.album : I18n.trl(I18n.lang, "player.nowPlaying");
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.body-medium.size;
+                    overflow: elide;
+                }
+            }
+
+            full-info := M3IconButton {
+                glyph: "i";
+                content: root.palette.on-surface-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.info-clicked(); }
+            }
+
+            full-like := M3IconButton {
+                glyph: root.liked ? "<3" : "o";
+                selected: root.liked;
+                fill: root.liked ? root.palette.primary : transparent;
+                content: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.like-clicked(); }
+            }
+        }
+
+        full-body := HorizontalLayout {
+            spacing: 20px;
+            vertical-stretch: 1;
+
+            full-left := VerticalLayout {
+                width: 380px;
+                spacing: 10px;
+                alignment: center;
+
+                full-art := Rectangle {
+                    width: 300px;
+                    height: 300px;
+                    border-radius: root.bg-style == 2 ? 150px : 24px;
+                    background: root.palette.primary-container;
+
+                    full-initial := Text {
+                        text: root.has-track ? root.title : "?";
+                        color: root.palette.on-primary-container;
+                        font-size: 96px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        width: 100%;
+                        height: 100%;
+                        overflow: clip;
+                    }
+
+                    animate border-radius { duration: 200ms; easing: ease-in-out; }
+                }
+
+                full-title := Text {
+                    text: root.has-track ? root.title : I18n.trl(I18n.lang, "player.noTrack");
+                    color: root.palette.on-surface;
+                    font-size: Type.headline-small.size;
+                    horizontal-alignment: center;
+                    overflow: elide;
+                    width: 100%;
+                }
+
+                full-artist := Text {
+                    text: root.has-track ? root.artist : "";
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.title-medium.size;
+                    horizontal-alignment: center;
+                    overflow: elide;
+                    width: 100%;
+                }
+
+                full-times := HorizontalLayout {
+                    spacing: 8px;
+
+                    full-pos := Text {
+                        text: root.pos-text;
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                    }
+
+                    seek-bar := Rectangle {
+                        horizontal-stretch: 1;
+                        height: 32px;
+                        background: transparent;
+
+                        property<length> bar-w: self.width - 32px;
+
+                        seek-track := Rectangle {
+                            x: 16px;
+                            y: (parent.height - 6px) / 2;
+                            width: parent.bar-w;
+                            height: 6px;
+                            border-radius: 3px;
+                            background: root.palette.surface-container-highest;
+                        }
+
+                        seek-fill := Rectangle {
+                            x: 16px;
+                            y: (parent.height - 6px) / 2;
+                            width: parent.bar-w * clamp(root.frac, 0, 1);
+                            height: 6px;
+                            border-radius: 3px;
+                            background: root.palette.primary;
+                        }
+
+                        seek-touch := TouchArea {
+                            width: 100%;
+                            height: 100%;
+                            mouse-cursor: pointer;
+                            clicked => {
+                                root.seek-to(Math.round(clamp((self.mouse-x - 16px) / parent.bar-w, 0, 1) * root.duration-ms));
+                            }
+                            moved => {
+                                if (self.pressed) {
+                                    root.seek-to(Math.round(clamp((self.mouse-x - 16px) / parent.bar-w, 0, 1) * root.duration-ms));
+                                }
+                            }
+                        }
+                    }
+
+                    full-dur := Text {
+                        text: root.dur-text;
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                    }
+                }
+
+                full-transport := HorizontalLayout {
+                    spacing: 4px;
+                    alignment: center;
+
+                    full-shuffle := M3IconButton {
+                        glyph: "x";
+                        selected: root.shuffle;
+                        fill: root.shuffle ? root.palette.secondary-container : transparent;
+                        content: root.shuffle ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.shuffle-clicked(); }
+                    }
+
+                    full-prev := M3IconButton {
+                        glyph: "|<";
+                        content: root.palette.on-surface;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.prev-clicked(); }
+                    }
+
+                    full-play := M3IconButton {
+                        glyph: root.paused ? ">" : "||";
+                        selected: !root.paused;
+                        fill: root.palette.primary;
+                        content: root.paused ? root.palette.on-surface : root.palette.on-primary;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.play-clicked(); }
+                    }
+
+                    full-next := M3IconButton {
+                        glyph: ">|";
+                        content: root.palette.on-surface;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.next-clicked(); }
+                    }
+
+                    full-repeat := M3IconButton {
+                        glyph: root.repeat-glyph;
+                        selected: root.repeat-mode != 0;
+                        fill: root.repeat-mode != 0 ? root.palette.secondary-container : transparent;
+                        content: root.repeat-mode != 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.repeat-clicked(); }
+                    }
+                }
+
+                full-volrow := HorizontalLayout {
+                    spacing: 8px;
+
+                    full-vol-glyph := Text {
+                        width: 80px;
+                        text: I18n.trl(I18n.lang, "action.volume");
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                        vertical-alignment: center;
+                        overflow: elide;
+                    }
+
+                    vol-bar := Rectangle {
+                        horizontal-stretch: 1;
+                        height: 32px;
+                        background: transparent;
+
+                        property<length> vbar-w: self.width - 32px;
+
+                        vol-track := Rectangle {
+                            x: 16px;
+                            y: (parent.height - 6px) / 2;
+                            width: parent.vbar-w;
+                            height: 6px;
+                            border-radius: 3px;
+                            background: root.palette.surface-container-highest;
+                        }
+
+                        vol-fill := Rectangle {
+                            x: 16px;
+                            y: (parent.height - 6px) / 2;
+                            width: parent.vbar-w * clamp(root.volume, 0, 1);
+                            height: 6px;
+                            border-radius: 3px;
+                            background: root.palette.primary;
+                        }
+
+                        vol-touch := TouchArea {
+                            width: 100%;
+                            height: 100%;
+                            mouse-cursor: pointer;
+                            clicked => {
+                                root.volume-changed(clamp((self.mouse-x - 16px) / parent.vbar-w, 0, 1));
+                            }
+                            moved => {
+                                if (self.pressed) {
+                                    root.volume-changed(clamp((self.mouse-x - 16px) / parent.vbar-w, 0, 1));
+                                }
+                            }
+                        }
+                    }
+                }
+
+                full-tools := HorizontalLayout {
+                    spacing: 8px;
+                    alignment: center;
+
+                    full-lyrics-btn := M3IconButton {
+                        glyph: "L";
+                        selected: root.panel == 1;
+                        fill: root.panel == 1 ? root.palette.secondary-container : transparent;
+                        content: root.panel == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.panel-selected(root.panel == 1 ? 0 : 1); }
+                    }
+
+                    full-sleep := M3IconButton {
+                        glyph: "z";
+                        content: root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.sleep-clicked(); }
+                    }
+
+                    full-tempo := M3IconButton {
+                        glyph: "t";
+                        content: root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.tempo-clicked(); }
+                    }
+
+                    full-eq := M3IconButton {
+                        glyph: "E";
+                        content: root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.eq-clicked(); }
+                    }
+                }
+            }
+
+            full-right := VerticalLayout {
+                horizontal-stretch: 1;
+                spacing: 8px;
+
+                full-panel-tabs := HorizontalLayout {
+                    spacing: 4px;
+
+                    full-tab-now := Rectangle {
+                        width: 120px;
+                        height: 36px;
+                        border-radius: 18px;
+                        background: root.panel == 0 ? root.palette.secondary-container : transparent;
+
+                        Text {
+                            text: I18n.trl(I18n.lang, "player.nowPlaying");
+                            color: root.panel == 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                            font-size: Type.label-large.size;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                            width: 100%;
+                            height: 100%;
+                        }
+
+                        TouchArea {
+                            width: 100%;
+                            height: 100%;
+                            mouse-cursor: pointer;
+                            clicked => { root.panel-selected(0); }
+                        }
+                    }
+
+                    full-tab-lyrics := Rectangle {
+                        width: 120px;
+                        height: 36px;
+                        border-radius: 18px;
+                        background: root.panel == 1 ? root.palette.secondary-container : transparent;
+
+                        Text {
+                            text: I18n.trl(I18n.lang, "player.tab.lyrics");
+                            color: root.panel == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                            font-size: Type.label-large.size;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                            width: 100%;
+                            height: 100%;
+                        }
+
+                        TouchArea {
+                            width: 100%;
+                            height: 100%;
+                            mouse-cursor: pointer;
+                            clicked => { root.panel-selected(1); }
+                        }
+                    }
+                }
+
+                full-now := Rectangle {
+                    vertical-stretch: 1;
+                    background: transparent;
+                    visible: root.panel == 0;
+
+                    Text {
+                        text: root.has-track ? root.title + "\n" + root.artist : I18n.trl(I18n.lang, "player.noTrack");
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-large.size;
+                        wrap: word-wrap;
+                        width: 100%;
+                    }
+                }
+
+                full-lyrics := LyricsView {
+                    vertical-stretch: 1;
+                    visible: root.panel == 1;
+                    palette: root.palette;
+                    rows: root.lyric-rows;
+                    active-line: root.active-line;
+                    word-progress: root.word-progress;
+                    font-px: root.lyrics-font-px;
+                    spacing-mult: root.lyrics-spacing;
+                    line-seek(ms) => { root.lyric-seek(ms); }
+                    share-requested => { root.lyric-share(); }
+                }
+            }
+        }
+    }
+}

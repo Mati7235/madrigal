@@ -43,8 +43,8 @@ PageHost seam contract: `PageHost` takes `page` + `palette` and renders one
 placeholder branch per page index. Screens F8-3..F8-6 replace each branch with
 its page component in place, keeping the property names and the branch order;
 `MainShell` only reads `page` and never reaches into page internals. The
-queue drawer seam is `queue-count`, synced from `madrigal-player` `Queue`
-length via `sync_queue_seam` until the real drawer lands.
+queue count seam is `queue-count`, synced from `madrigal-player` `Queue`
+length via `sync_queue_seam`; the real drawer now lives in the player surface.
 
 Page state lives on `MainShell` as `in-out` mirror properties that `PageHost`
 binds through; page callbacks record `lib-action-count` / `dl-action-count`
@@ -58,7 +58,28 @@ results into the Slint row models.
 | --------------- | ------ | ----- |
 | 0 Home | placeholder | F8-3 |
 | 1 Search | placeholder | F8-3 |
-| 2 Explore | placeholder | F8-5 |
+| 2 Explore | placeholder | F8-3 |
 | 3 Library | `LibraryPage` (chips, tags, sorts, multiselect, history, stats) | F8-4 |
 | 4 Downloads | `DownloadsPage` (states, progress, actions) | F8-4 |
 | 5 Settings | placeholder | F8-6 |
+
+Player surface (`ui/player/`, presenter `src/player_ui.rs`, owner F8-5):
+`NowPlayingBar` replaces the shell strip (artwork thumb, title/artist,
+transport, thin progress, like, queue button). `FullPlayer` overlay opens via
+the shell `full-player-opened` signal (key F) and closes via its close button
+or Esc (shell dispatch, `full-player-closed`); background styles
+theme/gradient/blur/glow come from settings `PlayerBackground`
+(`apply_background_style`), big artwork, transport + seek slider, repeat /
+shuffle toggles, volume slider, lyrics + info buttons. `LyricsView` renders
+`madrigal-lyrics::Lyrics` through `karaoke::{line_at, word_at,
+progress_within}`: active-line highlight, per-word sweep, click-to-seek,
+`markers.translation` secondary line, font/spacing from
+`madrigal-settings::Lyrics`, share-as-image via `share_image::render_png`.
+`QueueDrawer` tabs All/Searched/Continue/Autoplaying from
+`queue_tabs_from_queue`, drag-reorder commits on `pointer-event(up)`,
+edit-lock toggle, per-row remove, current-track mark. Dialogs:
+`SleepTimerDialog`, `TempoPitchDialog`, `EqualizerDialog` (10 bands +
+presets), `PlaybackErrorDialog`, `StreamInfoPanel` (from
+`madrigal-player::stream_info::StreamInfo`). `PlaybackUiState` is injected
+with `apply_playback_state`; `wire_player_callbacks` owns all player state
+transitions. Asserted by `ui_player`.

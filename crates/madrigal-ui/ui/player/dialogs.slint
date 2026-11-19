@@ -1,0 +1,450 @@
+import { Palette, Type } from "../tokens.slint";
+import { I18n } from "../i18n.slint";
+import { M3Button, M3IconButton } from "../components/buttons.slint";
+import { M3Switch, M3Slider } from "../components/selection.slint";
+
+export component SleepTimerDialog inherits Rectangle {
+    in property<Palette> palette;
+    in property<int> mode: 0;
+    in property<int> minutes: 30;
+
+    callback minutes-selected(int);
+    callback end-of-song-selected();
+    callback off-selected();
+    callback dismissed();
+
+    accessible-role: AccessibleRole.region;
+    accessible-label: I18n.trl(I18n.lang, "player.sleep_timer");
+
+    HorizontalLayout {
+        alignment: center;
+        VerticalLayout {
+            alignment: center;
+            sleep-card := Rectangle {
+                width: 380px;
+                height: 340px;
+                border-radius: 12px;
+                background: root.palette.surface-container-high;
+                VerticalLayout {
+                    padding: 20px;
+                    spacing: 12px;
+                    sleep-title := Text {
+                        text: I18n.trl(I18n.lang, "player.sleep_timer");
+                        color: root.palette.on-surface;
+                        font-size: Type.title-large.size;
+                    }
+                    sleep-modes := HorizontalLayout {
+                        spacing: 8px;
+                        for m in [15, 30, 60]: sleep-opt := Rectangle {
+                            horizontal-stretch: 1;
+                            height: 44px;
+                            border-radius: 22px;
+                            background: root.mode == 1 && root.minutes == m ? root.palette.primary : root.palette.surface-container-highest;
+                            sleep-opt-label := Text {
+                                text: m;
+                                color: root.mode == 1 && root.minutes == m ? root.palette.on-primary : root.palette.on-surface;
+                                font-size: Type.label-large.size;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                                width: 100%;
+                                height: 100%;
+                            }
+                            sleep-opt-touch := TouchArea {
+                                width: 100%;
+                                height: 100%;
+                                mouse-cursor: pointer;
+                                clicked => { root.minutes-selected(m); }
+                            }
+                        }
+                    }
+                    sleep-eos-row := HorizontalLayout {
+                        spacing: 8px;
+                        alignment: start;
+                        sleep-eos-label := Text {
+                            text: I18n.trl(I18n.lang, "player.sleep_end");
+                            color: root.palette.on-surface;
+                            font-size: Type.body-large.size;
+                            horizontal-stretch: 1;
+                            vertical-alignment: center;
+                        }
+                        sleep-eos := M3Switch {
+                            label: I18n.trl(I18n.lang, "player.sleep_end");
+                            checked: root.mode == 2;
+                            on-track: root.palette.primary;
+                            on-thumb: root.palette.on-primary;
+                            off-track: root.palette.surface-container-highest;
+                            off-line: root.palette.outline;
+                            off-thumb: root.palette.outline;
+                            state-on-surface: root.palette.on-surface;
+                            toggled(on) => {
+                                if (on) {
+                                    root.end-of-song-selected();
+                                } else {
+                                    root.off-selected();
+                                }
+                            }
+                        }
+                    }
+                    sleep-off-row := HorizontalLayout {
+                        alignment: end;
+                        spacing: 8px;
+                        sleep-cancel := M3Button {
+                            width: 110px;
+                            text: I18n.trl(I18n.lang, "confirm.cancel");
+                            fill: root.palette.surface-container-highest;
+                            content: root.palette.on-surface;
+                            state-on-surface: root.palette.on-surface;
+                            clicked => { root.dismissed(); }
+                        }
+                        sleep-off-btn := M3Button {
+                            width: 130px;
+                            text: I18n.trl(I18n.lang, "player.sleep_off");
+                            fill: transparent;
+                            content: root.palette.on-surface-variant;
+                            line: root.palette.outline-variant;
+                            state-on-surface: root.palette.on-surface;
+                            clicked => { root.off-selected(); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component TempoPitchDialog inherits Rectangle {
+    in property<Palette> palette;
+    in-out property<float> semitones: 0;
+    in-out property<float> mult: 1;
+
+    callback commit();
+    callback reset();
+    callback dismissed();
+
+    accessible-role: AccessibleRole.region;
+    accessible-label: I18n.trl(I18n.lang, "player.tempoPitch");
+
+    property<float> semi01: (root.semitones + 12) / 24;
+    property<float> mult01: (root.mult - 0.5) / 1.5;
+
+    HorizontalLayout {
+        alignment: center;
+        VerticalLayout {
+            alignment: center;
+            tempo-card := Rectangle {
+                width: 420px;
+                height: 360px;
+                border-radius: 12px;
+                background: root.palette.surface-container-high;
+                VerticalLayout {
+                    padding: 20px;
+                    spacing: 8px;
+                    tempo-title := Text {
+                        text: I18n.trl(I18n.lang, "player.tempoPitch");
+                        color: root.palette.on-surface;
+                        font-size: Type.title-large.size;
+                    }
+                    tempo-semi-label := Text {
+                        text: I18n.trl(I18n.lang, "audio.pitch");
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                    }
+                    tempo-semi := M3Slider {
+                        value: root.semi01;
+                        active-track: root.palette.primary;
+                        inactive-track: root.palette.surface-container-highest;
+                        handle-color: root.palette.primary;
+                        state-on-surface: root.palette.on-surface;
+                        changed(v) => {
+                            root.semitones = Math.round((v * 24 - 12) * 10) / 10;
+                            root.commit();
+                        }
+                    }
+                    tempo-mult-label := Text {
+                        text: I18n.trl(I18n.lang, "audio.speed");
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                    }
+                    tempo-mult := M3Slider {
+                        value: root.mult01;
+                        active-track: root.palette.primary;
+                        inactive-track: root.palette.surface-container-highest;
+                        handle-color: root.palette.primary;
+                        state-on-surface: root.palette.on-surface;
+                        changed(v) => {
+                            root.mult = Math.round((0.5 + v * 1.5) * 100) / 100;
+                            root.commit();
+                        }
+                    }
+                    tempo-row := HorizontalLayout {
+                        alignment: end;
+                        spacing: 8px;
+                        tempo-cancel := M3Button {
+                            width: 110px;
+                            text: I18n.trl(I18n.lang, "confirm.cancel");
+                            fill: root.palette.surface-container-highest;
+                            content: root.palette.on-surface;
+                            state-on-surface: root.palette.on-surface;
+                            clicked => { root.dismissed(); }
+                        }
+                        tempo-reset-btn := M3Button {
+                            width: 220px;
+                            text: I18n.trl(I18n.lang, "audio.reset");
+                            fill: transparent;
+                            content: root.palette.on-surface-variant;
+                            line: root.palette.outline-variant;
+                            state-on-surface: root.palette.on-surface;
+                            clicked => { root.reset(); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component EqualizerDialog inherits Rectangle {
+    in property<Palette> palette;
+    in property<bool> eq-on: false;
+    in property<[float]> gains;
+    in property<string> preset-name;
+
+    callback toggled(bool);
+    callback band-changed(int, float);
+    callback preset-selected(string);
+    callback dismissed();
+
+    accessible-role: AccessibleRole.region;
+    accessible-label: I18n.trl(I18n.lang, "audio.equalizer");
+
+    HorizontalLayout {
+        alignment: center;
+        VerticalLayout {
+            alignment: center;
+            eq-card := Rectangle {
+                width: 560px;
+                height: 480px;
+                border-radius: 12px;
+                background: root.palette.surface-container-high;
+                VerticalLayout {
+                    padding: 20px;
+                    spacing: 8px;
+                    eq-head := HorizontalLayout {
+                        spacing: 8px;
+                        eq-title := Text {
+                            text: I18n.trl(I18n.lang, "audio.equalizer");
+                            color: root.palette.on-surface;
+                            font-size: Type.title-large.size;
+                            horizontal-stretch: 1;
+                            vertical-alignment: center;
+                        }
+                        eq-enable := M3Switch {
+                            label: I18n.trl(I18n.lang, "audio.equalizer");
+                            checked: root.eq-on;
+                            on-track: root.palette.primary;
+                            on-thumb: root.palette.on-primary;
+                            off-track: root.palette.surface-container-highest;
+                            off-line: root.palette.outline;
+                            off-thumb: root.palette.outline;
+                            state-on-surface: root.palette.on-surface;
+                            toggled(on) => { root.toggled(on); }
+                        }
+                    }
+                    eq-presets := HorizontalLayout {
+                        spacing: 8px;
+                        for p in ["flat", "bass", "treble", "vocal"]: eq-preset := Rectangle {
+                            horizontal-stretch: 1;
+                            height: 36px;
+                            border-radius: 18px;
+                            background: root.preset-name == p ? root.palette.secondary-container : transparent;
+                            eq-preset-label := Text {
+                                text: I18n.trl(I18n.lang, "audio.preset." + (p == "treble" ? "brillante" : p == "bass" ? "graves" : p == "vocal" ? "voz" : "plano"));
+                                color: root.preset-name == p ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                                font-size: Type.label-large.size;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                                width: 100%;
+                                height: 100%;
+                                overflow: elide;
+                            }
+                            eq-preset-touch := TouchArea {
+                                width: 100%;
+                                height: 100%;
+                                mouse-cursor: pointer;
+                                clicked => { root.preset-selected(p); }
+                            }
+                        }
+                    }
+                    eq-bands := HorizontalLayout {
+                        spacing: 2px;
+                        vertical-stretch: 1;
+                        for i in 10: eq-band := M3Slider {
+                            horizontal-stretch: 1;
+                            value: i < root.gains.length ? root.gains[i] : 0.5;
+                            active-track: root.palette.primary;
+                            inactive-track: root.palette.surface-container-highest;
+                            handle-color: root.palette.primary;
+                            state-on-surface: root.palette.on-surface;
+                            changed(v) => { root.band-changed(i, v); }
+                        }
+                    }
+                    eq-foot := HorizontalLayout {
+                        alignment: end;
+                        eq-close := M3Button {
+                            width: 110px;
+                            text: I18n.trl(I18n.lang, "confirm.cancel");
+                            fill: root.palette.surface-container-highest;
+                            content: root.palette.on-surface;
+                            state-on-surface: root.palette.on-surface;
+                            clicked => { root.dismissed(); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component PlaybackErrorDialog inherits Rectangle {
+    in property<Palette> palette;
+    in property<string> code;
+    in property<string> message;
+
+    callback retry();
+    callback dismissed();
+
+    accessible-role: AccessibleRole.region;
+    accessible-label: I18n.trl(I18n.lang, "player.playbackError");
+
+    HorizontalLayout {
+        alignment: center;
+        VerticalLayout {
+            alignment: center;
+            error-card := Rectangle {
+                width: 380px;
+                height: 280px;
+                border-radius: 12px;
+                background: root.palette.surface-container-high;
+                VerticalLayout {
+                    padding: 20px;
+                    spacing: 12px;
+                    error-title := Text {
+                        text: I18n.trl(I18n.lang, "player.playbackError");
+                        color: root.palette.error;
+                        font-size: Type.title-large.size;
+                    }
+                    error-code := Text {
+                        text: root.code;
+                        color: root.palette.on-surface;
+                        font-size: Type.body-large.size;
+                    }
+                    error-message := Text {
+                        text: root.message;
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                        wrap: word-wrap;
+                        vertical-stretch: 1;
+                    }
+                    error-row := HorizontalLayout {
+                        alignment: end;
+                        spacing: 8px;
+                        error-dismiss := M3Button {
+                            width: 110px;
+                            text: I18n.trl(I18n.lang, "confirm.cancel");
+                            fill: root.palette.surface-container-highest;
+                            content: root.palette.on-surface;
+                            state-on-surface: root.palette.on-surface;
+                            clicked => { root.dismissed(); }
+                        }
+                        error-retry-btn := M3Button {
+                            width: 120px;
+                            text: I18n.trl(I18n.lang, "common.retry");
+                            fill: root.palette.primary;
+                            content: root.palette.on-primary;
+                            state-on-surface: root.palette.on-surface;
+                            clicked => { root.retry(); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component StreamInfoPanel inherits Rectangle {
+    in property<Palette> palette;
+    in property<string> codec;
+    in property<string> bitrate;
+    in property<string> sample-rate;
+    in property<string> loudness;
+    in property<string> buffer;
+    in property<string> state;
+
+    callback dismissed();
+
+    accessible-role: AccessibleRole.region;
+    accessible-label: I18n.trl(I18n.lang, "stream.title");
+
+    HorizontalLayout {
+        alignment: center;
+        VerticalLayout {
+            alignment: center;
+            info-card := Rectangle {
+                width: 380px;
+                height: 420px;
+                border-radius: 12px;
+                background: root.palette.surface-container-high;
+                VerticalLayout {
+                    padding: 20px;
+                    spacing: 8px;
+                    info-title := Text {
+                        text: I18n.trl(I18n.lang, "stream.title");
+                        color: root.palette.on-surface;
+                        font-size: Type.title-large.size;
+                    }
+                    info-codec := Text {
+                        text: I18n.trl(I18n.lang, "stream.codec") + ": " + root.codec;
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                    }
+                    info-bitrate := Text {
+                        text: I18n.trl(I18n.lang, "stream.bitrate") + ": " + root.bitrate;
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                    }
+                    info-rate := Text {
+                        text: I18n.trl(I18n.lang, "stream.samplerate") + ": " + root.sample-rate;
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                    }
+                    info-loud := Text {
+                        text: I18n.trl(I18n.lang, "stream.quality") + ": " + root.loudness;
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                    }
+                    info-buffer := Text {
+                        text: I18n.trl(I18n.lang, "stream.source") + ": " + root.buffer;
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                    }
+                    info-state := Text {
+                        text: I18n.trl(I18n.lang, "stream.resolution") + ": " + root.state;
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                    }
+                    info-foot := HorizontalLayout {
+                        alignment: end;
+                        info-close := M3Button {
+                            width: 110px;
+                            text: I18n.trl(I18n.lang, "action.close");
+                            fill: root.palette.surface-container-highest;
+                            content: root.palette.on-surface;
+                            state-on-surface: root.palette.on-surface;
+                            clicked => { root.dismissed(); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

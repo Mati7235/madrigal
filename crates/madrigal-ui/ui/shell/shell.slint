@@ -4,6 +4,11 @@ import { LibSongRow, LibPlaylistRow, LibCardRow, HistoryRow, StatRow, DownloadRo
 import { SideNav } from "sidebar.slint";
 import { PageHost } from "pagehost.slint";
 import { ConfirmOverlay, PromptOverlay } from "overlays.slint";
+import { NowPlayingBar } from "../player/bar.slint";
+import { FullPlayer } from "../player/full.slint";
+import { QueueDrawer } from "../player/queue.slint";
+import { SleepTimerDialog, TempoPitchDialog, EqualizerDialog, PlaybackErrorDialog, StreamInfoPanel } from "../player/dialogs.slint";
+import { QueueRow, LyricLineRow } from "../player/models.slint";
 
 export component MainShell inherits Window {
     in-out property<Palette> palette: Light.palette;
@@ -43,6 +48,71 @@ export component MainShell inherits Window {
     in-out property<string> lib-last-action: "";
     in-out property<int> dl-action-count: 0;
     in-out property<string> dl-last-action: "";
+    in-out property<string> track-title: "";
+    in-out property<string> track-artist: "";
+    in-out property<string> track-album: "";
+    in-out property<bool> has-track: false;
+    in-out property<int> position-ms: 0;
+    in-out property<int> duration-ms: 0;
+    in-out property<bool> paused: true;
+    in-out property<bool> liked: false;
+    in-out property<int> repeat-mode: 0;
+    in-out property<bool> shuffle: false;
+    in-out property<float> volume: 0.7;
+    in-out property<int> bg-style: 0;
+    in-out property<int> player-panel: 0;
+    in-out property<[LyricLineRow]> lyric-rows;
+    in-out property<int> active-line: -1;
+    in-out property<float> word-progress: 0;
+    in-out property<float> lyrics-font-px: 16;
+    in-out property<float> lyrics-spacing: 1.5;
+    in-out property<int> queue-tab: 0;
+    in-out property<bool> queue-locked: false;
+    in-out property<[QueueRow]> queue-all;
+    in-out property<[QueueRow]> queue-searched;
+    in-out property<[QueueRow]> queue-continue;
+    in-out property<[QueueRow]> queue-auto;
+    in-out property<int> drag-from: -1;
+    in-out property<int> drag-to: -1;
+    in-out property<bool> full-player-open: false;
+    in-out property<bool> queue-open: false;
+    in-out property<int> player-dialog: 0;
+    in-out property<int> sleep-mode: 0;
+    in-out property<int> sleep-minutes: 30;
+    in-out property<float> tempo-semitones: 0;
+    in-out property<float> tempo-mult: 1;
+    in-out property<bool> eq-on: false;
+    in-out property<[float]> eq-gains;
+    in-out property<string> eq-preset: "flat";
+    in-out property<string> error-code: "";
+    in-out property<string> error-message: "";
+    in-out property<string> stream-codec: "";
+    in-out property<string> stream-bitrate: "";
+    in-out property<string> stream-rate: "";
+    in-out property<string> stream-loudness: "";
+    in-out property<string> stream-buffer: "";
+    in-out property<string> stream-state: "";
+    in-out property<int> like-count: 0;
+    in-out property<int> queue-open-count: 0;
+    in-out property<int> lyrics-seek-count: 0;
+    in-out property<int> lyrics-seek-ms: 0;
+    in-out property<int> lyrics-share-count: 0;
+    in-out property<int> queue-play-count: 0;
+    in-out property<int> queue-play-last: -1;
+    in-out property<int> queue-remove-count: 0;
+    in-out property<int> queue-remove-last: -1;
+    in-out property<int> queue-move-count: 0;
+    in-out property<int> queue-move-from: -1;
+    in-out property<int> queue-move-to: -1;
+    in-out property<int> volume-count: 0;
+    in-out property<int> dialog-count: 0;
+    in-out property<int> sleep-count: 0;
+    in-out property<int> tempo-count: 0;
+    in-out property<int> eq-count: 0;
+    in-out property<int> error-retry-count: 0;
+    in-out property<int> player-dismiss-count: 0;
+    in-out property<int> seek-count: 0;
+    in-out property<int> seek-last-ms: 0;
     in-out property<string> confirm-title: "";
     in-out property<string> confirm-body: "";
     in-out property<int> confirm-result: -1;
@@ -173,6 +243,35 @@ export component MainShell inherits Window {
     dl-cancel(id) => { root.dl-record("dl-cancel"); }
     dl-retry(id) => { root.dl-record("dl-retry"); }
     dl-retry-all() => { root.dl-record("dl-retry-all"); }
+    callback like-toggled();
+    callback queue-opened();
+    callback queue-closed();
+    callback full-player-closed();
+    callback repeat-toggled();
+    callback shuffle-toggled();
+    callback volume-changed(float);
+    callback seek-to-requested(int);
+    callback lyrics-seek-requested(int);
+    callback lyrics-share-requested();
+    callback queue-play-requested(int);
+    callback queue-remove-requested(int);
+    callback queue-move-requested(int, int);
+    callback queue-tab-selected(int);
+    callback queue-lock-toggled();
+    callback player-dialog-requested(int);
+    callback player-dialog-dismissed();
+    callback sleep-selected(int, int);
+    callback tempo-committed();
+    callback tempo-reset();
+    callback eq-toggled(bool);
+    callback eq-band-changed(int, float);
+    callback eq-preset-selected(string);
+    callback error-retried();
+    callback drag-start(int, length);
+    callback drag-move(length);
+    callback drag-end();
+    pure callback line-at(int) -> int;
+    pure callback line-progress(int) -> float;
 
     apply-theme(k) => {
         if (k == 0) {
@@ -228,6 +327,22 @@ export component MainShell inherits Window {
 
     handle-key(key) => {
         if (key == "Escape") {
+            if (root.player-dialog != 0) {
+                root.player-dialog = 0;
+                root.player-dialog-dismissed();
+                return true;
+            }
+            if (root.queue-open) {
+                root.queue-open = false;
+                root.queue-closed();
+                return true;
+            }
+            if (root.full-player-open) {
+                root.full-player-open = false;
+                root.player-dialog = 0;
+                root.full-player-closed();
+                return true;
+            }
             if (root.overlay == 1) {
                 root.confirm-dismissed();
                 return true;
@@ -395,28 +510,22 @@ export component MainShell inherits Window {
                 dl-retry(id) => { root.dl-retry(id); }
                 dl-retry-all() => { root.dl-retry-all(); }
             }
-            nowbar := Rectangle {
+            nowbar := NowPlayingBar {
                 height: 72px;
-                background: root.palette.surface-container;
-                nowbar-dot := Rectangle {
-                    x: 16px;
-                    y: 14px;
-                    width: 44px;
-                    height: 44px;
-                    border-radius: 22px;
-                    background: root.palette.secondary-container;
-                }
-                nowbar-text := Text {
-                    x: 72px;
-                    y: 0px;
-                    width: parent.width - 88px;
-                    height: 100%;
-                    text: I18n.trl(I18n.lang, "player.noTrack") + " (" + root.queue-count + ")";
-                    color: root.palette.on-surface-variant;
-                    font-size: Type.body-medium.size;
-                    vertical-alignment: center;
-                    overflow: elide;
-                }
+                palette: root.palette;
+                title: root.track-title;
+                artist: root.track-artist;
+                has-track: root.has-track;
+                position-ms: root.position-ms;
+                duration-ms: root.duration-ms;
+                paused: root.paused;
+                liked: root.liked;
+                queue-count: root.queue-count;
+                play-clicked => { root.play-toggle-count += 1; root.play-pause-toggled(); }
+                prev-clicked => { root.prev-count += 1; root.prev-requested(); }
+                next-clicked => { root.next-count += 1; root.next-requested(); }
+                like-clicked => { root.like-toggled(); }
+                queue-clicked => { root.queue-open = true; root.queue-opened(); }
             }
         }
     }
@@ -441,5 +550,136 @@ export component MainShell inherits Window {
         input <=> root.prompt-input;
         accepted(text) => { root.prompt-accepted(text); }
         dismissed => { root.prompt-dismissed(); }
+    }
+
+    full-layer := FullPlayer {
+        width: 100%;
+        height: 100%;
+        visible: root.full-player-open;
+        palette: root.palette;
+        title: root.track-title;
+        artist: root.track-artist;
+        album: root.track-album;
+        has-track: root.has-track;
+        position-ms: root.position-ms;
+        duration-ms: root.duration-ms;
+        paused: root.paused;
+        liked: root.liked;
+        repeat-mode: root.repeat-mode;
+        shuffle: root.shuffle;
+        volume: root.volume;
+        bg-style: root.bg-style;
+        panel: root.player-panel;
+        lyric-rows: root.lyric-rows;
+        active-line: root.active-line;
+        word-progress: root.word-progress;
+        lyrics-font-px: root.lyrics-font-px;
+        lyrics-spacing: root.lyrics-spacing;
+        close-clicked => { root.full-player-open = false; root.player-dialog = 0; root.full-player-closed(); }
+        play-clicked => { root.play-toggle-count += 1; root.play-pause-toggled(); }
+        prev-clicked => { root.prev-count += 1; root.prev-requested(); }
+        next-clicked => { root.next-count += 1; root.next-requested(); }
+        like-clicked => { root.like-toggled(); }
+        shuffle-clicked => { root.shuffle-toggled(); }
+        repeat-clicked => { root.repeat-toggled(); }
+        volume-changed(v) => { root.volume-changed(v); }
+        seek-to(ms) => { root.seek-to-requested(ms); }
+        panel-selected(p) => { root.player-panel = p; }
+        info-clicked => { root.player-dialog = 5; root.player-dialog-requested(5); }
+        sleep-clicked => { root.player-dialog = 1; root.player-dialog-requested(1); }
+        tempo-clicked => { root.player-dialog = 2; root.player-dialog-requested(2); }
+        eq-clicked => { root.player-dialog = 3; root.player-dialog-requested(3); }
+        lyric-seek(ms) => { root.lyrics-seek-requested(ms); }
+        lyric-share => { root.lyrics-share-requested(); }
+        line-at(t) => { root.line-at(t) }
+        line-progress(t) => { root.line-progress(t) }
+    }
+
+    queue-layer := QueueDrawer {
+        x: parent.width - 380px;
+        y: 0px;
+        width: 380px;
+        height: 100%;
+        visible: root.queue-open;
+        palette: root.palette;
+        tab: root.queue-tab;
+        locked: root.queue-locked;
+        total-count: root.queue-count;
+        rows-all: root.queue-all;
+        rows-searched: root.queue-searched;
+        rows-continue: root.queue-continue;
+        rows-auto: root.queue-auto;
+        close-clicked => { root.queue-open = false; root.queue-closed(); }
+        lock-clicked => { root.queue-lock-toggled(); }
+        tab-selected(t) => { root.queue-tab-selected(t); }
+        row-play(i) => { root.queue-play-requested(i); }
+        row-remove(i) => { root.queue-remove-requested(i); }
+        drag-start(i, y) => { root.drag-start(i, y); }
+        drag-move(y) => { root.drag-move(y); }
+        drag-end => { root.drag-end(); }
+    }
+
+    sleep-layer := SleepTimerDialog {
+        width: 100%;
+        height: 100%;
+        visible: root.player-dialog == 1;
+        palette: root.palette;
+        mode: root.sleep-mode;
+        minutes: root.sleep-minutes;
+        minutes-selected(m) => { root.sleep-selected(1, m); }
+        end-of-song-selected => { root.sleep-selected(2, 0); }
+        off-selected => { root.sleep-selected(0, 0); }
+        dismissed => { root.player-dialog = 0; root.player-dialog-dismissed(); }
+    }
+
+    tempo-layer := TempoPitchDialog {
+        width: 100%;
+        height: 100%;
+        visible: root.player-dialog == 2;
+        palette: root.palette;
+        semitones <=> root.tempo-semitones;
+        mult <=> root.tempo-mult;
+        commit => { root.tempo-committed(); }
+        reset => { root.tempo-reset(); }
+        dismissed => { root.player-dialog = 0; root.player-dialog-dismissed(); }
+    }
+
+    eq-layer := EqualizerDialog {
+        width: 100%;
+        height: 100%;
+        visible: root.player-dialog == 3;
+        palette: root.palette;
+        eq-on: root.eq-on;
+        gains: root.eq-gains;
+        preset-name: root.eq-preset;
+        toggled(on) => { root.eq-toggled(on); }
+        band-changed(i, v) => { root.eq-band-changed(i, v); }
+        preset-selected(p) => { root.eq-preset-selected(p); }
+        dismissed => { root.player-dialog = 0; root.player-dialog-dismissed(); }
+    }
+
+    error-layer := PlaybackErrorDialog {
+        width: 100%;
+        height: 100%;
+        visible: root.player-dialog == 4;
+        palette: root.palette;
+        code: root.error-code;
+        message: root.error-message;
+        retry => { root.error-retried(); }
+        dismissed => { root.player-dialog = 0; root.player-dialog-dismissed(); }
+    }
+
+    info-layer := StreamInfoPanel {
+        width: 100%;
+        height: 100%;
+        visible: root.player-dialog == 5;
+        palette: root.palette;
+        codec: root.stream-codec;
+        bitrate: root.stream-bitrate;
+        sample-rate: root.stream-rate;
+        loudness: root.stream-loudness;
+        buffer: root.stream-buffer;
+        state: root.stream-state;
+        dismissed => { root.player-dialog = 0; root.player-dialog-dismissed(); }
     }
 }

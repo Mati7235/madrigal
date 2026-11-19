@@ -13,6 +13,7 @@ madrigal-db = { path = "../madrigal-db" }
 madrigal-downloads = { path = "../madrigal-downloads" }
 madrigal-i18n = { path = "../madrigal-i18n" }
 madrigal-library = { path = "../madrigal-library" }
+madrigal-lyrics = { path = "../madrigal-lyrics" }
 madrigal-paths = { path = "../madrigal-paths" }
 madrigal-player = { path = "../madrigal-player" }
 madrigal-settings = { path = "../madrigal-settings" }
@@ -21,6 +22,7 @@ slint = { version = "=1.19.0", features = ["mcp"] }
 tempfile = "3"
 
 [dev-dependencies]
+madrigal-core = { path = "../madrigal-core" }
 madrigal-testkit = { path = "../madrigal-testkit" }
 tempfile = "3"
 
@@ -38,3 +40,7 @@ path = "tests/checks/check_ui_shell.rs"
 [[test]]
 name = "check_ui_library"
 path = "tests/checks/check_ui_library.rs"
+
+[[test]]
+name = "check_ui_player"
+path = "tests/checks/check_ui_player.rs"
