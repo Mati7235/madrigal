@@ -56,9 +56,10 @@ results into the Slint row models.
 
 | PageHost branch | Screen | Owner |
 | --------------- | ------ | ----- |
-| 0 Home | placeholder | F8-3 |
-| 1 Search | placeholder | F8-3 |
-| 2 Explore | placeholder | F8-3 |
+| 0 Home | `HomePage`: chips, sections, quick picks, pins | F8-3 |
+| 1 Search | `SearchPage`: suggestions, filters, source toggle | F8-3 |
+| 2 Explore | `ExplorePage`: moods, charts, releases, browse | F8-3 |
+| Detail (page-independent) | `DetailPage` behind `detail-stack`; shell callbacks `detail-requested` / `detail-opened` / `detail-closed` / `play-requested` | F8-3 |
 | 3 Library | `LibraryPage` (chips, tags, sorts, multiselect, history, stats) | F8-4 |
 | 4 Downloads | `DownloadsPage` (states, progress, actions) | F8-4 |
 | 5 Settings | placeholder | F8-6 |

@@ -3,6 +3,12 @@ import { I18n } from "../i18n.slint";
 import { LibSongRow, LibPlaylistRow, LibCardRow, HistoryRow, StatRow, DownloadRow } from "../pages/library/models.slint";
 import { LibraryPage } from "../pages/library/library.slint";
 import { DownloadsPage } from "../pages/library/downloads.slint";
+import { CatalogItem, CatalogSection, DetailRef, MoodEntry } from "../pages/catalog/refs.slint";
+import { DetailKind } from "../pages/catalog/refs.slint";
+import { HomePage } from "../pages/catalog/home.slint";
+import { SearchPage } from "../pages/catalog/search.slint";
+import { ExplorePage } from "../pages/catalog/explore.slint";
+import { DetailPage } from "../pages/catalog/detail.slint";
 
 export component PageHost inherits Rectangle {
     in property<int> page;
@@ -59,6 +65,49 @@ export component PageHost inherits Rectangle {
     callback dl-cancel(string);
     callback dl-retry(string);
     callback dl-retry-all();
+    in property<bool> search-focused: false;
+    in-out property<int> detail-stack: 0;
+    in-out property<DetailRef> detail-ref: { kind: DetailKind.album, id: "" };
+
+    in property<[string]> home-chips;
+    in-out property<int> home-current-chip: 0;
+    in property<[CatalogSection]> home-sections;
+    in property<[CatalogItem]> home-quick-picks;
+    in property<[CatalogItem]> home-pins;
+    in property<bool> home-card-layout: true;
+    in-out property<int> home-selected-item: -1;
+
+    in-out property<string> search-query: "";
+    in property<[string]> search-suggestions;
+    in-out property<int> search-suggestion-index: -1;
+    in-out property<int> search-filter-tab: 0;
+    in property<[CatalogItem]> search-results;
+    in-out property<int> search-source: 1;
+
+    in property<[MoodEntry]> explore-moods-left;
+    in property<[MoodEntry]> explore-moods-right;
+    in property<string> explore-charts-id: "charts:";
+    in-out property<int> explore-releases-tab: 0;
+    in property<[CatalogItem]> explore-releases-albums;
+    in property<[CatalogItem]> explore-releases-videos;
+    in property<[CatalogSection]> explore-browse-sections;
+
+    in property<string> detail-title: "";
+    in property<string> detail-subtitle: "";
+    in property<string> detail-description: "";
+    in property<[CatalogItem]> detail-tracks;
+    in property<[CatalogItem]> detail-albums;
+    in property<[CatalogSection]> detail-sections;
+    in-out property<int> detail-tab: 0;
+
+    callback chip-selected(int);
+    callback query-changed(string);
+    callback suggestion-accepted(string);
+    callback filter-selected(int);
+    callback source-selected(int);
+    callback detail-requested(DetailRef);
+    callback play-requested(string);
+    callback detail-closed();
 
     property<string> title: root.page == 0 ? I18n.trl(I18n.lang, "nav.home") : root.page == 1 ? I18n.trl(I18n.lang, "explore.search") : root.page == 2 ? I18n.trl(I18n.lang, "nav.explore") : root.page == 3 ? I18n.trl(I18n.lang, "nav.lists") : root.page == 4 ? I18n.trl(I18n.lang, "nav.downloads") : I18n.trl(I18n.lang, "settings.title");
 
@@ -66,49 +115,54 @@ export component PageHost inherits Rectangle {
     accessible-role: text;
     accessible-label: root.title;
 
-    if (root.page == 0) : home-ph := Rectangle {
-        ph-home-label := Text {
-            x: 0px;
-            y: 0px;
-            width: 100%;
-            height: 100%;
-            text: I18n.trl(I18n.lang, "nav.home");
-            color: root.palette.on-surface;
-            font-size: Type.headline-small.size;
-            font-weight: Type.headline-small.weight;
-            horizontal-alignment: center;
-            vertical-alignment: center;
-        }
+    if (root.page == 0) : home-page := HomePage {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        chips: root.home-chips;
+        current-chip <=> root.home-current-chip;
+        sections: root.home-sections;
+        quick-picks: root.home-quick-picks;
+        pins: root.home-pins;
+        card-layout: root.home-card-layout;
+        selected-item <=> root.home-selected-item;
+        chip-selected(i) => { root.chip-selected(i); }
+        detail-requested(ref) => { root.detail-requested(ref); }
+        play-requested(id) => { root.play-requested(id); }
     }
 
-    if (root.page == 1) : search-ph := Rectangle {
-        ph-search-label := Text {
-            x: 0px;
-            y: 0px;
-            width: 100%;
-            height: 100%;
-            text: I18n.trl(I18n.lang, "explore.search");
-            color: root.palette.on-surface;
-            font-size: Type.headline-small.size;
-            font-weight: Type.headline-small.weight;
-            horizontal-alignment: center;
-            vertical-alignment: center;
-        }
+    if (root.page == 1) : search-page := SearchPage {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        focus-requested: root.search-focused;
+        query <=> root.search-query;
+        suggestions: root.search-suggestions;
+        suggestion-index <=> root.search-suggestion-index;
+        filter-tab <=> root.search-filter-tab;
+        results: root.search-results;
+        source <=> root.search-source;
+        query-changed(text) => { root.query-changed(text); }
+        suggestion-accepted(text) => { root.suggestion-accepted(text); }
+        filter-selected(i) => { root.filter-selected(i); }
+        source-selected(i) => { root.source-selected(i); }
+        detail-requested(ref) => { root.detail-requested(ref); }
+        play-requested(id) => { root.play-requested(id); }
     }
 
-    if (root.page == 2) : explore-ph := Rectangle {
-        ph-explore-label := Text {
-            x: 0px;
-            y: 0px;
-            width: 100%;
-            height: 100%;
-            text: I18n.trl(I18n.lang, "nav.explore");
-            color: root.palette.on-surface;
-            font-size: Type.headline-small.size;
-            font-weight: Type.headline-small.weight;
-            horizontal-alignment: center;
-            vertical-alignment: center;
-        }
+    if (root.page == 2) : explore-page := ExplorePage {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        moods-left: root.explore-moods-left;
+        moods-right: root.explore-moods-right;
+        charts-id: root.explore-charts-id;
+        releases-tab <=> root.explore-releases-tab;
+        releases-albums: root.explore-releases-albums;
+        releases-videos: root.explore-releases-videos;
+        browse-sections: root.explore-browse-sections;
+        detail-requested(ref) => { root.detail-requested(ref); }
+        play-requested(id) => { root.play-requested(id); }
     }
 
     if (root.page == 3) : library-host := LibraryPage {
@@ -191,5 +245,25 @@ export component PageHost inherits Rectangle {
             horizontal-alignment: center;
             vertical-alignment: center;
         }
+    }
+
+    if (root.detail-stack == 1) : detail-view := DetailPage {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        detail: root.detail-ref;
+        title: root.detail-title;
+        subtitle: root.detail-subtitle;
+        description: root.detail-description;
+        tracks: root.detail-tracks;
+        albums: root.detail-albums;
+        sections: root.detail-sections;
+        detail-tab <=> root.detail-tab;
+        back-requested => {
+            root.detail-stack = 0;
+            root.detail-closed();
+        }
+        detail-requested(ref) => { root.detail-requested(ref); }
+        play-requested(id) => { root.play-requested(id); }
     }
 }

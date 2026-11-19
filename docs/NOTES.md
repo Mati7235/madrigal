@@ -1,5 +1,25 @@
 # Notes
 
+## Catalog screens port (F8-3)
+
+Oracle (local Python app): `upstream_desktop/ui/qml/{Home,Search,Explore,Detail}Page.qml`
+(port structure/behavior only; no Qt in the product).
+`madrigal-ui` hosts `HomePage`/`SearchPage`/`ExplorePage`/`DetailPage`
+(`ui/pages/catalog/`) inside `PageHost` branches 0-2; `MainShell` mirrors
+every page model as `home-`/`search-`/`explore-`/`detail-` properties and
+forwards `chip-selected`/`query-changed`/`suggestion-accepted`/
+`filter-selected`/`source-selected`/`play-requested`/`detail-requested`
+to the Rust presenter (`src/pages_catalog.rs`, fixture `load_*` helpers).
+Slint findings: single-line `TextInput` consumes Up/Down (cursor move) and
+Return (`accepted`), so suggestion navigation goes through a new additive
+`M3SearchBar::nav-key(string) -> bool` callback wired to the input's
+`key-pressed` (accept on handled); the shell's `/` signal reaches the page
+as the `focus-requested` in-prop driving `M3SearchBar::ring` (additive).
+Shell `/`-back handling order: overlays, then `detail-stack`, then sidebar.
+Component `changed` handlers were avoided for cross-component state;
+read-only bindings and the mirrored in-out props carry it instead.
+Element ids repeat inside one `for` loop only (testkit clicks via `nth`).
+
 ## InnerTube client decision
 
 Oracle (local Python app): `backends/yt.py` + `backends/playlists.py`,

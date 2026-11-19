@@ -1,9 +1,20 @@
 slint::include_modules!();
 
+mod pages_catalog;
 mod pages_library;
 mod player_ui;
 mod shell;
 mod theme;
+
+pub use pages_catalog::{
+    album_results, apply_album_detail, apply_artist_detail, apply_browse, apply_browse_detail,
+    apply_charts_entry, apply_home, apply_home_chip, apply_home_chips, apply_moods, apply_pins,
+    apply_playlist_detail, apply_podcast_detail, apply_releases, apply_search_results,
+    apply_suggestions, artist_results, episode_item, home_chips, home_sections, load_album_fixture,
+    load_artist_fixture, load_browse_fixture, load_explore_fixtures, load_home_fixture,
+    load_playlist_fixture, load_search_fixture, load_suggestions_fixture, playlist_item,
+    quick_pick_items, song_results, track_item, CatalogResult,
+};
 
 pub use pages_library::{
     LibraryFixture, album_cards, artist_cards, chip_order, default_chip_order, download_models,
@@ -24,9 +35,9 @@ pub use player_ui::{
 };
 
 pub use shell::{
-    apply_shell_appearance, apply_shell_theme, dispatch_key, overlay_from_index, overlay_index,
-    page_from_index, page_index, set_shell_lang, sync_queue_seam, wire_shell_i18n, ShellOverlay,
-    ShellPage,
+    apply_shell_appearance, apply_shell_theme, close_detail, dispatch_key, is_detail_open,
+    overlay_from_index, overlay_index, page_from_index, page_index, set_shell_lang,
+    sync_queue_seam, wire_shell_i18n, ShellOverlay, ShellPage,
 };
 pub use theme::{
     from_appearance, lang_code, lang_from_code, theme_from_index, theme_index, ThemeKind,

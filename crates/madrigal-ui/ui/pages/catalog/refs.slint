@@ -1,0 +1,25 @@
+export enum DetailKind { artist, album, playlist, podcast, browse }
+
+export struct DetailRef {
+    kind: DetailKind,
+    id: string,
+}
+
+export struct CatalogItem {
+    kind: DetailKind,
+    id: string,
+    title: string,
+    subtitle: string,
+    duration: string,
+    playable: bool,
+}
+
+export struct CatalogSection {
+    title: string,
+    items: [CatalogItem],
+}
+
+export struct MoodEntry {
+    title: string,
+    params: string,
+}

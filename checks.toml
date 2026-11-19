@@ -253,6 +253,10 @@ name = "ui_player"
 group = "offline"
 
 [[check]]
+name = "ui_catalog"
+group = "offline"
+
+[[check]]
 name = "spotify_import"
 group = "offline"
 

@@ -12,6 +12,7 @@ madrigal-core = { path = "../madrigal-core" }
 madrigal-db = { path = "../madrigal-db" }
 madrigal-downloads = { path = "../madrigal-downloads" }
 madrigal-i18n = { path = "../madrigal-i18n" }
+madrigal-innertube = { path = "../madrigal-innertube" }
 madrigal-library = { path = "../madrigal-library" }
 madrigal-lyrics = { path = "../madrigal-lyrics" }
 madrigal-paths = { path = "../madrigal-paths" }
@@ -44,3 +45,7 @@ path = "tests/checks/check_ui_library.rs"
 [[test]]
 name = "check_ui_player"
 path = "tests/checks/check_ui_player.rs"
+
+[[test]]
+name = "check_ui_catalog"
+path = "tests/checks/check_ui_catalog.rs"

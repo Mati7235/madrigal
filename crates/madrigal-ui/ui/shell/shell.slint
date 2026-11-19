@@ -1,6 +1,7 @@
 import { Palette, Light, Dark, PureBlack, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
 import { LibSongRow, LibPlaylistRow, LibCardRow, HistoryRow, StatRow, DownloadRow } from "../pages/library/models.slint";
+import { CatalogItem, CatalogSection, DetailKind, DetailRef, MoodEntry } from "../pages/catalog/refs.slint";
 import { SideNav } from "sidebar.slint";
 import { PageHost } from "pagehost.slint";
 import { ConfirmOverlay, PromptOverlay } from "overlays.slint";
@@ -127,6 +128,39 @@ export component MainShell inherits Window {
     in-out property<int> prev-count: 0;
     in-out property<int> full-player-count: 0;
     in-out property<int> search-focus-count: 0;
+    in-out property<int> detail-stack: 0;
+    in-out property<DetailRef> detail-ref: { kind: DetailKind.album, id: "" };
+
+    in property<[string]> home-chips;
+    in-out property<int> home-current-chip: 0;
+    in property<[CatalogSection]> home-sections;
+    in property<[CatalogItem]> home-quick-picks;
+    in property<[CatalogItem]> home-pins;
+    in property<bool> home-card-layout: true;
+    in-out property<int> home-selected-item: -1;
+
+    in-out property<string> search-query: "";
+    in property<[string]> search-suggestions;
+    in-out property<int> search-suggestion-index: -1;
+    in-out property<int> search-filter-tab: 0;
+    in property<[CatalogItem]> search-results;
+    in-out property<int> search-source: 1;
+
+    in property<[MoodEntry]> explore-moods-left;
+    in property<[MoodEntry]> explore-moods-right;
+    in property<string> explore-charts-id: "charts:";
+    in-out property<int> explore-releases-tab: 0;
+    in property<[CatalogItem]> explore-releases-albums;
+    in property<[CatalogItem]> explore-releases-videos;
+    in property<[CatalogSection]> explore-browse-sections;
+
+    in property<string> detail-title: "";
+    in property<string> detail-subtitle: "";
+    in property<string> detail-description: "";
+    in property<[CatalogItem]> detail-tracks;
+    in property<[CatalogItem]> detail-albums;
+    in property<[CatalogSection]> detail-sections;
+    in-out property<int> detail-tab: 0;
 
     callback apply-theme(int);
     callback navigate(int);
@@ -272,6 +306,15 @@ export component MainShell inherits Window {
     callback drag-end();
     pure callback line-at(int) -> int;
     pure callback line-progress(int) -> float;
+    callback chip-selected(int);
+    callback query-changed(string);
+    callback suggestion-accepted(string);
+    callback filter-selected(int);
+    callback source-selected(int);
+    callback detail-requested(DetailRef);
+    callback detail-opened(DetailRef);
+    callback play-requested(string);
+    callback detail-closed();
 
     apply-theme(k) => {
         if (k == 0) {
@@ -325,6 +368,19 @@ export component MainShell inherits Window {
         root.overlay = 0;
     }
 
+    detail-requested(ref) => {
+        root.detail-ref = ref;
+        root.detail-stack = 1;
+        root.detail-opened(ref);
+    }
+
+    detail-opened(ref) => {
+    }
+
+    detail-closed() => {
+        root.detail-stack = 0;
+    }
+
     handle-key(key) => {
         if (key == "Escape") {
             if (root.player-dialog != 0) {
@@ -349,6 +405,11 @@ export component MainShell inherits Window {
             }
             if (root.overlay == 2) {
                 root.prompt-dismissed();
+                return true;
+            }
+            if (root.detail-stack == 1) {
+                root.detail-stack = 0;
+                root.detail-closed();
                 return true;
             }
             root.sidebar-focused = true;
@@ -509,6 +570,44 @@ export component MainShell inherits Window {
                 dl-cancel(id) => { root.dl-cancel(id); }
                 dl-retry(id) => { root.dl-retry(id); }
                 dl-retry-all() => { root.dl-retry-all(); }
+                search-focused: root.search-focused;
+                detail-stack <=> root.detail-stack;
+                detail-ref <=> root.detail-ref;
+                home-chips: root.home-chips;
+                home-current-chip <=> root.home-current-chip;
+                home-sections: root.home-sections;
+                home-quick-picks: root.home-quick-picks;
+                home-pins: root.home-pins;
+                home-card-layout: root.home-card-layout;
+                home-selected-item <=> root.home-selected-item;
+                search-query <=> root.search-query;
+                search-suggestions: root.search-suggestions;
+                search-suggestion-index <=> root.search-suggestion-index;
+                search-filter-tab <=> root.search-filter-tab;
+                search-results: root.search-results;
+                search-source <=> root.search-source;
+                explore-moods-left: root.explore-moods-left;
+                explore-moods-right: root.explore-moods-right;
+                explore-charts-id: root.explore-charts-id;
+                explore-releases-tab <=> root.explore-releases-tab;
+                explore-releases-albums: root.explore-releases-albums;
+                explore-releases-videos: root.explore-releases-videos;
+                explore-browse-sections: root.explore-browse-sections;
+                detail-title: root.detail-title;
+                detail-subtitle: root.detail-subtitle;
+                detail-description: root.detail-description;
+                detail-tracks: root.detail-tracks;
+                detail-albums: root.detail-albums;
+                detail-sections: root.detail-sections;
+                detail-tab <=> root.detail-tab;
+                chip-selected(i) => { root.chip-selected(i); }
+                query-changed(text) => { root.query-changed(text); }
+                suggestion-accepted(text) => { root.suggestion-accepted(text); }
+                filter-selected(i) => { root.filter-selected(i); }
+                source-selected(i) => { root.source-selected(i); }
+                detail-requested(ref) => { root.detail-requested(ref); }
+                play-requested(id) => { root.play-requested(id); }
+                detail-closed() => { root.detail-closed(); }
             }
             nowbar := NowPlayingBar {
                 height: 72px;

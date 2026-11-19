@@ -1,0 +1,64 @@
+import { Palette, Type } from "../../tokens.slint";
+import { M3Card } from "../../components/cards.slint";
+import { M3ListItem } from "../../components/rows.slint";
+import { CatalogSection, DetailRef } from "refs.slint";
+
+export component SectionView inherits VerticalLayout {
+    in property<Palette> palette;
+    in property<CatalogSection> section;
+    in property<bool> cards: false;
+    callback detail-requested(DetailRef);
+    callback play-requested(string);
+
+    spacing: 8px;
+
+    sec-title := Text {
+        text: root.section.title;
+        color: root.palette.on-surface;
+        font-size: Type.title-medium.size;
+        font-weight: Type.title-medium.weight;
+    }
+
+    if (!root.cards) : sec-list := VerticalLayout {
+        spacing: 2px;
+        for item[i] in root.section.items : sec-row := M3ListItem {
+            title: item.title;
+            subtitle: item.subtitle;
+            duration: item.duration;
+            row-bg: root.palette.surface-container-low;
+            active-bg: root.palette.secondary-container;
+            title-color: root.palette.on-surface;
+            subtitle-color: root.palette.on-surface-variant;
+            progress-track: root.palette.surface-container-highest;
+            progress-fill: root.palette.primary;
+            action => {
+                if (item.playable) {
+                    root.play-requested(item.id);
+                } else {
+                    root.detail-requested({ kind: item.kind, id: item.id });
+                }
+            }
+        }
+    }
+
+    if (root.cards) : sec-grid := HorizontalLayout {
+        spacing: 12px;
+        for item[i] in root.section.items : sec-card := M3Card {
+            width: 200px;
+            height: 120px;
+            title: item.title;
+            subtitle: item.subtitle;
+            fill: root.palette.surface-container-low;
+            title-color: root.palette.on-surface;
+            subtitle-color: root.palette.on-surface-variant;
+            shadow-color: root.palette.shadow;
+            clicked => {
+                if (item.playable) {
+                    root.play-requested(item.id);
+                } else {
+                    root.detail-requested({ kind: item.kind, id: item.id });
+                }
+            }
+        }
+    }
+}

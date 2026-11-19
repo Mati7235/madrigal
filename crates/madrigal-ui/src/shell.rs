@@ -95,3 +95,11 @@ pub fn dispatch_key(shell: &MainShell, key: &str) -> bool {
 pub fn sync_queue_seam(shell: &MainShell, queue: &madrigal_player::queue::Queue) {
     shell.set_queue_count(queue.len() as i32);
 }
+
+pub fn close_detail(shell: &MainShell) {
+    shell.set_detail_stack(0);
+}
+
+pub fn is_detail_open(shell: &MainShell) -> bool {
+    shell.get_detail_stack() == 1
+}

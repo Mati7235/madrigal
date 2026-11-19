@@ -1,0 +1,468 @@
+use slint::{ModelRc, SharedString, VecModel};
+
+use madrigal_core::{Album, Artist, Episode, Playlist, Podcast, Track};
+use madrigal_innertube::{
+    AlbumPage, ArtistPage, BrowseItem, BrowsePage, CatalogClient, ChartsPage, HomeFeed, HomeItem,
+    MoodListing, NewReleases, PlaylistPage,
+};
+
+use crate::{CatalogItem, CatalogSection, DetailKind, DetailRef, MainShell, MoodEntry};
+
+pub type CatalogResult<T> = Result<T, madrigal_innertube::Error>;
+
+fn item(
+    kind: DetailKind,
+    id: &str,
+    title: &str,
+    subtitle: &str,
+    duration: &str,
+    playable: bool,
+) -> CatalogItem {
+    CatalogItem {
+        kind,
+        id: id.into(),
+        title: title.into(),
+        subtitle: subtitle.into(),
+        duration: duration.into(),
+        playable,
+    }
+}
+
+pub fn track_item(track: &Track) -> CatalogItem {
+    let mut subtitle = track.artist_text();
+    if let Some(album) = track.album.as_deref() {
+        if !subtitle.is_empty() {
+            subtitle.push_str(" · ");
+        }
+        subtitle.push_str(album);
+    }
+    item(
+        DetailKind::Album,
+        track.identity.id.as_str(),
+        track.title.as_str(),
+        subtitle.as_str(),
+        madrigal_core::format_duration(track.duration_secs).as_str(),
+        true,
+    )
+}
+
+pub fn album_item(album: &Album) -> CatalogItem {
+    item(
+        DetailKind::Album,
+        album.id.as_str(),
+        album.title.as_str(),
+        album.artist_text().as_str(),
+        album.year.as_deref().unwrap_or_default(),
+        false,
+    )
+}
+
+pub fn artist_item(artist: &Artist) -> CatalogItem {
+    item(
+        DetailKind::Artist,
+        artist.id.as_str(),
+        artist.name.as_str(),
+        artist.subscribers.as_deref().unwrap_or_default(),
+        "",
+        false,
+    )
+}
+
+pub fn playlist_item(playlist: &Playlist) -> CatalogItem {
+    let mut subtitle = playlist.author.clone().unwrap_or_default();
+    if let Some(count) = playlist.track_count {
+        if !subtitle.is_empty() {
+            subtitle.push_str(" · ");
+        }
+        subtitle.push_str(&count.to_string());
+    }
+    item(
+        DetailKind::Playlist,
+        playlist.id.as_str(),
+        playlist.title.as_str(),
+        subtitle.as_str(),
+        "",
+        false,
+    )
+}
+
+pub fn episode_item(episode: &Episode) -> CatalogItem {
+    item(
+        DetailKind::Podcast,
+        episode.id.as_str(),
+        episode.title.as_str(),
+        episode.description.as_deref().unwrap_or_default(),
+        madrigal_core::format_duration(episode.duration_secs).as_str(),
+        true,
+    )
+}
+
+fn browse_item(entry: &BrowseItem) -> CatalogItem {
+    match entry {
+        BrowseItem::Track(track) => track_item(track),
+        BrowseItem::Album(album) => album_item(album),
+        BrowseItem::Artist(artist) => artist_item(artist),
+        BrowseItem::Playlist(playlist) => playlist_item(playlist),
+    }
+}
+
+fn home_item(entry: &HomeItem) -> CatalogItem {
+    match entry {
+        HomeItem::Track(track) => track_item(track),
+        HomeItem::Album(album) => album_item(album),
+        HomeItem::Artist(artist) => artist_item(artist),
+        HomeItem::Playlist(playlist) => playlist_item(playlist),
+    }
+}
+
+fn section_of(title: &str, items: Vec<CatalogItem>) -> CatalogSection {
+    CatalogSection {
+        title: title.into(),
+        items: ModelRc::new(VecModel::from_slice(&items)),
+    }
+}
+
+pub fn home_sections(feed: &HomeFeed) -> Vec<CatalogSection> {
+    feed.sections
+        .iter()
+        .map(|section| {
+            section_of(
+                section.title.as_str(),
+                section.items.iter().map(home_item).collect(),
+            )
+        })
+        .collect()
+}
+
+pub fn quick_pick_items(feed: &HomeFeed) -> Vec<CatalogItem> {
+    feed.sections
+        .iter()
+        .find(|section| section.title.to_lowercase().contains("quick picks"))
+        .map(|section| {
+            section
+                .items
+                .iter()
+                .filter_map(|entry| match entry {
+                    HomeItem::Track(track) => Some(track_item(track)),
+                    _ => None,
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+pub fn home_chips(feed: &HomeFeed, show: bool) -> Vec<SharedString> {
+    if !show {
+        return Vec::new();
+    }
+    let mut chips = vec![SharedString::from("All")];
+    chips.extend(
+        feed.sections
+            .iter()
+            .map(|s| SharedString::from(s.title.as_str())),
+    );
+    chips
+}
+
+pub fn apply_home(shell: &MainShell, feed: &HomeFeed) {
+    shell.set_home_sections(ModelRc::new(VecModel::from_slice(&home_sections(feed))));
+    shell.set_home_quick_picks(ModelRc::new(VecModel::from_slice(&quick_pick_items(
+        feed,
+    ))));
+    shell.set_home_current_chip(0);
+    shell.set_home_selected_item(-1);
+}
+
+pub fn apply_home_chips(
+    shell: &MainShell,
+    feed: &HomeFeed,
+    content: &madrigal_settings::Content,
+) {
+    shell.set_home_chips(ModelRc::new(VecModel::from_slice(&home_chips(
+        feed,
+        content.show_home_category_chips,
+    ))));
+}
+
+pub fn apply_home_chip(shell: &MainShell, chip: i32, feed: &HomeFeed) {
+    shell.set_home_current_chip(chip);
+    let mut sections = home_sections(feed);
+    if chip > 0 {
+        let index = (chip - 1) as usize;
+        sections = sections.into_iter().skip(index).take(1).collect();
+    }
+    shell.set_home_sections(ModelRc::new(VecModel::from_slice(&sections)));
+}
+
+pub fn apply_pins(shell: &MainShell, ids: &[String], tracks: &[Track]) {
+    let mut items = Vec::new();
+    for id in ids {
+        if let Some(track) = tracks
+            .iter()
+            .find(|t| t.identity.id.as_str() == id.as_str())
+        {
+            items.push(track_item(track));
+        }
+    }
+    shell.set_home_pins(ModelRc::new(VecModel::from_slice(&items)));
+}
+
+pub fn load_home_fixture(shell: &MainShell, source: &str) -> CatalogResult<HomeFeed> {
+    let feed = CatalogClient::parse_home(source)?;
+    apply_home(shell, &feed);
+    Ok(feed)
+}
+
+pub fn song_results(tracks: &[Track]) -> Vec<CatalogItem> {
+    tracks.iter().map(track_item).collect()
+}
+
+pub fn artist_results(artists: &[Artist]) -> Vec<CatalogItem> {
+    artists.iter().map(artist_item).collect()
+}
+
+pub fn album_results(albums: &[Album]) -> Vec<CatalogItem> {
+    albums.iter().map(album_item).collect()
+}
+
+pub fn apply_search_results(shell: &MainShell, items: Vec<CatalogItem>) {
+    shell.set_search_results(ModelRc::new(VecModel::from_slice(&items)));
+}
+
+pub fn apply_suggestions(shell: &MainShell, query: &str, all: &[String]) {
+    let lowered = query.to_lowercase();
+    let hits: Vec<SharedString> = all
+        .iter()
+        .filter(|s| s.to_lowercase().starts_with(&lowered))
+        .take(8)
+        .map(SharedString::from)
+        .collect();
+    shell.set_search_suggestions(ModelRc::new(VecModel::from_slice(&hits)));
+    shell.set_search_suggestion_index(-1);
+}
+
+pub fn load_search_fixture(
+    shell: &MainShell,
+    songs_source: &str,
+    artists_source: &str,
+    albums_source: &str,
+) -> CatalogResult<(Vec<Track>, Vec<Artist>, Vec<Album>)> {
+    let songs = CatalogClient::parse_search_songs(songs_source)?;
+    let artists = CatalogClient::parse_search_artists(artists_source)?;
+    let albums = CatalogClient::parse_search_albums(albums_source)?;
+    apply_search_results(shell, song_results(&songs));
+    Ok((songs, artists, albums))
+}
+
+pub fn load_suggestions_fixture(shell: &MainShell, source: &str) -> CatalogResult<Vec<String>> {
+    let suggestions = CatalogClient::parse_suggestions(source)?;
+    apply_suggestions(shell, shell.get_search_query().as_str(), &suggestions);
+    Ok(suggestions)
+}
+
+pub fn apply_moods(shell: &MainShell, listing: &MoodListing) {
+    let mut left = Vec::new();
+    let mut right = Vec::new();
+    for (index, entry) in listing
+        .sections
+        .iter()
+        .flat_map(|section| section.entries.iter())
+        .enumerate()
+    {
+        let item = MoodEntry {
+            title: entry.title.as_str().into(),
+            params: entry.params.as_str().into(),
+        };
+        if index % 2 == 0 {
+            left.push(item);
+        } else {
+            right.push(item);
+        }
+    }
+    shell.set_explore_moods_left(ModelRc::new(VecModel::from_slice(&left)));
+    shell.set_explore_moods_right(ModelRc::new(VecModel::from_slice(&right)));
+}
+
+pub fn apply_releases(shell: &MainShell, releases: &NewReleases) {
+    shell.set_explore_releases_albums(ModelRc::new(VecModel::from_slice(&album_results(
+        &releases.albums,
+    ))));
+    shell.set_explore_releases_videos(ModelRc::new(VecModel::from_slice(&song_results(
+        &releases.videos,
+    ))));
+}
+
+pub fn apply_charts_entry(shell: &MainShell, charts: &ChartsPage) {
+    shell.set_explore_charts_id(format!("charts:{}", charts.country).into());
+}
+
+pub fn apply_browse(shell: &MainShell, browse: &BrowsePage) {
+    let sections: Vec<CatalogSection> = browse
+        .sections
+        .iter()
+        .map(|section| {
+            section_of(
+                section.title.as_str(),
+                section.items.iter().map(browse_item).collect(),
+            )
+        })
+        .collect();
+    shell.set_explore_browse_sections(ModelRc::new(VecModel::from_slice(&sections)));
+}
+
+pub fn load_explore_fixtures(
+    shell: &MainShell,
+    moods_source: &str,
+    explore_source: &str,
+    charts_source: &str,
+) -> CatalogResult<()> {
+    apply_moods(shell, &CatalogClient::parse_mood_listing(moods_source)?);
+    apply_releases(
+        shell,
+        &CatalogClient::parse_new_releases(explore_source)?,
+    );
+    apply_browse(shell, &CatalogClient::parse_browse(explore_source)?);
+    apply_charts_entry(shell, &CatalogClient::parse_charts(charts_source)?);
+    Ok(())
+}
+
+fn clear_detail(shell: &MainShell, kind: DetailKind, id: &str) {
+    shell.set_detail_ref(DetailRef {
+        kind,
+        id: id.into(),
+    });
+    shell.set_detail_title("".into());
+    shell.set_detail_subtitle("".into());
+    shell.set_detail_description("".into());
+    shell.set_detail_tracks(ModelRc::new(VecModel::from_slice(&[])));
+    shell.set_detail_albums(ModelRc::new(VecModel::from_slice(&[])));
+    shell.set_detail_sections(ModelRc::new(VecModel::from_slice(&[])));
+    shell.set_detail_tab(0);
+}
+
+pub fn apply_album_detail(shell: &MainShell, detail: &AlbumPage) {
+    clear_detail(shell, DetailKind::Album, detail.album.id.as_str());
+    shell.set_detail_title(detail.album.title.as_str().into());
+    shell.set_detail_subtitle(detail.album.artist_text().as_str().into());
+    shell.set_detail_description(
+        detail
+            .album
+            .year
+            .as_deref()
+            .unwrap_or_default()
+            .into(),
+    );
+    shell.set_detail_tracks(ModelRc::new(VecModel::from_slice(&song_results(
+        &detail.tracks,
+    ))));
+}
+
+pub fn apply_artist_detail(shell: &MainShell, detail: &ArtistPage) {
+    clear_detail(shell, DetailKind::Artist, detail.artist.id.as_str());
+    shell.set_detail_title(detail.artist.name.as_str().into());
+    shell.set_detail_subtitle(
+        detail
+            .artist
+            .subscribers
+            .as_deref()
+            .unwrap_or_default()
+            .into(),
+    );
+    shell.set_detail_description(
+        detail
+            .artist
+            .description
+            .as_deref()
+            .unwrap_or_default()
+            .into(),
+    );
+    shell.set_detail_tracks(ModelRc::new(VecModel::from_slice(&song_results(
+        &detail.songs,
+    ))));
+    shell.set_detail_albums(ModelRc::new(VecModel::from_slice(&album_results(
+        &detail.albums,
+    ))));
+}
+
+pub fn apply_playlist_detail(shell: &MainShell, detail: &PlaylistPage) {
+    clear_detail(
+        shell,
+        DetailKind::Playlist,
+        detail.playlist.id.as_str(),
+    );
+    shell.set_detail_title(detail.playlist.title.as_str().into());
+    shell.set_detail_subtitle(
+        detail
+            .playlist
+            .author
+            .as_deref()
+            .unwrap_or_default()
+            .into(),
+    );
+    shell.set_detail_description(
+        detail
+            .playlist
+            .description
+            .as_deref()
+            .unwrap_or_default()
+            .into(),
+    );
+    shell.set_detail_tracks(ModelRc::new(VecModel::from_slice(&song_results(
+        &detail.tracks,
+    ))));
+}
+
+pub fn apply_podcast_detail(shell: &MainShell, podcast: &Podcast, episodes: &[Episode]) {
+    clear_detail(shell, DetailKind::Podcast, podcast.id.as_str());
+    shell.set_detail_title(podcast.title.as_str().into());
+    shell.set_detail_subtitle(podcast.author.as_deref().unwrap_or_default().into());
+    shell.set_detail_description(
+        podcast.description.as_deref().unwrap_or_default().into(),
+    );
+    let items: Vec<CatalogItem> = episodes.iter().map(episode_item).collect();
+    shell.set_detail_tracks(ModelRc::new(VecModel::from_slice(&items)));
+}
+
+pub fn apply_browse_detail(shell: &MainShell, browse: &BrowsePage, title: &str) {
+    clear_detail(shell, DetailKind::Browse, "browse");
+    shell.set_detail_title(title.into());
+    let sections: Vec<CatalogSection> = browse
+        .sections
+        .iter()
+        .map(|section| {
+            section_of(
+                section.title.as_str(),
+                section.items.iter().map(browse_item).collect(),
+            )
+        })
+        .collect();
+    shell.set_detail_sections(ModelRc::new(VecModel::from_slice(&sections)));
+}
+
+pub fn load_album_fixture(shell: &MainShell, id: &str, source: &str) -> CatalogResult<()> {
+    apply_album_detail(shell, &CatalogClient::parse_album_page(id, source)?);
+    Ok(())
+}
+
+pub fn load_artist_fixture(shell: &MainShell, id: &str, source: &str) -> CatalogResult<()> {
+    apply_artist_detail(shell, &CatalogClient::parse_artist_page(id, source)?);
+    Ok(())
+}
+
+pub fn load_playlist_fixture(
+    shell: &MainShell,
+    id: &str,
+    details_source: &str,
+    tracks_source: &str,
+) -> CatalogResult<()> {
+    apply_playlist_detail(
+        shell,
+        &CatalogClient::parse_playlist_page(id, details_source, tracks_source)?,
+    );
+    Ok(())
+}
+
+pub fn load_browse_fixture(shell: &MainShell, source: &str, title: &str) -> CatalogResult<()> {
+    apply_browse_detail(shell, &CatalogClient::parse_browse(source)?, title);
+    Ok(())
+}
