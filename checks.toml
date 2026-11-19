@@ -271,3 +271,7 @@ group = "offline"
 [[check]]
 name = "ui_settings"
 group = "offline"
+
+[[check]]
+name = "app_startup"
+group = "offline"

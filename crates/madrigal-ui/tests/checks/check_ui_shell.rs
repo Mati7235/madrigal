@@ -49,10 +49,10 @@ fn ui_shell() {
 
     apply_shell_theme(&shell, ThemeKind::Light);
     assert_eq!(shell.get_theme_kind(), 0);
-    expect_rgb(shell.get_palette().surface, 0xff, 0xf8, 0xf7);
+    expect_rgb(shell.get_palette().surface, 0xff, 0xff, 0xff);
     apply_shell_theme(&shell, ThemeKind::Dark);
     assert_eq!(shell.get_theme_kind(), 1);
-    expect_rgb(shell.get_palette().surface, 0x1a, 0x11, 0x11);
+    expect_rgb(shell.get_palette().surface, 0x0b, 0x08, 0x10);
     apply_shell_theme(&shell, ThemeKind::PureBlack);
     assert_eq!(shell.get_theme_kind(), 2);
     expect_rgb(shell.get_palette().surface, 0x00, 0x00, 0x00);

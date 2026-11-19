@@ -1,0 +1,30 @@
+[package]
+name = "madrigal-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[lib]
+name = "madrigal_app"
+path = "src/lib.rs"
+
+[[bin]]
+name = "madrigal"
+path = "src/main.rs"
+
+[dependencies]
+madrigal-db = { path = "../madrigal-db" }
+madrigal-paths = { path = "../madrigal-paths" }
+madrigal-player = { path = "../madrigal-player" }
+madrigal-settings = { path = "../madrigal-settings" }
+rusqlite = "0.41"
+
+[dev-dependencies]
+tempfile = "3"
+
+[[test]]
+name = "check_app_startup"
+path = "tests/checks/check_app_startup.rs"

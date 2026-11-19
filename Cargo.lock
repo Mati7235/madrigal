@@ -3524,6 +3524,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "madrigal-app"
+version = "0.1.0"
+dependencies = [
+ "madrigal-db",
+ "madrigal-paths",
+ "madrigal-player",
+ "madrigal-settings",
+ "rusqlite",
+ "tempfile",
+]
+
+[[package]]
 name = "madrigal-backup"
 version = "0.1.0"
 dependencies = [

@@ -104,6 +104,7 @@ Without `cargo` available the check is FAIL.
 | `cast_protocol` | offline | CastV2 framing, CONNECT/LOAD/volume shapes, session state machine, device mapping; mock transport, no TLS |
 | `ui_library` | offline | Library/History/Stats/Downloads pages via MainShell: chip order+tabs, tags, sorts, multiselect, history clear, tops, Year in Music, download rows; Es/En; PNG-sane |
 | `ui_settings` | offline | Settings screens: 11 groups with field parity, apply/toggle/dropdown/drag/mask/test, onboarding, diagnostics |
+| `app_startup` | offline | `boot_headless` under isolated XDG (settings+db+queue, no event loop): wall < 2000 ms and VmHWM delta < 150 MB |
 
 ## Visual verification
 
