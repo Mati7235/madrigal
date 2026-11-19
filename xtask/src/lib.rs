@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -348,11 +348,13 @@ pub fn tail_lines(text: &str, limit: usize) -> String {
 
 pub struct Artifact {
     pub target: String,
+    pub manifest: Option<PathBuf>,
     pub executable: Option<PathBuf>,
 }
 
 pub struct Diagnostic {
     pub target: Option<String>,
+    pub manifest: Option<PathBuf>,
     pub rendered: String,
 }
 
@@ -398,6 +400,9 @@ pub fn parse_report(stdout: &str) -> BuildReport {
                 }
                 artifacts.push(Artifact {
                     target: name,
+                    manifest: text(&value, "manifest_path")
+                        .filter(|path| !path.is_empty())
+                        .map(PathBuf::from),
                     executable: text(&value, "executable")
                         .filter(|path| !path.is_empty())
                         .map(PathBuf::from),
@@ -415,6 +420,9 @@ pub fn parse_report(stdout: &str) -> BuildReport {
                     .unwrap_or_default();
                 diagnostics.push(Diagnostic {
                     target: field(&value, "target").and_then(|t| text(t, "name")),
+                    manifest: text(&value, "manifest_path")
+                        .filter(|path| !path.is_empty())
+                        .map(PathBuf::from),
                     rendered,
                 });
             }
@@ -473,30 +481,98 @@ fn build_error(report: &BuildReport, stderr: &str) -> String {
     }
 }
 
-struct CrateBuild {
-    bins: HashMap<String, PathBuf>,
-    errors: HashMap<String, String>,
+struct BuildAll {
+    bins: HashMap<(String, String), PathBuf>,
+    errors: HashMap<(String, String), String>,
 }
 
-fn build_crate(root: &Path, package: &str, targets: &[String]) -> CrateBuild {
-    let mut state = CrateBuild {
+fn package_of(
+    manifest: Option<&Path>,
+    dirs: &HashMap<PathBuf, String>,
+    target: &str,
+    plan: &[(String, Vec<String>)],
+) -> Option<String> {
+    if let Some(package) = manifest
+        .and_then(Path::parent)
+        .and_then(|dir| dirs.get(dir))
+    {
+        return Some(package.clone());
+    }
+    let mut owners = plan
+        .iter()
+        .filter(|(_, targets)| targets.iter().any(|name| name == target))
+        .map(|(package, _)| package.clone());
+    let first = owners.next()?;
+    if owners.next().is_none() {
+        Some(first)
+    } else {
+        None
+    }
+}
+
+pub fn plan(selections: &[Selection]) -> Vec<(String, Vec<String>)> {
+    let mut grouped: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for selection in selections {
+        for target in &selection.targets {
+            grouped
+                .entry(target.package.clone())
+                .or_default()
+                .insert(target.name.clone());
+        }
+    }
+    grouped
+        .into_iter()
+        .map(|(package, targets)| (package, targets.into_iter().collect()))
+        .collect()
+}
+
+pub fn plan_args(plan: &[(String, Vec<String>)]) -> Vec<String> {
+    let mut args: Vec<String> = ["test", "--no-run", "--message-format=json"]
+        .map(str::to_string)
+        .to_vec();
+    for (package, _) in plan {
+        args.push("-p".to_string());
+        args.push(package.clone());
+    }
+    let mut names: BTreeSet<&str> = BTreeSet::new();
+    for (_, targets) in plan {
+        for name in targets {
+            names.insert(name);
+        }
+    }
+    for name in names {
+        args.push("--test".to_string());
+        args.push(name.to_string());
+    }
+    args
+}
+
+fn build_all(
+    root: &Path,
+    plan: &[(String, Vec<String>)],
+    dirs: &HashMap<PathBuf, String>,
+) -> BuildAll {
+    let mut state = BuildAll {
         bins: HashMap::new(),
         errors: HashMap::new(),
     };
-    let mut command = cargo_command();
-    command
-        .current_dir(root)
-        .args(["test", "--no-run", "--message-format=json", "-p", package]);
-    for target in targets {
-        command.args(["--test", target]);
+    if plan.is_empty() {
+        return state;
     }
-    let output = match command.output() {
+    let output = match cargo_command()
+        .current_dir(root)
+        .args(plan_args(plan))
+        .output()
+    {
         Ok(output) => output,
         Err(err) => {
-            for target in targets {
-                state
-                    .errors
-                    .insert(target.clone(), format!("cargo unavailable: {err}"));
+            for (package, targets) in plan {
+                for target in targets {
+                    state.errors.insert(
+                        (package.clone(), target.clone()),
+                        format!("cargo unavailable: {err}"),
+                    );
+                }
             }
             return state;
         }
@@ -505,24 +581,35 @@ fn build_crate(root: &Path, package: &str, targets: &[String]) -> CrateBuild {
     let stderr = String::from_utf8_lossy(&output.stderr);
     let report = parse_report(&stdout);
     for artifact in &report.artifacts {
-        if let Some(executable) = &artifact.executable {
-            state
-                .bins
-                .insert(artifact.target.clone(), executable.clone());
-        }
+        let Some(executable) = &artifact.executable else {
+            continue;
+        };
+        let Some(package) = package_of(artifact.manifest.as_deref(), dirs, &artifact.target, plan)
+        else {
+            continue;
+        };
+        state
+            .bins
+            .insert((package, artifact.target.clone()), executable.clone());
     }
     if !output.status.success() || report.finished == Some(false) {
         let fallback = build_error(&report, &stderr);
         for diagnostic in &report.diagnostics {
-            let slot = diagnostic
-                .target
-                .as_ref()
-                .filter(|name| targets.iter().any(|target| target == *name));
-            let slot = match slot {
-                Some(name) => name.clone(),
-                None => continue,
+            let Some(target) = diagnostic.target.as_deref() else {
+                continue;
             };
-            let entry = state.errors.entry(slot).or_default();
+            let Some(package) = package_of(diagnostic.manifest.as_deref(), dirs, target, plan)
+            else {
+                continue;
+            };
+            let key = (package, target.to_string());
+            if !plan
+                .iter()
+                .any(|(package, targets)| package == &key.0 && targets.contains(&key.1))
+            {
+                continue;
+            }
+            let entry = state.errors.entry(key).or_default();
             if !diagnostic.rendered.trim().is_empty() {
                 if !entry.is_empty() {
                     entry.push('\n');
@@ -530,9 +617,12 @@ fn build_crate(root: &Path, package: &str, targets: &[String]) -> CrateBuild {
                 entry.push_str(diagnostic.rendered.trim_end());
             }
         }
-        for target in targets {
-            if !state.bins.contains_key(target) && !state.errors.contains_key(target) {
-                state.errors.insert(target.clone(), fallback.clone());
+        for (package, targets) in plan {
+            for target in targets {
+                let key = (package.clone(), target.clone());
+                if !state.bins.contains_key(&key) && !state.errors.contains_key(&key) {
+                    state.errors.insert(key, fallback.clone());
+                }
             }
         }
     }
@@ -591,38 +681,49 @@ fn run_binary(dir: &Path, bin: &Path) -> Result<(), String> {
 
 pub struct Runner<'a> {
     root: &'a Path,
-    plan: HashMap<String, Vec<String>>,
-    built: HashMap<String, CrateBuild>,
+    plan: Vec<(String, Vec<String>)>,
+    dirs: HashMap<PathBuf, String>,
+    build: Option<BuildAll>,
+    fallbacks: HashMap<(String, String), Result<PathBuf, String>>,
 }
 
 impl<'a> Runner<'a> {
     pub fn new(root: &'a Path, selections: &[Selection]) -> Self {
-        let mut plan: HashMap<String, Vec<String>> = HashMap::new();
+        let plan = plan(selections);
+        let mut dirs = HashMap::new();
         for selection in selections {
             for target in &selection.targets {
-                plan.entry(target.package.clone())
-                    .or_default()
-                    .push(target.name.clone());
+                dirs.insert(target.dir.clone(), target.package.clone());
             }
-        }
-        for targets in plan.values_mut() {
-            targets.sort();
-            targets.dedup();
         }
         Self {
             root,
             plan,
-            built: HashMap::new(),
+            dirs,
+            build: None,
+            fallbacks: HashMap::new(),
         }
     }
 
-    fn build(&mut self, package: &str) -> &CrateBuild {
-        if !self.built.contains_key(package) {
-            let targets = self.plan.get(package).cloned().unwrap_or_default();
-            let state = build_crate(self.root, package, &targets);
-            self.built.insert(package.to_string(), state);
+    fn resolve(&mut self, package: &str, target: &str) -> Result<PathBuf, String> {
+        if self.build.is_none() {
+            self.build = Some(build_all(self.root, &self.plan, &self.dirs));
         }
-        self.built.get(package).expect("built")
+        let key = (package.to_string(), target.to_string());
+        if let Some(build) = &self.build {
+            if let Some(bin) = build.bins.get(&key) {
+                return Ok(bin.clone());
+            }
+            if let Some(error) = build.errors.get(&key) {
+                return Err(error.clone());
+            }
+        }
+        if let Some(cached) = self.fallbacks.get(&key) {
+            return cached.clone();
+        }
+        let result = build_one(self.root, package, target);
+        self.fallbacks.insert(key, result.clone());
+        result
     }
 
     pub fn run(&mut self, selection: &Selection) -> Ran {
@@ -631,31 +732,7 @@ impl<'a> Runner<'a> {
         }
         let mut detail = Vec::new();
         for target in &selection.targets {
-            let (bin, error) = {
-                let build = self.build(&target.package);
-                (
-                    build.bins.get(&target.name).cloned(),
-                    build.errors.get(&target.name).cloned(),
-                )
-            };
-            let resolved = match (bin, error) {
-                (Some(bin), _) => Ok(bin),
-                (None, Some(error)) => Err(error),
-                (None, None) => {
-                    let one = build_one(self.root, &target.package, &target.name);
-                    let build = self.built.get_mut(&target.package).expect("build entry");
-                    match &one {
-                        Ok(bin) => {
-                            build.bins.insert(target.name.clone(), bin.clone());
-                        }
-                        Err(error) => {
-                            build.errors.insert(target.name.clone(), error.clone());
-                        }
-                    }
-                    one
-                }
-            };
-            match resolved {
+            match self.resolve(&target.package, &target.name) {
                 Ok(bin) => {
                     if let Err(failure) = run_binary(&target.dir, &bin) {
                         detail.push(failure);
@@ -990,6 +1067,80 @@ path = "tests/other.rs"
             .iter()
             .any(|diagnostic| diagnostic.rendered.contains("mismatched types")));
         assert!(report.artifacts.is_empty());
+    }
+
+    #[test]
+    fn reporte_real_distingue_el_mismo_target_en_dos_paquetes() {
+        let text = include_str!("../fixtures/cargo-duplicate-target.jsonl");
+        let report = parse_report(text);
+        let artwork: Vec<&Artifact> = report
+            .artifacts
+            .iter()
+            .filter(|artifact| artifact.target == "check_artwork")
+            .collect();
+        assert_eq!(artwork.len(), 2);
+        let packages: Vec<String> = artwork
+            .iter()
+            .map(|artifact| {
+                artifact
+                    .manifest
+                    .as_ref()
+                    .and_then(|manifest| manifest.parent())
+                    .and_then(|dir| dir.file_name())
+                    .unwrap()
+                    .to_string_lossy()
+                    .into_owned()
+            })
+            .collect();
+        assert!(packages.contains(&"madrigal-artwork".to_string()));
+        assert!(packages.contains(&"madrigal-ui".to_string()));
+        assert!(artwork.iter().all(|artifact| artifact.executable.is_some()));
+        assert_eq!(report.finished, Some(true));
+    }
+
+    #[test]
+    fn plan_global_usa_un_p_por_paquete_y_un_test_por_target() {
+        let checks = parse_registry(FIXTURE);
+        let selections = vec![
+            Selection {
+                check: &checks[0],
+                targets: vec![target("madrigal-a", "queue"), target("madrigal-b", "queue")],
+            },
+            Selection {
+                check: &checks[1],
+                targets: vec![
+                    target("madrigal-a", "player"),
+                    target("madrigal-a", "queue"),
+                ],
+            },
+        ];
+        let plan = plan(&selections);
+        assert_eq!(
+            plan,
+            vec![
+                (
+                    "madrigal-a".to_string(),
+                    vec!["check_player".to_string(), "check_queue".to_string()]
+                ),
+                ("madrigal-b".to_string(), vec!["check_queue".to_string()]),
+            ]
+        );
+        assert_eq!(
+            plan_args(&plan),
+            args(&[
+                "test",
+                "--no-run",
+                "--message-format=json",
+                "-p",
+                "madrigal-a",
+                "-p",
+                "madrigal-b",
+                "--test",
+                "check_player",
+                "--test",
+                "check_queue",
+            ])
+        );
     }
 
     #[test]
