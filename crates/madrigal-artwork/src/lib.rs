@@ -20,6 +20,7 @@ pub const BUCKETS: [u32; 4] = [96, 128, 384, 640];
 
 const FETCH_TIMEOUT: Duration = Duration::from_secs(8);
 const MAX_FETCH_BYTES: usize = 4 * 1024 * 1024;
+const MAX_DIMENSION: u32 = 4096;
 
 #[derive(Clone, Debug)]
 pub enum Source {
@@ -207,10 +208,22 @@ impl ArtworkCache {
 }
 
 fn decode(bytes: &[u8], bucket: u32) -> Result<RgbaImage, ArtworkError> {
-    let reader = ImageReader::new(io::Cursor::new(bytes))
+    let dimensions = ImageReader::new(io::Cursor::new(bytes))
         .with_guessed_format()
+        .map_err(|e| ArtworkError::Decode(e.to_string()))?
+        .into_dimensions()
         .map_err(|e| ArtworkError::Decode(e.to_string()))?;
-    let image = reader.decode().map_err(|e| ArtworkError::Decode(e.to_string()))?;
+    if dimensions.0 > MAX_DIMENSION || dimensions.1 > MAX_DIMENSION {
+        return Err(ArtworkError::Decode(format!(
+            "dimensions {}x{} exceed {MAX_DIMENSION}",
+            dimensions.0, dimensions.1
+        )));
+    }
+    let image = ImageReader::new(io::Cursor::new(bytes))
+        .with_guessed_format()
+        .map_err(|e| ArtworkError::Decode(e.to_string()))?
+        .decode()
+        .map_err(|e| ArtworkError::Decode(e.to_string()))?;
     let (width, height) = (image.width(), image.height());
     let side = width.min(height);
     let cropped = if side == 0 {
@@ -228,9 +241,9 @@ fn decode(bytes: &[u8], bucket: u32) -> Result<RgbaImage, ArtworkError> {
 
 impl ArtworkCache {
     fn fetch(&self, source: Source) -> Result<Vec<u8>, ArtworkError> {
-        match source {
-            Source::Bytes(bytes) => Ok(bytes),
-            Source::File(path) => Ok(fs::read(path)?),
+        let bytes = match source {
+            Source::Bytes(bytes) => bytes,
+            Source::File(path) => fs::read(path)?,
             Source::Url(url) => {
                 let response = self
                     .client
@@ -244,12 +257,13 @@ impl ArtworkCache {
                 response
                     .take(MAX_FETCH_BYTES as u64 + 1)
                     .read_to_end(&mut bytes)?;
-                if bytes.len() > MAX_FETCH_BYTES {
-                    return Err(ArtworkError::TooLarge(bytes.len()));
-                }
-                Ok(bytes)
+                bytes
             }
+        };
+        if bytes.len() > MAX_FETCH_BYTES {
+            return Err(ArtworkError::TooLarge(bytes.len()));
         }
+        Ok(bytes)
     }
 }
 
@@ -298,6 +312,21 @@ mod tests {
         assert!(matches!(
             cache.get("track", Source::Bytes(Vec::new()), 100),
             Err(ArtworkError::InvalidBucket(100))
+        ));
+    }
+
+    #[test]
+    fn rejects_oversized_payloads_and_dimensions() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache = ArtworkCache::new(tmp.path().into(), 1 << 20);
+        assert!(matches!(
+            cache.get("big", Source::Bytes(vec![0; MAX_FETCH_BYTES + 1]), 96),
+            Err(ArtworkError::TooLarge(_))
+        ));
+        let wide = png(MAX_DIMENSION + 1, 1);
+        assert!(matches!(
+            cache.get("wide", Source::Bytes(wide), 96),
+            Err(ArtworkError::Decode(_))
         ));
     }
 
