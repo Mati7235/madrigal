@@ -13,6 +13,14 @@
 
 By default `offline` + `native` run. `live` and `visual` only on request.
 
+## Filters
+
+`--only <check>[,<check>...]` (repeatable, CSV) and `--crate <crate>` narrow the
+selection; both intersect with `--group`. Each crate's selected checks compile in
+a single `cargo test --no-run` and then run as plain test binaries. Artifacts are
+shared with direct `cargo test -p <crate>` runs. A failing check prints its last
+40 output lines under the `FAIL` line.
+
 ## Exit codes
 
 - `0`: all PASS or SKIP, or an empty registry (`0 checks`).

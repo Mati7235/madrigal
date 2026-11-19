@@ -1,8 +1,8 @@
 use std::process::ExitCode;
 
-use xtask::{execute, find_registry, load_registry, parse_args, run_cargo_test, select};
+use xtask::{discover, execute, find_registry, load_registry, parse_args, select, Runner};
 
-const USAGE: &str = "uso: cargo xtask checks [--group offline|native|live|visual] [--only <check>] [--max-fails N]";
+const USAGE: &str = "uso: cargo xtask checks [--group offline|native|live|visual] [--only <check>[,<check>...]] [--crate <crate>] [--max-fails N]";
 
 fn main() -> ExitCode {
     let mut argv: Vec<String> = std::env::args().skip(1).collect();
@@ -21,9 +21,14 @@ fn main() -> ExitCode {
         }
     };
     let registry = find_registry();
+    let root = registry.parent().unwrap_or(std::path::Path::new("."));
     let checks = load_registry(&registry);
-    let selected = select(&checks, &opts);
-    let (lines, code) = execute(&selected, opts.max_fails, &run_cargo_test);
+    let inventory = discover(root);
+    let selected = select(&checks, &opts, &inventory);
+    let mut runner = Runner::new(root, &selected);
+    let (lines, code) = execute(&selected, opts.max_fails, &mut |selection| {
+        runner.run(selection)
+    });
     for line in lines {
         println!("{line}");
     }
