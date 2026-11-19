@@ -68,6 +68,17 @@ pub fn mock_advance(total: Duration) {
     }
 }
 
+pub fn snapshot_dir(fallback: &Path) -> std::path::PathBuf {
+    match std::env::var_os("MADRIGAL_SNAPSHOT_DIR") {
+        Some(value) if !value.is_empty() => {
+            let dir = std::path::PathBuf::from(value);
+            std::fs::create_dir_all(&dir).expect("create MADRIGAL_SNAPSHOT_DIR");
+            dir
+        }
+        _ => fallback.to_path_buf(),
+    }
+}
+
 pub fn snapshot_to(window: &slint::Window, path: &Path) -> Result<(), Error> {
     let buffer = window.take_snapshot().map_err(|e| Error::Snapshot(e.to_string()))?;
     let pixels = buffer.as_bytes().to_vec();

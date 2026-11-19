@@ -1,0 +1,62 @@
+export global Icons {
+    out property<image> arrow-down: @image-url("../icons/arrow-down.svg");
+    out property<image> arrow-left: @image-url("../icons/arrow-left.svg");
+    out property<image> arrow-up: @image-url("../icons/arrow-up.svg");
+    out property<image> chart-no-axes-column-increasing: @image-url("../icons/chart-no-axes-column-increasing.svg");
+    out property<image> check: @image-url("../icons/check.svg");
+    out property<image> chevron-down: @image-url("../icons/chevron-down.svg");
+    out property<image> chevron-left: @image-url("../icons/chevron-left.svg");
+    out property<image> chevron-right: @image-url("../icons/chevron-right.svg");
+    out property<image> chevron-up: @image-url("../icons/chevron-up.svg");
+    out property<image> circle-check: @image-url("../icons/circle-check.svg");
+    out property<image> circle-x: @image-url("../icons/circle-x.svg");
+    out property<image> clock: @image-url("../icons/clock.svg");
+    out property<image> compass: @image-url("../icons/compass.svg");
+    out property<image> download: @image-url("../icons/download.svg");
+    out property<image> ellipsis-vertical: @image-url("../icons/ellipsis-vertical.svg");
+    out property<image> gauge: @image-url("../icons/gauge.svg");
+    out property<image> grip: @image-url("../icons/grip.svg");
+    out property<image> heart: @image-url("../icons/heart.svg");
+    out property<image> history: @image-url("../icons/history.svg");
+    out property<image> house: @image-url("../icons/house.svg");
+    out property<image> info: @image-url("../icons/info.svg");
+    out property<image> languages: @image-url("../icons/languages.svg");
+    out property<image> library: @image-url("../icons/library.svg");
+    out property<image> list-music: @image-url("../icons/list-music.svg");
+    out property<image> list-plus: @image-url("../icons/list-plus.svg");
+    out property<image> list-video: @image-url("../icons/list-video.svg");
+    out property<image> loader-circle: @image-url("../icons/loader-circle.svg");
+    out property<image> mic: @image-url("../icons/mic.svg");
+    out property<image> minus: @image-url("../icons/minus.svg");
+    out property<image> music-2: @image-url("../icons/music-2.svg");
+    out property<image> pause: @image-url("../icons/pause.svg");
+    out property<image> play: @image-url("../icons/play.svg");
+    out property<image> plus: @image-url("../icons/plus.svg");
+    out property<image> repeat-1: @image-url("../icons/repeat-1.svg");
+    out property<image> repeat: @image-url("../icons/repeat.svg");
+    out property<image> rotate-cw: @image-url("../icons/rotate-cw.svg");
+    out property<image> save: @image-url("../icons/save.svg");
+    out property<image> search: @image-url("../icons/search.svg");
+    out property<image> settings: @image-url("../icons/settings.svg");
+    out property<image> shuffle: @image-url("../icons/shuffle.svg");
+    out property<image> skip-back: @image-url("../icons/skip-back.svg");
+    out property<image> skip-forward: @image-url("../icons/skip-forward.svg");
+    out property<image> sliders-horizontal: @image-url("../icons/sliders-horizontal.svg");
+    out property<image> star-filled: @image-url("../icons/star-filled.svg");
+    out property<image> square-check: @image-url("../icons/square-check.svg");
+    out property<image> square: @image-url("../icons/square.svg");
+    out property<image> star: @image-url("../icons/star.svg");
+    out property<image> trash: @image-url("../icons/trash.svg");
+    out property<image> triangle-alert: @image-url("../icons/triangle-alert.svg");
+    out property<image> undo-2: @image-url("../icons/undo-2.svg");
+    out property<image> user-round: @image-url("../icons/user-round.svg");
+    out property<image> volume-2: @image-url("../icons/volume-2.svg");
+    out property<image> x: @image-url("../icons/x.svg");
+}
+
+export component Icon inherits Image {
+    in property<length> icon-size: 20px;
+    width: root.icon-size;
+    height: root.icon-size;
+    image-fit: contain;
+}

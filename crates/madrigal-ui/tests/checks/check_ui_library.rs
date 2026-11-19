@@ -300,7 +300,8 @@ fn ui_library() {
 
     shell.set_page(3);
     shell.show().unwrap();
-    let library_shot = tmp.path().join("library.png");
+    let snapshot_dir = kit::snapshot_dir(tmp.path());
+    let library_shot = snapshot_dir.join("library.png");
     kit::snapshot_to(shell.window(), &library_shot).unwrap();
     let bytes = std::fs::read(&library_shot).unwrap();
     assert_eq!(&bytes[0..8], &[137, 80, 78, 71, 13, 10, 26, 10]);
@@ -308,7 +309,7 @@ fn ui_library() {
 
     shell.set_page(4);
     kit::mock_advance(Duration::from_millis(600));
-    let downloads_shot = tmp.path().join("downloads.png");
+    let downloads_shot = snapshot_dir.join("downloads.png");
     kit::snapshot_to(shell.window(), &downloads_shot).unwrap();
     let bytes = std::fs::read(&downloads_shot).unwrap();
     assert_eq!(&bytes[0..8], &[137, 80, 78, 71, 13, 10, 26, 10]);

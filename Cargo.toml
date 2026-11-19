@@ -15,3 +15,6 @@ all = "warn"
 
 [profile.release]
 lto = "thin"
+
+[profile.dev]
+debug = 1

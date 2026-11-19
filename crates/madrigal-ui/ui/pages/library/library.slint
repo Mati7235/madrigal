@@ -2,6 +2,7 @@ import { Palette, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { M3Chip, M3Card } from "../../components/cards.slint";
 import { M3TextField } from "../../components/fields.slint";
+import { Icon, Icons } from "../../components/icons.slint";
 import { LibSongRow, LibPlaylistRow, LibCardRow, HistoryRow, StatRow } from "models.slint";
 
 export component LibraryPage inherits Rectangle {
@@ -84,16 +85,12 @@ export component LibraryPage inherits Rectangle {
                 width: 40px;
                 height: 32px;
                 visible: true;
-                edit-label := Text {
-                    x: 0px;
-                    y: 0px;
-                    width: 100%;
-                    height: 100%;
-                    text: "⋮";
-                    color: root.palette.on-surface-variant;
-                    font-size: Type.title-medium.size;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
+                edit-label := Icon {
+                    source: Icons.ellipsis-vertical;
+                    colorize: root.palette.on-surface-variant;
+                    icon-size: 20px;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
                 }
                 edit-touch := TouchArea {
                     accessible-label: I18n.trl(I18n.lang, "action.reorder");
@@ -107,16 +104,12 @@ export component LibraryPage inherits Rectangle {
                 width: 40px;
                 height: 32px;
                 visible: root.chip-edit;
-                move-left-label := Text {
-                    x: 0px;
-                    y: 0px;
-                    width: 100%;
-                    height: 100%;
-                    text: "‹";
-                    color: root.palette.on-surface-variant;
-                    font-size: Type.title-medium.size;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
+                move-left-label := Icon {
+                    source: Icons.chevron-left;
+                    colorize: root.palette.on-surface-variant;
+                    icon-size: 20px;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
                 }
                 move-left-touch := TouchArea {
                     accessible-label: I18n.trl(I18n.lang, "action.moveUp");
@@ -130,16 +123,12 @@ export component LibraryPage inherits Rectangle {
                 width: 40px;
                 height: 32px;
                 visible: root.chip-edit;
-                move-right-label := Text {
-                    x: 0px;
-                    y: 0px;
-                    width: 100%;
-                    height: 100%;
-                    text: "›";
-                    color: root.palette.on-surface-variant;
-                    font-size: Type.title-medium.size;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
+                move-right-label := Icon {
+                    source: Icons.chevron-right;
+                    colorize: root.palette.on-surface-variant;
+                    icon-size: 20px;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
                 }
                 move-right-touch := TouchArea {
                     accessible-label: I18n.trl(I18n.lang, "action.moveDown");
@@ -181,16 +170,12 @@ export component LibraryPage inherits Rectangle {
             manage-wrap := Rectangle {
                 width: 40px;
                 height: 32px;
-                manage-label := Text {
-                    x: 0px;
-                    y: 0px;
-                    width: 100%;
-                    height: 100%;
-                    text: "#";
-                    color: root.palette.on-surface-variant;
-                    font-size: Type.title-medium.size;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
+                manage-label := Icon {
+                    source: Icons.list-plus;
+                    colorize: root.palette.on-surface-variant;
+                    icon-size: 20px;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
                 }
                 manage-touch := TouchArea {
                     accessible-label: I18n.trl(I18n.lang, "library.tags.title");
@@ -339,15 +324,12 @@ export component LibraryPage inherits Rectangle {
                                 width: 24px;
                                 height: 32px;
                                 visible: root.multiselect;
-                                check-label := Text {
-                                    x: 0px;
-                                    y: 0px;
-                                    width: 100%;
-                                    height: 100%;
-                                    text: song.selected ? "☑" : "☐";
-                                    color: root.palette.primary;
-                                    font-size: 18px;
-                                    vertical-alignment: center;
+                                check-label := Icon {
+                                    source: song.selected ? Icons.square-check : Icons.square;
+                                    colorize: root.palette.primary;
+                                    icon-size: 18px;
+                                    x: (parent.width - self.width) / 2;
+                                    y: (parent.height - self.height) / 2;
                                 }
                             }
 
@@ -369,13 +351,10 @@ export component LibraryPage inherits Rectangle {
                                 }
                             }
 
-                            like-label := Text {
-                                width: 32px;
-                                text: song.liked ? "♥" : "♡";
-                                color: song.liked ? root.palette.primary : root.palette.on-surface-variant;
-                                font-size: 18px;
-                                vertical-alignment: center;
-                                horizontal-alignment: center;
+                            like-label := Icon {
+                                source: song.liked ? Icons.star-filled : Icons.heart;
+                                colorize: song.liked ? root.palette.primary : root.palette.on-surface-variant;
+                                icon-size: 18px;
                             }
 
                             like-touch := TouchArea {
@@ -572,16 +551,12 @@ export component LibraryPage inherits Rectangle {
                         year-prev-wrap := Rectangle {
                             width: 40px;
                             height: 32px;
-                            year-prev-label := Text {
-                                x: 0px;
-                                y: 0px;
-                                width: 100%;
-                                height: 100%;
-                                text: "‹";
-                                color: root.palette.on-surface-variant;
-                                font-size: Type.title-medium.size;
-                                horizontal-alignment: center;
-                                vertical-alignment: center;
+                            year-prev-label := Icon {
+                                source: Icons.chevron-left;
+                                colorize: root.palette.on-surface-variant;
+                                icon-size: 20px;
+                                x: (parent.width - self.width) / 2;
+                                y: (parent.height - self.height) / 2;
                             }
                             year-prev-touch := TouchArea {
                                 accessible-label: I18n.trl(I18n.lang, "action.back");
@@ -602,16 +577,12 @@ export component LibraryPage inherits Rectangle {
                         year-next-wrap := Rectangle {
                             width: 40px;
                             height: 32px;
-                            year-next-label := Text {
-                                x: 0px;
-                                y: 0px;
-                                width: 100%;
-                                height: 100%;
-                                text: "›";
-                                color: root.palette.on-surface-variant;
-                                font-size: Type.title-medium.size;
-                                horizontal-alignment: center;
-                                vertical-alignment: center;
+                            year-next-label := Icon {
+                                source: Icons.chevron-right;
+                                colorize: root.palette.on-surface-variant;
+                                icon-size: 20px;
+                                x: (parent.width - self.width) / 2;
+                                y: (parent.height - self.height) / 2;
                             }
                             year-next-touch := TouchArea {
                                 accessible-label: I18n.trl(I18n.lang, "action.play");
@@ -853,13 +824,10 @@ export component LibraryPage inherits Rectangle {
                                     horizontal-stretch: 1;
                                     overflow: elide;
                                 }
-                                tag-remove-label := Text {
-                                    width: 40px;
-                                    text: "✕";
-                                    color: root.palette.on-surface-variant;
-                                    font-size: 16px;
-                                    horizontal-alignment: center;
-                                    vertical-alignment: center;
+                                tag-remove-label := Icon {
+                                    source: Icons.x;
+                                    colorize: root.palette.on-surface-variant;
+                                    icon-size: 16px;
                                 }
                                 tag-remove-touch := TouchArea {
                                     accessible-label: I18n.trl(I18n.lang, "action.remove");

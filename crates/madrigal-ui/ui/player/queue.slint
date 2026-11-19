@@ -1,6 +1,7 @@
 import { Palette, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
 import { M3IconButton } from "../components/buttons.slint";
+import { Icon, Icons } from "../components/icons.slint";
 import { QueueRow } from "models.slint";
 
 export component QueueDrawer inherits Rectangle {
@@ -41,7 +42,8 @@ export component QueueDrawer inherits Rectangle {
             }
 
             queue-lock := M3IconButton {
-                glyph: root.locked ? "x" : "=";
+                icon: root.locked ? Icons.x : Icons.list-music;
+                icon-color: root.locked ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                 selected: root.locked;
                 content: root.palette.on-surface-variant;
                 state-on-surface: root.palette.on-surface;
@@ -49,7 +51,8 @@ export component QueueDrawer inherits Rectangle {
             }
 
             queue-close := M3IconButton {
-                glyph: "v";
+                icon: Icons.chevron-down;
+                icon-color: root.palette.on-surface-variant;
                 content: root.palette.on-surface-variant;
                 state-on-surface: root.palette.on-surface;
                 clicked => { root.close-clicked(); }
@@ -134,11 +137,11 @@ export component QueueDrawer inherits Rectangle {
                             padding-right: 8px;
                             spacing: 8px;
 
-                            row-mark := Text {
-                                text: page-rows[idx].current ? ">" : " ";
-                                color: root.palette.primary;
-                                font-size: Type.title-large.size;
-                                vertical-alignment: center;
+                            row-mark := Icon {
+                                source: Icons.play;
+                                colorize: root.palette.primary;
+                                icon-size: 16px;
+                                visible: page-rows[idx].current;
                             }
 
                             row-texts := VerticalLayout {
@@ -162,7 +165,8 @@ export component QueueDrawer inherits Rectangle {
                             }
 
                             row-remove := M3IconButton {
-                                glyph: "-";
+                                icon: Icons.minus;
+                                icon-color: root.palette.on-surface-variant;
                                 content: root.palette.on-surface-variant;
                                 state-on-surface: root.palette.on-surface;
                                 visible: !root.locked;

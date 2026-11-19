@@ -56,6 +56,7 @@ fn ui_catalog() {
     std::env::set_var("XDG_CONFIG_HOME", tmp.path().join("config"));
     std::env::set_var("XDG_CACHE_HOME", tmp.path().join("cache"));
     std::env::set_var("XDG_STATE_HOME", tmp.path().join("state"));
+    let snapshot_dir = kit::snapshot_dir(tmp.path());
 
     kit::init_headless();
     let shell = MainShell::new().unwrap();
@@ -532,16 +533,16 @@ fn ui_catalog() {
     kit::mock_advance(Duration::from_millis(600));
     shell.show().unwrap();
     shell.set_page(0);
-    snapshot(&shell, tmp.path(), "home.png");
+    snapshot(&shell, &snapshot_dir, "home.png");
     shell.set_page(1);
     shell.set_search_query("zzz-no-match".into());
     madrigal_ui::apply_search_results(&shell, Vec::new());
     shell.invoke_query_changed("zzz-no-match".into());
     assert_eq!(shell.get_search_results().row_count(), 0);
-    snapshot(&shell, tmp.path(), "search.png");
+    snapshot(&shell, &snapshot_dir, "search.png");
     shell.set_page(2);
-    snapshot(&shell, tmp.path(), "explore.png");
+    snapshot(&shell, &snapshot_dir, "explore.png");
     load_album_fixture(&shell, ALBUM_ID, &album_src).unwrap();
     shell.set_detail_stack(1);
-    snapshot(&shell, tmp.path(), "detail.png");
+    snapshot(&shell, &snapshot_dir, "detail.png");
 }

@@ -1,6 +1,7 @@
 import { Palette, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
 import { M3IconButton } from "../components/buttons.slint";
+import { Icons } from "../components/icons.slint";
 
 export component NowPlayingBar inherits Rectangle {
     in property<Palette> palette;
@@ -91,14 +92,16 @@ export component NowPlayingBar inherits Rectangle {
         alignment: center;
 
         bar-prev := M3IconButton {
-            glyph: "|<";
+            icon: Icons.skip-back;
+            icon-color: root.palette.on-surface-variant;
             content: root.palette.on-surface-variant;
             state-on-surface: root.palette.on-surface;
             clicked => { root.prev-clicked(); }
         }
 
         bar-play := M3IconButton {
-            glyph: root.paused ? ">" : "||";
+            icon: root.paused ? Icons.play : Icons.pause;
+            icon-color: root.paused ? root.palette.on-surface-variant : root.palette.on-primary;
             selected: !root.paused;
             fill: root.palette.primary;
             content: root.paused ? root.palette.on-surface-variant : root.palette.on-primary;
@@ -107,7 +110,8 @@ export component NowPlayingBar inherits Rectangle {
         }
 
         bar-next := M3IconButton {
-            glyph: ">|";
+            icon: Icons.skip-forward;
+            icon-color: root.palette.on-surface-variant;
             content: root.palette.on-surface-variant;
             state-on-surface: root.palette.on-surface;
             clicked => { root.next-clicked(); }
@@ -117,7 +121,8 @@ export component NowPlayingBar inherits Rectangle {
     bar-like := M3IconButton {
         x: 456px;
         y: 16px;
-        glyph: root.liked ? "<3" : "o";
+        icon: root.liked ? Icons.star-filled : Icons.heart;
+        icon-color: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
         selected: root.liked;
         fill: root.liked ? root.palette.primary : transparent;
         content: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
@@ -128,7 +133,8 @@ export component NowPlayingBar inherits Rectangle {
     bar-queue := M3IconButton {
         x: 504px;
         y: 16px;
-        glyph: "=";
+        icon: Icons.list-music;
+        icon-color: root.palette.on-surface-variant;
         content: root.palette.on-surface-variant;
         state-on-surface: root.palette.on-surface;
         clicked => { root.queue-clicked(); }

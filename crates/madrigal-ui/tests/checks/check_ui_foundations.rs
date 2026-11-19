@@ -39,20 +39,20 @@ fn ui_foundations() {
     apply_theme(&gallery, ThemeKind::Light);
     assert_eq!(gallery.get_theme_kind(), 0);
     let light = gallery.get_palette();
-    expect_rgb(light.surface, 0xff, 0xf8, 0xf7);
-    expect_rgb(light.primary, 0x8f, 0x4a, 0x4d);
+    expect_rgb(light.surface, 0xff, 0xff, 0xff);
+    expect_rgb(light.primary, 0x0b, 0x6b, 0xcb);
     expect_rgb(light.on_primary, 0xff, 0xff, 0xff);
-    expect_rgb(light.primary_container, 0xff, 0xda, 0xda);
-    expect_rgb(light.surface_container_highest, 0xf0, 0xde, 0xde);
+    expect_rgb(light.primary_container, 0xd6, 0xe7, 0xff);
+    expect_rgb(light.surface_container_highest, 0xd8, 0xe3, 0xf2);
     expect_rgb(light.error, 0xba, 0x1a, 0x1a);
-    expect_rgb(light.outline_variant, 0xd7, 0xc1, 0xc1);
+    expect_rgb(light.outline_variant, 0xc4, 0xc6, 0xd0);
 
     apply_theme(&gallery, ThemeKind::Dark);
     assert_eq!(gallery.get_theme_kind(), 1);
     let dark = gallery.get_palette();
-    expect_rgb(dark.surface, 0x1a, 0x11, 0x11);
-    expect_rgb(dark.primary, 0xff, 0xb3, 0xb5);
-    expect_rgb(dark.on_primary, 0x56, 0x1d, 0x22);
+    expect_rgb(dark.surface, 0x0b, 0x08, 0x10);
+    expect_rgb(dark.primary, 0xcf, 0xbc, 0xff);
+    expect_rgb(dark.on_primary, 0x38, 0x1e, 0x72);
     assert_ne!(
         (dark.surface.red(), dark.surface.green(), dark.surface.blue()),
         (light.surface.red(), light.surface.green(), light.surface.blue())
@@ -63,7 +63,7 @@ fn ui_foundations() {
     let black = gallery.get_palette();
     expect_rgb(black.surface, 0x00, 0x00, 0x00);
     expect_rgb(black.background, 0x00, 0x00, 0x00);
-    expect_rgb(black.primary, 0xff, 0xb3, 0xb5);
+    expect_rgb(black.primary, 0xcf, 0xbc, 0xff);
 
     apply_theme(&gallery, ThemeKind::Light);
     assert_eq!(gallery.get_demo_clicks(), 0);
@@ -86,7 +86,7 @@ fn ui_foundations() {
     kit::mock_advance(Duration::from_millis(600));
 
     gallery.show().unwrap();
-    let shot = tmp.path().join("gallery.png");
+    let shot = kit::snapshot_dir(tmp.path()).join("gallery.png");
     kit::snapshot_to(gallery.window(), &shot).unwrap();
     let bytes = std::fs::read(&shot).unwrap();
     assert_eq!(&bytes[0..8], &[137, 80, 78, 71, 13, 10, 26, 10]);

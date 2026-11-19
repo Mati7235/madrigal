@@ -1,6 +1,7 @@
 import { Palette, Light, Dark, PureBlack, Type, Spacing } from "tokens.slint";
 import { I18n } from "i18n.slint";
 import { M3Button, M3IconButton } from "components/buttons.slint";
+import { Icons } from "components/icons.slint";
 import { M3TextField, M3SearchBar } from "components/fields.slint";
 import { M3Switch, M3Checkbox, M3Slider } from "components/selection.slint";
 import { M3Card, M3Chip } from "components/cards.slint";
@@ -106,13 +107,15 @@ export component DemoGallery inherits Window {
             spacing: 12px;
             alignment: start;
             icon-std := M3IconButton {
-                glyph: "+";
+                icon: Icons.plus;
+                icon-color: root.palette.on-surface-variant;
                 content: root.palette.on-surface-variant;
                 state-on-surface: root.palette.on-surface;
                 clicked => { root.demo-clicks += 1; }
             }
             icon-filled := M3IconButton {
-                glyph: "▶";
+                icon: Icons.play;
+                icon-color: root.palette.on-primary;
                 selected: true;
                 fill: root.palette.primary;
                 content: root.palette.on-primary;
@@ -120,14 +123,16 @@ export component DemoGallery inherits Window {
                 clicked => { root.demo-clicks += 1; }
             }
             icon-tonal := M3IconButton {
-                glyph: "✓";
+                icon: Icons.check;
+                icon-color: root.palette.on-secondary-container;
                 fill: root.palette.secondary-container;
                 content: root.palette.on-secondary-container;
                 state-on-surface: root.palette.on-surface;
                 clicked => { root.demo-clicks += 1; }
             }
             icon-outlined := M3IconButton {
-                glyph: "×";
+                icon: Icons.x;
+                icon-color: root.palette.on-surface-variant;
                 content: root.palette.on-surface-variant;
                 line: root.palette.outline-variant;
                 state-on-surface: root.palette.on-surface;

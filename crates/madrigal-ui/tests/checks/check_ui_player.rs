@@ -408,7 +408,7 @@ fn ui_player() {
     shell.set_paused(true);
     shell.set_position_ms(60_000);
     shell.show().unwrap();
-    let shot = tmp.path().join("player.png");
+    let shot = kit::snapshot_dir(tmp.path()).join("player.png");
     kit::snapshot_to(shell.window(), &shot).unwrap();
     let bytes = std::fs::read(&shot).unwrap();
     assert_eq!(&bytes[0..8], &[137, 80, 78, 71, 13, 10, 26, 10]);

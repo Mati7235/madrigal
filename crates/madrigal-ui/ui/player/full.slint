@@ -1,6 +1,7 @@
 import { Palette, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
 import { M3IconButton } from "../components/buttons.slint";
+import { Icons } from "../components/icons.slint";
 import { LyricsView } from "lyrics.slint";
 import { LyricLineRow } from "models.slint";
 
@@ -52,7 +53,7 @@ export component FullPlayer inherits Rectangle {
     property<int> dur-s: Math.floor(root.duration-ms / 1000);
     property<string> pos-text: Math.floor(root.pos-s / 60) + ":" + (Math.mod(root.pos-s, 60) < 10 ? "0" : "") + Math.mod(root.pos-s, 60);
     property<string> dur-text: Math.floor(root.dur-s / 60) + ":" + (Math.mod(root.dur-s, 60) < 10 ? "0" : "") + Math.mod(root.dur-s, 60);
-    property<string> repeat-glyph: root.repeat-mode == 1 ? "1" : root.repeat-mode == 2 ? "A" : "o";
+    property<image> repeat-icon: root.repeat-mode == 1 ? Icons.repeat-1 : Icons.repeat;
 
     tick := Timer {
         interval: 16ms;
@@ -95,7 +96,8 @@ export component FullPlayer inherits Rectangle {
             spacing: 8px;
 
             full-close := M3IconButton {
-                glyph: "v";
+                icon: Icons.chevron-down;
+                icon-color: root.palette.on-surface-variant;
                 content: root.palette.on-surface-variant;
                 state-on-surface: root.palette.on-surface;
                 clicked => { root.close-clicked(); }
@@ -121,14 +123,16 @@ export component FullPlayer inherits Rectangle {
             }
 
             full-info := M3IconButton {
-                glyph: "i";
+                icon: Icons.info;
+                icon-color: root.palette.on-surface-variant;
                 content: root.palette.on-surface-variant;
                 state-on-surface: root.palette.on-surface;
                 clicked => { root.info-clicked(); }
             }
 
             full-like := M3IconButton {
-                glyph: root.liked ? "<3" : "o";
+                icon: root.liked ? Icons.star-filled : Icons.heart;
+                icon-color: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
                 selected: root.liked;
                 fill: root.liked ? root.palette.primary : transparent;
                 content: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
@@ -245,7 +249,8 @@ export component FullPlayer inherits Rectangle {
                     alignment: center;
 
                     full-shuffle := M3IconButton {
-                        glyph: "x";
+                        icon: Icons.shuffle;
+                        icon-color: root.shuffle ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                         selected: root.shuffle;
                         fill: root.shuffle ? root.palette.secondary-container : transparent;
                         content: root.shuffle ? root.palette.on-secondary-container : root.palette.on-surface-variant;
@@ -254,14 +259,16 @@ export component FullPlayer inherits Rectangle {
                     }
 
                     full-prev := M3IconButton {
-                        glyph: "|<";
+                        icon: Icons.skip-back;
+                        icon-color: root.palette.on-surface;
                         content: root.palette.on-surface;
                         state-on-surface: root.palette.on-surface;
                         clicked => { root.prev-clicked(); }
                     }
 
                     full-play := M3IconButton {
-                        glyph: root.paused ? ">" : "||";
+                        icon: root.paused ? Icons.play : Icons.pause;
+                        icon-color: root.paused ? root.palette.on-surface : root.palette.on-primary;
                         selected: !root.paused;
                         fill: root.palette.primary;
                         content: root.paused ? root.palette.on-surface : root.palette.on-primary;
@@ -270,14 +277,16 @@ export component FullPlayer inherits Rectangle {
                     }
 
                     full-next := M3IconButton {
-                        glyph: ">|";
+                        icon: Icons.skip-forward;
+                        icon-color: root.palette.on-surface;
                         content: root.palette.on-surface;
                         state-on-surface: root.palette.on-surface;
                         clicked => { root.next-clicked(); }
                     }
 
                     full-repeat := M3IconButton {
-                        glyph: root.repeat-glyph;
+                        icon: root.repeat-icon;
+                        icon-color: root.repeat-mode != 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                         selected: root.repeat-mode != 0;
                         fill: root.repeat-mode != 0 ? root.palette.secondary-container : transparent;
                         content: root.repeat-mode != 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
@@ -344,7 +353,8 @@ export component FullPlayer inherits Rectangle {
                     alignment: center;
 
                     full-lyrics-btn := M3IconButton {
-                        glyph: "L";
+                        icon: Icons.mic;
+                        icon-color: root.panel == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                         selected: root.panel == 1;
                         fill: root.panel == 1 ? root.palette.secondary-container : transparent;
                         content: root.panel == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
@@ -353,21 +363,24 @@ export component FullPlayer inherits Rectangle {
                     }
 
                     full-sleep := M3IconButton {
-                        glyph: "z";
+                        icon: Icons.clock;
+                        icon-color: root.palette.on-surface-variant;
                         content: root.palette.on-surface-variant;
                         state-on-surface: root.palette.on-surface;
                         clicked => { root.sleep-clicked(); }
                     }
 
                     full-tempo := M3IconButton {
-                        glyph: "t";
+                        icon: Icons.gauge;
+                        icon-color: root.palette.on-surface-variant;
                         content: root.palette.on-surface-variant;
                         state-on-surface: root.palette.on-surface;
                         clicked => { root.tempo-clicked(); }
                     }
 
                     full-eq := M3IconButton {
-                        glyph: "E";
+                        icon: Icons.sliders-horizontal;
+                        icon-color: root.palette.on-surface-variant;
                         content: root.palette.on-surface-variant;
                         state-on-surface: root.palette.on-surface;
                         clicked => { root.eq-clicked(); }

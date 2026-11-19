@@ -1,4 +1,5 @@
 import { Shape, Type } from "../tokens.slint";
+import { Icon, Icons } from "icons.slint";
 
 export component M3Card inherits Rectangle {
     in property<string> title;
@@ -92,11 +93,10 @@ export component M3Chip inherits Rectangle {
         spacing: 8px;
         alignment: center;
 
-        chip-mark := Text {
-            text: "✓";
-            color: root.selected-content;
-            font-size: 14px;
-            vertical-alignment: center;
+        chip-mark := Icon {
+            source: Icons.check;
+            colorize: root.selected-content;
+            icon-size: 14px;
             visible: root.selected;
         }
 

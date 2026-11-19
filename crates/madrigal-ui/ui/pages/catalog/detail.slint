@@ -2,6 +2,7 @@ import { Palette, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { M3IconButton, M3Button } from "../../components/buttons.slint";
 import { M3Chip } from "../../components/cards.slint";
+import { Icons } from "../../components/icons.slint";
 import { M3ListItem } from "../../components/rows.slint";
 import { CatalogItem, CatalogSection, DetailKind, DetailRef } from "refs.slint";
 import { SectionView } from "section.slint";
@@ -39,7 +40,8 @@ export component DetailPage inherits Rectangle {
                 spacing: 12px;
                 alignment: start;
                 detail-back := M3IconButton {
-                    glyph: "‹";
+                    icon: Icons.arrow-left;
+                    icon-color: root.palette.on-surface;
                     content: root.palette.on-surface;
                     state-on-surface: root.palette.on-surface;
                     clicked => { root.back-requested(); }

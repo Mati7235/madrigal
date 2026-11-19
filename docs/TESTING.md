@@ -110,6 +110,10 @@ Without `cargo` available the check is FAIL.
 Flow validated in the spike (`slint-spike/INFORME.md`): Slint 1.19 headless
 backend for clicks, virtual clock, drag-reorder, and PNG screenshots.
 
+Fast loop: `cargo test -p madrigal-ui --test check_ui_<name>` (or
+`cargo xtask checks --only <name>`) rebuilds one test binary, ~8 s incremental
+with lld + `debug = 1`. Full gates are for task close, not iteration.
+
 Harness contract (`madrigal-testkit`):
 
 - Pinned versions: `slint = "=1.19.0"` with the `mcp` feature (without it the
@@ -124,6 +128,7 @@ Harness contract (`madrigal-testkit`):
 - Drag&drop: the reorder commit goes in `pointer-event(up)`, never in `clicked`
   (click does not fire if the press moved).
 - Screenshots: `snapshot_to` uses `Window::take_snapshot()` and saves PNG.
+  `MADRIGAL_SNAPSHOT_DIR=<dir>` exports the UI checks' PNGs to `<dir>`.
 - Qualified `Component::id` ids; the crate compiles the `.slint` with forced
   debug info (`with_debug_info(true)`).
 - Crates compiling `.slint` do not inherit `unsafe_code = "forbid"` from the

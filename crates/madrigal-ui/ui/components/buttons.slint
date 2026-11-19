@@ -1,4 +1,5 @@
 import { Shape, Type } from "../tokens.slint";
+import { Icon } from "icons.slint";
 
 export component M3Button inherits Rectangle {
     in property<string> text;
@@ -67,7 +68,9 @@ export component M3Button inherits Rectangle {
 }
 
 export component M3IconButton inherits Rectangle {
-    in property<string> glyph;
+    in property<image> icon;
+    in property<color> icon-color: root.content;
+    in property<length> icon-size: 20px;
     in property<bool> enabled: true;
     in property<bool> selected: false;
     in property<color> fill: transparent;
@@ -76,7 +79,6 @@ export component M3IconButton inherits Rectangle {
     in property<color> state-on-surface;
     callback clicked();
 
-    accessible-label: root.glyph;
     accessible-role: AccessibleRole.button;
 
     width: 40px;
@@ -98,15 +100,12 @@ export component M3IconButton inherits Rectangle {
         animate opacity { duration: 100ms; easing: ease-in-out; }
     }
 
-    glyph-label := Text {
-        text: root.glyph;
-        color: root.enabled ? root.content : root.state-on-surface.with-alpha(0.38);
-        font-size: 20px;
-        horizontal-alignment: center;
-        vertical-alignment: center;
-        width: 100%;
-        height: 100%;
-        animate color { duration: 100ms; easing: ease-in-out; }
+    icon-view := Icon {
+        icon-size: root.icon-size;
+        source: root.icon;
+        colorize: root.enabled ? root.icon-color : root.state-on-surface.with-alpha(0.38);
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
     }
 
     touch := TouchArea {

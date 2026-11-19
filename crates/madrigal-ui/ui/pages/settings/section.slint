@@ -1,6 +1,7 @@
 import { Palette, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { M3Button, M3IconButton } from "../../components/buttons.slint";
+import { Icons } from "../../components/icons.slint";
 import { M3TextField } from "../../components/fields.slint";
 import { M3Switch, M3Slider } from "../../components/selection.slint";
 import { SettingsRow } from "rows.slint";
@@ -205,14 +206,16 @@ export component SectionView inherits Rectangle {
                             }
 
                             prov-up := M3IconButton {
-                                glyph: "▲";
+                                icon: Icons.chevron-up;
+                                icon-color: root.palette.on-surface-variant;
                                 content: root.palette.on-surface-variant;
                                 state-on-surface: root.palette.on-surface;
                                 clicked => { root.provider-moved(row.key, j, -52.0); }
                             }
 
                             prov-down := M3IconButton {
-                                glyph: "▼";
+                                icon: Icons.chevron-down;
+                                icon-color: root.palette.on-surface-variant;
                                 content: root.palette.on-surface-variant;
                                 state-on-surface: root.palette.on-surface;
                                 clicked => { root.provider-moved(row.key, j, 52.0); }

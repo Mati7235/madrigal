@@ -1,6 +1,7 @@
 import { Palette, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { DownloadRow } from "models.slint";
+import { Icon, Icons } from "../../components/icons.slint";
 
 export component DownloadsPage inherits Rectangle {
     in property<Palette> palette;
@@ -12,10 +13,6 @@ export component DownloadsPage inherits Rectangle {
     callback dl-cancel(string);
     callback dl-retry(string);
     callback dl-retry-all();
-
-    function state-glyph(state: int) -> string {
-        return state == 1 ? "⬇" : state == 2 ? "⏸" : state == 3 ? "✓" : state == 4 ? "⚠" : state == 5 ? "⛔" : "…";
-    }
 
     background: root.palette.surface;
     accessible-role: text;
@@ -98,13 +95,11 @@ export component DownloadsPage inherits Rectangle {
                         spacing: 12px;
                         alignment: center;
 
-                        state-label := Text {
+                        state-label := Icon {
                             width: 28px;
-                            text: root.state-glyph(row.state);
-                            color: row.state == 4 || row.state == 5 ? root.palette.error : row.state == 3 ? root.palette.primary : root.palette.on-surface-variant;
-                            font-size: 18px;
-                            vertical-alignment: center;
-                            horizontal-alignment: center;
+                            height: 18px;
+                            source: row.state == 1 ? Icons.download : row.state == 2 ? Icons.pause : row.state == 3 ? Icons.check : row.state == 4 ? Icons.triangle-alert : row.state == 5 ? Icons.circle-x : Icons.loader-circle;
+                            colorize: row.state == 4 || row.state == 5 ? root.palette.error : row.state == 3 ? root.palette.primary : root.palette.on-surface-variant;
                         }
 
                         dl-texts := VerticalLayout {
@@ -145,13 +140,11 @@ export component DownloadsPage inherits Rectangle {
                             visible: row.speed != "";
                         }
 
-                        dl-pause-label := Text {
+                        dl-pause-label := Icon {
                             width: 36px;
-                            text: "⏸";
-                            color: root.palette.on-surface-variant;
-                            font-size: 18px;
-                            horizontal-alignment: center;
-                            vertical-alignment: center;
+                            height: 18px;
+                            source: Icons.pause;
+                            colorize: root.palette.on-surface-variant;
                             visible: row.state == 0 || row.state == 1;
                         }
                         dl-pause-touch := TouchArea {
@@ -162,13 +155,11 @@ export component DownloadsPage inherits Rectangle {
                             clicked => { root.dl-pause(row.id); }
                         }
 
-                        dl-resume-label := Text {
+                        dl-resume-label := Icon {
                             width: 36px;
-                            text: "▶";
-                            color: root.palette.primary;
-                            font-size: 18px;
-                            horizontal-alignment: center;
-                            vertical-alignment: center;
+                            height: 18px;
+                            source: Icons.play;
+                            colorize: root.palette.primary;
                             visible: row.state == 2;
                         }
                         dl-resume-touch := TouchArea {
@@ -179,13 +170,11 @@ export component DownloadsPage inherits Rectangle {
                             clicked => { root.dl-resume(row.id); }
                         }
 
-                        dl-cancel-label := Text {
+                        dl-cancel-label := Icon {
                             width: 36px;
-                            text: "✕";
-                            color: root.palette.on-surface-variant;
-                            font-size: 16px;
-                            horizontal-alignment: center;
-                            vertical-alignment: center;
+                            height: 18px;
+                            source: Icons.x;
+                            colorize: root.palette.on-surface-variant;
                             visible: row.state != 3;
                         }
                         dl-cancel-touch := TouchArea {
@@ -216,13 +205,11 @@ export component DownloadsPage inherits Rectangle {
                         spacing: 12px;
                         alignment: center;
 
-                        failed-state-label := Text {
+                        failed-state-label := Icon {
                             width: 28px;
-                            text: root.state-glyph(row.state);
-                            color: root.palette.error;
-                            font-size: 18px;
-                            vertical-alignment: center;
-                            horizontal-alignment: center;
+                            height: 18px;
+                            source: row.state == 1 ? Icons.download : row.state == 2 ? Icons.pause : row.state == 3 ? Icons.check : row.state == 4 ? Icons.triangle-alert : row.state == 5 ? Icons.circle-x : Icons.loader-circle;
+                            colorize: root.palette.error;
                         }
 
                         failed-texts := VerticalLayout {
@@ -243,13 +230,11 @@ export component DownloadsPage inherits Rectangle {
                             }
                         }
 
-                        dl-retry-label := Text {
+                        dl-retry-label := Icon {
                             width: 36px;
-                            text: "↻";
-                            color: root.palette.primary;
-                            font-size: 18px;
-                            horizontal-alignment: center;
-                            vertical-alignment: center;
+                            height: 18px;
+                            source: Icons.rotate-cw;
+                            colorize: root.palette.primary;
                         }
                         dl-retry-touch := TouchArea {
                             accessible-label: I18n.trl(I18n.lang, "action.retryDownload");

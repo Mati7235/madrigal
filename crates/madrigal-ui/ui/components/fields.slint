@@ -1,4 +1,5 @@
 import { Shape, Type } from "../tokens.slint";
+import { Icon, Icons } from "icons.slint";
 
 export component M3TextField inherits Rectangle {
     in property<string> label;
@@ -100,11 +101,10 @@ export component M3SearchBar inherits Rectangle {
         padding-right: 16px;
         spacing: 8px;
 
-        lead := Text {
-            text: "○";
-            color: root.content;
-            font-size: 18px;
-            vertical-alignment: center;
+        lead := Icon {
+            source: Icons.search;
+            colorize: root.content;
+            icon-size: 18px;
         }
 
         field := Rectangle {
@@ -141,11 +141,11 @@ export component M3SearchBar inherits Rectangle {
             }
         }
 
-        trail := Text {
-            text: root.value == "" ? "" : "×";
-            color: root.content;
-            font-size: 18px;
-            vertical-alignment: center;
+        trail := Icon {
+            source: Icons.x;
+            colorize: root.content;
+            icon-size: 18px;
+            visible: root.value != "";
         }
     }
 }

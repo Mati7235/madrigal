@@ -1,5 +1,6 @@
 import { Palette, Type, Shape } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
+import { Icon, Icons } from "../components/icons.slint";
 
 export component SideNav inherits Rectangle {
     in property<Palette> palette;
@@ -22,11 +23,10 @@ export component SideNav inherits Rectangle {
             HorizontalLayout {
                 padding-left: 16px;
                 spacing: 12px;
-                home-glyph := Text {
-                    text: "⌂";
-                    color: root.page == 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                    font-size: 18px;
-                    vertical-alignment: center;
+                home-glyph := Icon {
+                    source: Icons.house;
+                    colorize: root.page == 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                    icon-size: 22px;
                 }
                 home-label := Text {
                     text: I18n.trl(I18n.lang, "nav.home");
@@ -53,11 +53,10 @@ export component SideNav inherits Rectangle {
             HorizontalLayout {
                 padding-left: 16px;
                 spacing: 12px;
-                search-glyph := Text {
-                    text: "⌕";
-                    color: root.page == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                    font-size: 18px;
-                    vertical-alignment: center;
+                search-glyph := Icon {
+                    source: Icons.search;
+                    colorize: root.page == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                    icon-size: 22px;
                 }
                 search-label := Text {
                     text: I18n.trl(I18n.lang, "explore.search");
@@ -84,11 +83,10 @@ export component SideNav inherits Rectangle {
             HorizontalLayout {
                 padding-left: 16px;
                 spacing: 12px;
-                explore-glyph := Text {
-                    text: "◍";
-                    color: root.page == 2 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                    font-size: 18px;
-                    vertical-alignment: center;
+                explore-glyph := Icon {
+                    source: Icons.compass;
+                    colorize: root.page == 2 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                    icon-size: 22px;
                 }
                 explore-label := Text {
                     text: I18n.trl(I18n.lang, "nav.explore");
@@ -115,11 +113,10 @@ export component SideNav inherits Rectangle {
             HorizontalLayout {
                 padding-left: 16px;
                 spacing: 12px;
-                library-glyph := Text {
-                    text: "▤";
-                    color: root.page == 3 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                    font-size: 18px;
-                    vertical-alignment: center;
+                library-glyph := Icon {
+                    source: Icons.library;
+                    colorize: root.page == 3 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                    icon-size: 22px;
                 }
                 library-label := Text {
                     text: I18n.trl(I18n.lang, "nav.lists");
@@ -146,11 +143,10 @@ export component SideNav inherits Rectangle {
             HorizontalLayout {
                 padding-left: 16px;
                 spacing: 12px;
-                downloads-glyph := Text {
-                    text: "↓";
-                    color: root.page == 4 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                    font-size: 18px;
-                    vertical-alignment: center;
+                downloads-glyph := Icon {
+                    source: Icons.arrow-down;
+                    colorize: root.page == 4 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                    icon-size: 22px;
                 }
                 downloads-label := Text {
                     text: I18n.trl(I18n.lang, "nav.downloads");
@@ -177,11 +173,10 @@ export component SideNav inherits Rectangle {
             HorizontalLayout {
                 padding-left: 16px;
                 spacing: 12px;
-                settings-glyph := Text {
-                    text: "⚙";
-                    color: root.page == 5 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                    font-size: 18px;
-                    vertical-alignment: center;
+                settings-glyph := Icon {
+                    source: Icons.settings;
+                    colorize: root.page == 5 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                    icon-size: 22px;
                 }
                 settings-label := Text {
                     text: I18n.trl(I18n.lang, "settings.title");

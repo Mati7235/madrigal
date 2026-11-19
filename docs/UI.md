@@ -17,6 +17,8 @@ via caller-supplied colors), `M3IconButton`, `M3TextField`, `M3SearchBar`,
 (elevated/filled), `M3Chip`, `M3ListItem` (active/download states). All take
 text via parameters and set `accessible-label` + `accessible-role`.
 
+Icons: Lucide (ISC) in ui/icons, tinted via Image.colorize.
+
 Motion: hover/press state layers per token durations, press shape-morph
 (medium 12 to small 8), card hover lift via shadow. No scale transform: Slint
 has no GPU scale primitive, so press feedback is morph + state layer.
@@ -28,7 +30,7 @@ refreshes every binding through the `lang` property. The global lives in
 re-exports `DemoGallery`, `MainShell` and `I18n` as the single compile root.
 
 Shell (`ui/shell/`, presenter `src/shell.rs`): `MainShell` window with a
-`SideNav` (Home, Search, Explore, Library, Downloads, Settings; glyph + label
+`SideNav` (Home, Search, Explore, Library, Downloads, Settings; icon + label
 via `trl`), a `page` int property (0..5), a `PageHost` workspace, a
 NowPlayingBar placeholder strip (`player.noTrack` + `queue-count` seam), and
 `ConfirmOverlay` / `PromptOverlay` under one `overlay` int enum (0 none,
@@ -51,6 +53,12 @@ binds through; page callbacks record `lib-action-count` / `dl-action-count`
 plus `lib-last-action` / `dl-last-action` for the checks. The presenter
 (`src/pages_library.rs`) maps `madrigal-library` / `madrigal-downloads`
 results into the Slint row models.
+
+## Theme
+
+`tokens.slint` carries two fixed expressive palettes: Light = sky blue accent
+on white, Dark/PureBlack = violet accent on black. `appearance.theme` picks the
+mode; matugen-derived colors for the system mode are an F9 runtime seam.
 
 ## Screen ownership (F8-3..F8-6)
 

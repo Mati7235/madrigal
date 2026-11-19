@@ -1,6 +1,7 @@
 import { Palette, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
 import { M3IconButton } from "../components/buttons.slint";
+import { Icons } from "../components/icons.slint";
 import { LyricLineRow } from "models.slint";
 
 export component LyricsView inherits Rectangle {
@@ -34,7 +35,8 @@ export component LyricsView inherits Rectangle {
             }
 
             lyrics-share := M3IconButton {
-                glyph: "^";
+                icon: Icons.save;
+                icon-color: root.palette.on-surface-variant;
                 content: root.palette.on-surface-variant;
                 state-on-surface: root.palette.on-surface;
                 clicked => { root.share-requested(); }
