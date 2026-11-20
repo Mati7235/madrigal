@@ -128,3 +128,26 @@ item height 48).
 | Library + downloads | F8-4 | `ui/pages/library/*`, `src/pages_library.rs` |
 | Player surface | F8-5 | `ui/player/*`, `src/player_ui.rs` |
 | Settings + onboarding + diagnostics | F8-6 | `ui/pages/settings/*`, `src/pages_settings.rs` |
+
+## Page specs (1920x1080)
+
+Common: page margin 16px from the sidebar edge and from the top of the
+workspace, section gap 24px, rows 54px, content fills the workspace width, the
+workspace scrolls vertically and never overlaps the 96px player bar.
+
+Top bar (48px, spans the workspace, above the page): one `M3SearchBar`, 560px
+max width, left aligned at the page margin. Home, Search and Explore: placeholder
+"search music", Enter opens Search with the query. Library and Downloads:
+placeholder "search downloaded songs", filters the visible rows while typing.
+`/` focuses it. Search page no longer owns a bar.
+
+Library, Lists tab: chips row, tag row and one tool row (sort tonal button,
+select outlined button, 8px gaps), then 54px playlist rows: cover 36px, name,
+"N tracks" subtitle, play icon button on the right. No cards, no blank gap.
+
+Downloads: header row (title, count), 54px rows full width: cover 36px, title,
+subtitle, state or progress on the right, action icon buttons. Empty state is
+an icon and one line, centered in the workspace.
+
+Media cards (`M3Card`): 150x190, no border artifacts, no clipped shadow, hover
+veil only. Rails use 12px spacing and start at the page margin.
