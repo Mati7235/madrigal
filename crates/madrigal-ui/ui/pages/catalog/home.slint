@@ -54,9 +54,8 @@ export component HomePage inherits Rectangle {
                 }
             }
 
-            pins-block := VerticalLayout {
+            if (root.pins.length > 0) : pins-block := VerticalLayout {
                 spacing: 8px;
-                visible: root.pins.length > 0;
                 pins-title := Text {
                     text: I18n.trl(I18n.lang, "catalog.pins");
                     color: root.palette.on-surface;
@@ -81,9 +80,8 @@ export component HomePage inherits Rectangle {
                 }
             }
 
-            picks-block := VerticalLayout {
+            if (root.quick-picks.length > 0) : picks-block := VerticalLayout {
                 spacing: 8px;
-                visible: root.quick-picks.length > 0;
                 picks-title := Text {
                     text: I18n.trl(I18n.lang, "catalog.quickPicks");
                     color: root.palette.on-surface;
@@ -135,7 +133,7 @@ export component HomePage inherits Rectangle {
             }
 
             sections-block := VerticalLayout {
-                spacing: 24px;
+                spacing: 16px;
                 for sec[s] in root.sections : sec-view := SectionView {
                     palette: root.palette;
                     section: sec;
@@ -148,12 +146,11 @@ export component HomePage inherits Rectangle {
                 }
             }
 
-            home-empty := Text {
+            if (root.is-empty) : home-empty := Text {
                 text: I18n.trl(I18n.lang, "home.empty");
                 color: root.palette.on-surface-variant;
                 font-size: Type.body-large.size;
                 horizontal-alignment: center;
-                visible: root.is-empty;
             }
         }
     }
