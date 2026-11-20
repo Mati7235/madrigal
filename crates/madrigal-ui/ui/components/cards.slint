@@ -18,11 +18,13 @@ export component M3Card inherits Rectangle {
     accessible-label: root.title;
     accessible-role: AccessibleRole.button;
 
+    property<bool> lit: root.elevated && !root.media;
+
     border-radius: root.media ? Shape.medium : Shape.large;
     background: root.fill;
-    drop-shadow-color: root.shadow-color;
-    drop-shadow-blur: !root.elevated ? 0px : card-touch.has-hover ? 12px : 3px;
-    drop-shadow-offset-y: !root.elevated ? 0px : card-touch.has-hover ? 4px : 1px;
+    drop-shadow-color: root.lit ? root.shadow-color : transparent;
+    drop-shadow-blur: !root.lit ? 0px : card-touch.has-hover ? 12px : 3px;
+    drop-shadow-offset-y: !root.lit ? 0px : card-touch.has-hover ? 4px : 1px;
     animate background { duration: 100ms; easing: ease-in-out; }
     animate drop-shadow-blur { duration: 200ms; easing: ease-out; }
     animate drop-shadow-offset-y { duration: 200ms; easing: ease-out; }
