@@ -127,11 +127,17 @@ export component M3Chip inherits Rectangle {
         spacing: 8px;
         alignment: center;
 
-        chip-mark := Icon {
-            source: Icons.check;
-            colorize: root.selected-content;
-            icon-size: 14px;
-            visible: root.selected;
+        mark-frame := Rectangle {
+            width: 14px;
+            VerticalLayout {
+                alignment: center;
+                chip-mark := Icon {
+                    source: Icons.check;
+                    colorize: root.selected-content;
+                    icon-size: 14px;
+                    visible: root.selected;
+                }
+            }
         }
 
         chip-label := Text {

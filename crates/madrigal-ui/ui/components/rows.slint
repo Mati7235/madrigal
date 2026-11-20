@@ -30,12 +30,17 @@ export component M3ListItem inherits Rectangle {
         padding-left: 10px;
         padding-right: 10px;
         spacing: 12px;
-        alignment: center;
 
-        art := Cover {
-            size: 36px;
-            radius: 8px;
-            source: root.cover;
+        art-frame := Rectangle {
+            width: 36px;
+            VerticalLayout {
+                alignment: center;
+                art := Cover {
+                    size: 36px;
+                    radius: 8px;
+                    source: root.cover;
+                }
+            }
         }
 
         texts := VerticalLayout {
@@ -60,18 +65,24 @@ export component M3ListItem inherits Rectangle {
             }
         }
 
-        download-bar := Rectangle {
+        download-frame := Rectangle {
             width: 120px;
-            height: 6px;
-            border-radius: 3px;
-            background: root.progress-track;
             visible: root.progress >= 0;
+            VerticalLayout {
+                alignment: center;
+                download-bar := Rectangle {
+                    width: 120px;
+                    height: 6px;
+                    border-radius: 3px;
+                    background: root.progress-track;
 
-            download-fill := Rectangle {
-                width: parent.width * clamp(root.progress, 0, 1);
-                height: 100%;
-                border-radius: 3px;
-                background: root.progress-fill;
+                    download-fill := Rectangle {
+                        width: parent.width * clamp(root.progress, 0, 1);
+                        height: 100%;
+                        border-radius: 3px;
+                        background: root.progress-fill;
+                    }
+                }
             }
         }
 
