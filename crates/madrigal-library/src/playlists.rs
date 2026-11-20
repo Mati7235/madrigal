@@ -30,6 +30,93 @@ pub struct PlaylistListFilter {
     pub kind: Option<PlaylistKind>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PlaylistOrigin {
+    #[default]
+    Local,
+    Account,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PlaylistOriginFilter {
+    #[default]
+    All,
+    Local,
+    Account,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PlaylistOrder {
+    #[default]
+    Recent,
+    Name,
+    Tracks,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct PlaylistQuery {
+    pub text: Option<String>,
+    pub origin: PlaylistOriginFilter,
+    pub order: PlaylistOrder,
+    pub limit: Option<usize>,
+    pub offset: usize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PlaylistCapabilities {
+    pub add: bool,
+    pub remove: bool,
+    pub reorder: bool,
+    pub rename: bool,
+    pub delete: bool,
+    pub description: bool,
+    pub cover: bool,
+    pub export: bool,
+    pub copy: bool,
+}
+
+impl PlaylistCapabilities {
+    fn owned() -> Self {
+        Self {
+            add: true,
+            remove: true,
+            reorder: true,
+            rename: true,
+            delete: true,
+            description: true,
+            cover: true,
+            export: true,
+            copy: true,
+        }
+    }
+
+    fn read_only() -> Self {
+        Self {
+            add: false,
+            remove: false,
+            reorder: false,
+            rename: false,
+            delete: false,
+            description: false,
+            cover: false,
+            export: true,
+            copy: true,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PlaylistSummary {
+    pub id: PlaylistId,
+    pub name: String,
+    pub subtitle: Option<String>,
+    pub origin: PlaylistOrigin,
+    pub track_count: u32,
+    pub updated_at: i64,
+    pub cover: Option<String>,
+    pub capabilities: PlaylistCapabilities,
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct UndoRow {
     pub song_key: String,
@@ -83,6 +170,36 @@ fn sort_from_prefs(sort: PlaylistSongSortType) -> SongSort {
     }
 }
 
+fn sync_playlist_stats(
+    conn: &rusqlite::Connection,
+    id: &PlaylistId,
+    updated_at: i64,
+) -> Result<()> {
+    conn.execute(
+        "UPDATE playlists SET track_count = (SELECT COUNT(*) FROM playlist_tracks WHERE playlist_id = ?1), updated_at = ?2 WHERE id = ?1",
+        params![id.as_str(), updated_at],
+    )?;
+    Ok(())
+}
+
+fn summary_order(order: PlaylistOrder) -> &'static str {
+    match order {
+        PlaylistOrder::Recent => "p.updated_at DESC, p.rowid DESC",
+        PlaylistOrder::Name => "p.title COLLATE NOCASE ASC, p.rowid ASC",
+        PlaylistOrder::Tracks => {
+            "COALESCE(p.track_count, 0) DESC, p.title COLLATE NOCASE ASC, p.rowid ASC"
+        }
+    }
+}
+
+fn summary_origin_filter(origin: PlaylistOriginFilter) -> &'static str {
+    match origin {
+        PlaylistOriginFilter::All => "all",
+        PlaylistOriginFilter::Local => "local",
+        PlaylistOriginFilter::Account => "account",
+    }
+}
+
 impl<'a> Library<'a> {
     pub fn create_playlist(&self, title: &str) -> Result<Playlist> {
         let title = title.trim();
@@ -96,7 +213,7 @@ impl<'a> Library<'a> {
             author: None,
             description: None,
             thumbnail: None,
-            track_count: None,
+            track_count: Some(0),
             owned: true,
             privacy: None,
             author_id: None,
@@ -130,9 +247,59 @@ impl<'a> Library<'a> {
             None => ("", 0),
         };
         let playlists = stmt
-            .query_map(params![tag, include_hidden, kind, include_auto], read_playlist)?
+            .query_map(
+                params![tag, include_hidden, kind, include_auto],
+                read_playlist,
+            )?
             .collect::<rusqlite::Result<Vec<_>>>()?;
         Ok(playlists)
+    }
+
+    pub fn list_playlist_summaries(&self, query: &PlaylistQuery) -> Result<Vec<PlaylistSummary>> {
+        let text = query.text.as_deref().map(str::trim).unwrap_or("");
+        let origin = summary_origin_filter(query.origin);
+        let sql = format!(
+            "SELECT p.id, p.title, p.description, p.thumbnail, COALESCE(p.track_count, 0) AS track_count, p.owned, p.kind, p.updated_at
+             FROM playlists p
+             WHERE (?1 = '' OR instr(lower(p.title), lower(?1)) > 0)
+               AND (?2 = 'all'
+                 OR (?2 = 'local' AND p.kind = 'local')
+                 OR (?2 = 'account' AND p.kind IN ('remote', 'spotify')))
+               AND COALESCE(p.privacy, '') <> 'hidden'
+               AND p.kind <> 'auto'
+             ORDER BY {}
+             LIMIT ?3 OFFSET ?4",
+            summary_order(query.order)
+        );
+        let mut stmt = self.conn.prepare(&sql)?;
+        let limit = query.limit.map_or(-1, |value| value as i64);
+        let rows = stmt
+            .query_map(params![text, origin, limit, query.offset as i64], |row| {
+                let kind_raw: String = row.get("kind")?;
+                let owned: i64 = row.get("owned")?;
+                let description: Option<String> = row.get("description")?;
+                let track_count: i64 = row.get("track_count")?;
+                Ok(PlaylistSummary {
+                    id: PlaylistId::new(row.get::<_, String>("id")?),
+                    name: row.get("title")?,
+                    subtitle: description.filter(|value| !value.trim().is_empty()),
+                    origin: if matches!(kind_raw.as_str(), "remote" | "spotify") {
+                        PlaylistOrigin::Account
+                    } else {
+                        PlaylistOrigin::Local
+                    },
+                    track_count: track_count.max(0) as u32,
+                    updated_at: row.get("updated_at")?,
+                    cover: row.get("thumbnail")?,
+                    capabilities: if owned != 0 {
+                        PlaylistCapabilities::owned()
+                    } else {
+                        PlaylistCapabilities::read_only()
+                    },
+                })
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        Ok(rows)
     }
 
     pub fn rename_playlist(&self, id: &PlaylistId, title: &str) -> Result<bool> {
@@ -141,8 +308,8 @@ impl<'a> Library<'a> {
             return Err(Error::Invalid("playlist title is empty".to_owned()));
         }
         let changed = self.conn.execute(
-            "UPDATE playlists SET title = ?1 WHERE id = ?2",
-            params![title, id.as_str()],
+            "UPDATE playlists SET title = ?1, updated_at = ?3 WHERE id = ?2",
+            params![title, id.as_str(), crate::now_unix_millis()],
         )?;
         Ok(changed > 0)
     }
@@ -153,16 +320,16 @@ impl<'a> Library<'a> {
         description: Option<&str>,
     ) -> Result<bool> {
         let changed = self.conn.execute(
-            "UPDATE playlists SET description = ?1 WHERE id = ?2",
-            params![description, id.as_str()],
+            "UPDATE playlists SET description = ?1, updated_at = ?3 WHERE id = ?2",
+            params![description, id.as_str(), crate::now_unix_millis()],
         )?;
         Ok(changed > 0)
     }
 
     pub fn set_cover(&self, id: &PlaylistId, cover_path: Option<&str>) -> Result<bool> {
         let changed = self.conn.execute(
-            "UPDATE playlists SET thumbnail = ?1 WHERE id = ?2",
-            params![cover_path, id.as_str()],
+            "UPDATE playlists SET thumbnail = ?1, updated_at = ?3 WHERE id = ?2",
+            params![cover_path, id.as_str(), crate::now_unix_millis()],
         )?;
         Ok(changed > 0)
     }
@@ -183,10 +350,9 @@ impl<'a> Library<'a> {
     }
 
     pub fn delete_playlist(&self, id: &PlaylistId) -> Result<bool> {
-        let changed = self.conn.execute(
-            "DELETE FROM playlists WHERE id = ?1",
-            params![id.as_str()],
-        )?;
+        let changed = self
+            .conn
+            .execute("DELETE FROM playlists WHERE id = ?1", params![id.as_str()])?;
         Ok(changed > 0)
     }
 
@@ -211,9 +377,9 @@ impl<'a> Library<'a> {
     }
 
     pub fn playlist_tags(&self, id: &PlaylistId) -> Result<Vec<String>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT tag FROM playlist_tags WHERE playlist_id = ?1 ORDER BY tag ASC",
-        )?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT tag FROM playlist_tags WHERE playlist_id = ?1 ORDER BY tag ASC")?;
         let tags = stmt
             .query_map(params![id.as_str()], |row| row.get(0))?
             .collect::<rusqlite::Result<Vec<String>>>()?;
@@ -221,7 +387,9 @@ impl<'a> Library<'a> {
     }
 
     pub fn all_tags(&self) -> Result<Vec<String>> {
-        let mut stmt = self.conn.prepare("SELECT name FROM tags ORDER BY name ASC")?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT name FROM tags ORDER BY name ASC")?;
         let tags = stmt
             .query_map([], |row| row.get(0))?
             .collect::<rusqlite::Result<Vec<String>>>()?;
@@ -320,12 +488,61 @@ impl<'a> Library<'a> {
             present.insert(key);
             report.added.push(track.identity.clone());
         }
+        sync_playlist_stats(&tx, id, crate::now_unix_millis())?;
         tx.commit()?;
         self.undo.borrow_mut().push(UndoOp {
             playlist: id.as_str().to_owned(),
             before,
         });
         Ok(report)
+    }
+
+    pub fn remove_tracks(&self, id: &PlaylistId, tracks: &[TrackIdentity]) -> Result<usize> {
+        if self.get_playlist(id)?.is_none() {
+            return Err(Error::Invalid("playlist does not exist".to_owned()));
+        }
+        let before = if tracks.is_empty() {
+            Vec::new()
+        } else {
+            self.playlist_snapshot(id)?
+        };
+        let tx = self.conn.unchecked_transaction()?;
+        let mut removed = 0usize;
+        for identity in tracks {
+            removed += tx.execute(
+                "DELETE FROM playlist_tracks WHERE playlist_id = ?1 AND song_key = ?2",
+                params![id.as_str(), identity.to_storage_string()],
+            )?;
+        }
+        sync_playlist_stats(&tx, id, crate::now_unix_millis())?;
+        tx.commit()?;
+        if removed > 0 {
+            self.undo.borrow_mut().push(UndoOp {
+                playlist: id.as_str().to_owned(),
+                before,
+            });
+        }
+        Ok(removed)
+    }
+
+    pub fn duplicate_playlist(&self, source: &PlaylistId, title: &str) -> Result<Playlist> {
+        if self.get_playlist(source)?.is_none() {
+            return Err(Error::Invalid("playlist does not exist".to_owned()));
+        }
+        let copy = self.create_playlist(title)?;
+        let rows = self.playlist_snapshot(source)?;
+        let added_at = crate::now_unix();
+        let tx = self.conn.unchecked_transaction()?;
+        for (position, row) in rows.iter().enumerate() {
+            tx.execute(
+                "INSERT INTO playlist_tracks (playlist_id, song_key, position, added_at) VALUES (?1, ?2, ?3, ?4)",
+                params![copy.id.as_str(), row.song_key, position as i64, added_at],
+            )?;
+        }
+        sync_playlist_stats(&tx, &copy.id, crate::now_unix_millis())?;
+        tx.commit()?;
+        self.get_playlist(&copy.id)?
+            .ok_or_else(|| Error::Invalid("playlist does not exist".to_owned()))
     }
 
     pub fn undo_last_add(&self) -> Result<bool> {
@@ -344,6 +561,7 @@ impl<'a> Library<'a> {
                 params![id.as_str(), row.song_key, row.position, row.added_at],
             )?;
         }
+        sync_playlist_stats(&tx, &id, crate::now_unix_millis())?;
         tx.commit()?;
         Ok(true)
     }
@@ -367,13 +585,14 @@ impl<'a> Library<'a> {
                 params![id.as_str(), row.song_key, position as i64, row.added_at],
             )?;
         }
+        sync_playlist_stats(&tx, id, crate::now_unix_millis())?;
         tx.commit()?;
         Ok(true)
     }
 
     fn ensure_auto(&self, id: &str, title: &str) -> Result<()> {
         self.conn.execute(
-            "INSERT OR IGNORE INTO playlists (id, kind, title, owned) VALUES (?1, 'auto', ?2, 0)",
+            "INSERT OR IGNORE INTO playlists (id, kind, title, owned, updated_at) VALUES (?1, 'auto', ?2, 0, CAST(strftime('%s', 'now') AS INTEGER) * 1000)",
             params![id, title],
         )?;
         Ok(())
@@ -381,13 +600,14 @@ impl<'a> Library<'a> {
 
     pub fn set_liked(&self, identity: &TrackIdentity, liked: bool) -> Result<()> {
         self.ensure_auto(LIKED_PLAYLIST_ID, "Liked")?;
+        let tx = self.conn.unchecked_transaction()?;
         if liked {
-            let position: i64 = self.conn.query_row(
+            let position: i64 = tx.query_row(
                 "SELECT COALESCE(MAX(position), -1) + 1 FROM playlist_tracks WHERE playlist_id = ?1",
                 params![LIKED_PLAYLIST_ID],
                 |row| row.get(0),
             )?;
-            self.conn.execute(
+            tx.execute(
                 "INSERT OR IGNORE INTO playlist_tracks (playlist_id, song_key, position, added_at) VALUES (?1, ?2, ?3, ?4)",
                 params![
                     LIKED_PLAYLIST_ID,
@@ -397,11 +617,17 @@ impl<'a> Library<'a> {
                 ],
             )?;
         } else {
-            self.conn.execute(
+            tx.execute(
                 "DELETE FROM playlist_tracks WHERE playlist_id = ?1 AND song_key = ?2",
                 params![LIKED_PLAYLIST_ID, identity.to_storage_string()],
             )?;
         }
+        sync_playlist_stats(
+            &tx,
+            &PlaylistId::new(LIKED_PLAYLIST_ID),
+            crate::now_unix_millis(),
+        )?;
+        tx.commit()?;
         Ok(())
     }
 

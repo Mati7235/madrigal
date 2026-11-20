@@ -1,5 +1,28 @@
 # Notes
 
+## Playlist list data
+
+`madrigal-library::Library::list_playlist_summaries(&PlaylistQuery)`
+returns `PlaylistSummary` (`id`, `name`, `subtitle`, `origin`,
+`track_count`, `updated_at` in unix ms, `cover`, `capabilities`). Filters:
+`text` (case-insensitive name substring), `origin`
+(`All`/`Local`/`Account`), `order` (`Recent`/`Name`/`Tracks`), `limit` and
+`offset`. Hidden and auto playlists are excluded. `subtitle` is the stored
+description; the "N tracks" label stays a presenter/i18n concern.
+
+`track_count` is denormalized and rewritten inside the same transaction as
+`add_tracks`, `remove_tracks`, `move_track`, `duplicate_playlist`,
+`undo_last_add`, `set_liked` and `madrigal_db::set_playlist_tracks`
+(import/restore). `updated_at` (migration v2, backfilled for existing
+databases) is bumped by those operations plus rename/description/cover, so
+`order = recent` does not depend on playlist rowid.
+
+Account seam: origin `Account` reads locally stored `remote`/`spotify`
+playlists only; there is no session or network call. `Local` matches
+`kind = 'local'`, so without an account sync the `Account` query is empty.
+Merging `AuthCatalogClient::library_playlists` into this query belongs to
+the presenter once the app wires `madrigal-account`/`madrigal-innertube`.
+
 ## Catalog screens port (F8-3)
 
 Oracle: the local Python app (`ui/qml/{Home,Search,Explore,Detail}Page.qml`)

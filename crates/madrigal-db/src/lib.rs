@@ -7,7 +7,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use madrigal_core::{
     Album, Artist, ArtistId, Event, Playlist, PlaylistId, PlaylistKind, Recognition,
     SearchHistoryItem, Track, TrackIdentity, TrackSource,
-};use rusqlite::{params, Connection, ErrorCode, OptionalExtension};
+};
+use rusqlite::{params, Connection, ErrorCode, OptionalExtension};
 
 pub const SQLITE_MAGIC: &[u8] = b"SQLite format 3\x00";
 pub const PAGE_SIZE: u64 = 4096;
@@ -111,8 +112,17 @@ CREATE TABLE recognitions (
 );
 ";
 
-static MIGRATION_STEPS: &[rusqlite_migration::M<'_>] =
-    &[rusqlite_migration::M::up(MIGRATION_V1)];
+const MIGRATION_V2: &str = "
+ALTER TABLE playlists ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;
+UPDATE playlists SET updated_at = CAST(strftime('%s', 'now') AS INTEGER) * 1000 WHERE updated_at = 0;
+UPDATE playlists SET track_count = (SELECT COUNT(*) FROM playlist_tracks pt WHERE pt.playlist_id = playlists.id);
+CREATE INDEX playlists_updated_at ON playlists(updated_at DESC);
+";
+
+static MIGRATION_STEPS: &[rusqlite_migration::M<'_>] = &[
+    rusqlite_migration::M::up(MIGRATION_V1),
+    rusqlite_migration::M::up(MIGRATION_V2),
+];
 
 fn migrations() -> rusqlite_migration::Migrations<'static> {
     rusqlite_migration::Migrations::from_slice(MIGRATION_STEPS)
@@ -120,6 +130,11 @@ fn migrations() -> rusqlite_migration::Migrations<'static> {
 
 pub fn latest_version() -> usize {
     MIGRATION_STEPS.len()
+}
+
+pub fn migrate_to(conn: &mut Connection, version: usize) -> Result<()> {
+    migrations().to_version(conn, version)?;
+    Ok(())
 }
 
 #[derive(Debug)]
@@ -483,12 +498,12 @@ pub fn upsert_album(conn: &Connection, album: &Album) -> Result<()> {
 
 pub fn upsert_playlist(conn: &Connection, playlist: &Playlist) -> Result<()> {
     conn.execute(
-        "INSERT INTO playlists (id, kind, title, author, description, thumbnail, track_count, owned, privacy, author_id)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+        "INSERT INTO playlists (id, kind, title, author, description, thumbnail, track_count, owned, privacy, author_id, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, CAST(strftime('%s', 'now') AS INTEGER) * 1000)
          ON CONFLICT(id) DO UPDATE SET kind = excluded.kind, title = excluded.title,
            author = excluded.author, description = excluded.description, thumbnail = excluded.thumbnail,
            track_count = excluded.track_count, owned = excluded.owned, privacy = excluded.privacy,
-           author_id = excluded.author_id",
+           author_id = excluded.author_id, updated_at = excluded.updated_at",
         params![
             playlist.id.as_str(),
             playlist.kind.as_str(),
@@ -527,6 +542,14 @@ pub fn set_playlist_tracks(
             ],
         )?;
     }
+    tx.execute(
+        "UPDATE playlists SET track_count = ?2, updated_at = ?3 WHERE id = ?1",
+        params![
+            playlist.as_str(),
+            tracks.len() as i64,
+            added_at.saturating_mul(1000)
+        ],
+    )?;
     tx.commit()?;
     Ok(())
 }
@@ -545,7 +568,10 @@ pub fn fetch_playlist_tracks(conn: &Connection, playlist: &PlaylistId) -> Result
 }
 
 pub fn tag_playlist(conn: &Connection, playlist: &PlaylistId, tag: &str) -> Result<()> {
-    conn.execute("INSERT OR IGNORE INTO tags (name) VALUES (?1)", params![tag])?;
+    conn.execute(
+        "INSERT OR IGNORE INTO tags (name) VALUES (?1)",
+        params![tag],
+    )?;
     conn.execute(
         "INSERT OR IGNORE INTO playlist_tags (playlist_id, tag) VALUES (?1, ?2)",
         params![playlist.as_str(), tag],

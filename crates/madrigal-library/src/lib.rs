@@ -3,7 +3,10 @@ mod playlists;
 mod songs;
 mod stats;
 
-pub use playlists::{AddReport, AutoPlaylist, DuplicatePolicy, PlaylistListFilter};
+pub use playlists::{
+    AddReport, AutoPlaylist, DuplicatePolicy, PlaylistCapabilities, PlaylistListFilter,
+    PlaylistOrder, PlaylistOrigin, PlaylistOriginFilter, PlaylistQuery, PlaylistSummary,
+};
 pub use songs::{SongScope, SongSort, SortDir};
 pub use stats::{Stats, Streaks, TopAlbum, TopArtist, TopTrack, YearInMusic};
 
@@ -19,6 +22,13 @@ pub fn now_unix() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
+}
+
+pub fn now_unix_millis() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis() as i64)
         .unwrap_or(0)
 }
 
