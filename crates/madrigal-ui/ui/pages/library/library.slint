@@ -393,14 +393,27 @@ export component LibraryPage inherits Rectangle {
                         visible: root.playlists.length == 0;
                     }
 
-                    for pl in root.playlists: M3Card {
-                        title: pl.title;
-                        subtitle: pl.subtitle + (pl.tags == "" ? "" : " · " + pl.tags);
-                        fill: root.palette.surface-container;
-                        title-color: root.palette.on-surface;
-                        subtitle-color: root.palette.on-surface-variant;
-                        shadow-color: transparent;
-                        clicked => { root.playlist-opened(pl.id); }
+                    playlists-rail := Flickable {
+                        height: 190px;
+                        content-width: playlists-row.preferred-width;
+                        visible: root.playlists.length > 0;
+
+                        playlists-row := HorizontalLayout {
+                            spacing: 12px;
+                            for pl in root.playlists : playlist-card := M3Card {
+                                width: 150px;
+                                height: 190px;
+                                media: true;
+                                title: pl.title;
+                                subtitle: pl.subtitle + (pl.tags == "" ? "" : " · " + pl.tags);
+                                fill: root.palette.surface-container-low;
+                                art-fill: root.palette.surface-container-high;
+                                title-color: root.palette.on-surface;
+                                subtitle-color: root.palette.on-surface-variant;
+                                shadow-color: root.palette.shadow;
+                                clicked => { root.playlist-opened(pl.id); }
+                            }
+                        }
                     }
                 }
             }
@@ -417,14 +430,27 @@ export component LibraryPage inherits Rectangle {
                     spacing: 8px;
                     padding: 12px;
 
-                    for card in root.cards: M3Card {
-                        title: card.title;
-                        subtitle: card.subtitle;
-                        fill: root.palette.surface-container;
-                        title-color: root.palette.on-surface;
-                        subtitle-color: root.palette.on-surface-variant;
-                        shadow-color: transparent;
-                        clicked => { root.playlist-opened(card.id); }
+                    cards-rail := Flickable {
+                        height: 190px;
+                        content-width: cards-row.preferred-width;
+                        visible: root.cards.length > 0;
+
+                        cards-row := HorizontalLayout {
+                            spacing: 12px;
+                            for card in root.cards : catalog-card := M3Card {
+                                width: 150px;
+                                height: 190px;
+                                media: true;
+                                title: card.title;
+                                subtitle: card.subtitle;
+                                fill: root.palette.surface-container-low;
+                                art-fill: root.palette.surface-container-high;
+                                title-color: root.palette.on-surface;
+                                subtitle-color: root.palette.on-surface-variant;
+                                shadow-color: root.palette.shadow;
+                                clicked => { root.playlist-opened(card.id); }
+                            }
+                        }
                     }
                 }
             }
