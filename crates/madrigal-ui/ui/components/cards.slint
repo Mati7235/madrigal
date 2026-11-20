@@ -128,7 +128,8 @@ export component M3Chip inherits Rectangle {
         alignment: center;
 
         mark-frame := Rectangle {
-            width: 14px;
+            width: root.selected ? 14px : 0px;
+            visible: root.selected;
             VerticalLayout {
                 alignment: center;
                 chip-mark := Icon {
