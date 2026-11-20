@@ -1,5 +1,6 @@
 slint::include_modules!();
 
+use std::ops::ControlFlow;
 use std::path::Path;
 use std::time::Duration;
 
@@ -88,4 +89,197 @@ pub fn snapshot_to(window: &slint::Window, path: &Path) -> Result<(), Error> {
         .ok_or_else(|| Error::Snapshot("empty pixel buffer".to_string()))?;
     picture.save(path).map_err(|e| Error::Image(e.to_string()))?;
     Ok(())
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Rect {
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+}
+
+impl Rect {
+    fn right(&self) -> f32 {
+        self.x + self.width
+    }
+
+    fn bottom(&self) -> f32 {
+        self.y + self.height
+    }
+
+    fn is_empty(&self) -> bool {
+        self.width <= 0.0 || self.height <= 0.0
+    }
+
+    fn overlap_exceeds(&self, other: &Rect, tolerance: f32) -> bool {
+        let horizontal = self.right().min(other.right()) - self.x.max(other.x);
+        let vertical = self.bottom().min(other.bottom()) - self.y.max(other.y);
+        horizontal > tolerance && vertical > tolerance
+    }
+}
+
+impl std::fmt::Display for Rect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({:.0}, {:.0} {:.0}x{:.0})", self.x, self.y, self.width, self.height)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ViolationKind {
+    OutOfWindow,
+    Overlap(String),
+}
+
+impl std::fmt::Display for ViolationKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::OutOfWindow => write!(f, "out of window"),
+            Self::Overlap(other) => write!(f, "overlaps {other}"),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Violation {
+    pub id: String,
+    pub kind: ViolationKind,
+    pub rect: Rect,
+}
+
+impl std::fmt::Display for Violation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {} at {}", self.id, self.kind, self.rect)
+    }
+}
+
+struct Node {
+    handle: ElementHandle,
+    label: String,
+    text: bool,
+    scroll: bool,
+    rect: Rect,
+    span: usize,
+    parent: Option<usize>,
+}
+
+impl Node {
+    fn from_handle(handle: ElementHandle) -> Self {
+        let position = handle.absolute_position();
+        let size = handle.size();
+        let kind = handle.type_name().map(|value| value.to_string()).unwrap_or_default();
+        Self {
+            label: handle.id().map(|value| value.to_string()).unwrap_or(kind),
+            text: is_kind(&handle, "Text"),
+            scroll: is_kind(&handle, "Flickable"),
+            rect: Rect { x: position.x, y: position.y, width: size.width, height: size.height },
+            span: 0,
+            parent: None,
+            handle,
+        }
+    }
+}
+
+fn inherits(handle: &ElementHandle, base: &str) -> bool {
+    handle.bases().is_some_and(|mut bases| bases.any(|name| name == base))
+}
+
+fn is_kind(handle: &ElementHandle, name: &str) -> bool {
+    handle.type_name().is_some_and(|kind| kind == name) || inherits(handle, name)
+}
+
+fn subtree_len(handle: &ElementHandle) -> usize {
+    let mut count = 0;
+    handle.visit_descendants(|_| {
+        count += 1;
+        ControlFlow::<()>::Continue(())
+    });
+    count
+}
+
+fn build_tree(root: &impl ElementRoot) -> Vec<Node> {
+    let mut nodes = Vec::new();
+    root.root_element().visit_descendants(|handle| {
+        nodes.push(Node::from_handle(handle));
+        ControlFlow::<()>::Continue(())
+    });
+    for node in &mut nodes {
+        node.span = subtree_len(&node.handle);
+    }
+    // The testing API exposes no parent link; a node's descendants are the contiguous pre-order run after it.
+    for index in 1..nodes.len() {
+        let mut parent = None;
+        let mut smallest = usize::MAX;
+        for candidate in 0..index {
+            let span = nodes[candidate].span;
+            if span == 0 || candidate + span < index || span >= smallest {
+                continue;
+            }
+            smallest = span;
+            parent = Some(candidate);
+        }
+        nodes[index].parent = parent;
+    }
+    nodes
+}
+
+pub fn lint_layout(root: &impl ElementRoot, window_size: (f32, f32)) -> Vec<Violation> {
+    let nodes = build_tree(root);
+    let mut violations = Vec::new();
+    lint_window_bounds(&nodes, window_size, &mut violations);
+    lint_sibling_text(&nodes, &mut violations);
+    violations
+}
+
+fn clipped(nodes: &[Node], index: usize) -> bool {
+    let mut current = nodes[index].parent;
+    while let Some(parent) = current {
+        if nodes[parent].scroll {
+            return true;
+        }
+        current = nodes[parent].parent;
+    }
+    false
+}
+
+fn lint_window_bounds(nodes: &[Node], window_size: (f32, f32), out: &mut Vec<Violation>) {
+    let (width, height) = window_size;
+    let tolerance = 1.0;
+    for (index, node) in nodes.iter().enumerate() {
+        if node.rect.is_empty() || clipped(nodes, index) {
+            continue;
+        }
+        let outside = node.rect.x < -tolerance
+            || node.rect.y < -tolerance
+            || node.rect.right() > width + tolerance
+            || node.rect.bottom() > height + tolerance;
+        if outside {
+            out.push(Violation {
+                id: node.label.clone(),
+                kind: ViolationKind::OutOfWindow,
+                rect: node.rect,
+            });
+        }
+    }
+}
+
+fn lint_sibling_text(nodes: &[Node], out: &mut Vec<Violation>) {
+    let texts: Vec<usize> = (0..nodes.len())
+        .filter(|index| nodes[*index].text && !nodes[*index].rect.is_empty())
+        .collect();
+    let tolerance = 2.0;
+    for left in 0..texts.len() {
+        for right in (left + 1)..texts.len() {
+            if nodes[texts[left]].parent != nodes[texts[right]].parent {
+                continue;
+            }
+            if nodes[texts[left]].rect.overlap_exceeds(&nodes[texts[right]].rect, tolerance) {
+                out.push(Violation {
+                    id: nodes[texts[right]].label.clone(),
+                    kind: ViolationKind::Overlap(nodes[texts[left]].label.clone()),
+                    rect: nodes[texts[right]].rect,
+                });
+            }
+        }
+    }
 }

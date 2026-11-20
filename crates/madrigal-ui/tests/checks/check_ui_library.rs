@@ -300,6 +300,8 @@ fn ui_library() {
 
     shell.set_page(3);
     shell.show().unwrap();
+    let violations = kit::lint_layout(&shell, (1920.0, 1080.0));
+    assert!(violations.is_empty(), "layout violations: {violations:#?}");
     let snapshot_dir = kit::snapshot_dir(tmp.path());
     let library_shot = snapshot_dir.join("library.png");
     kit::snapshot_to(shell.window(), &library_shot).unwrap();

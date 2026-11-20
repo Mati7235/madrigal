@@ -113,4 +113,25 @@ fn testkit_selftest() {
     let bytes = std::fs::read(&shot).unwrap();
     assert!(bytes.len() > 100);
     assert_eq!(&bytes[0..8], &[137, 80, 78, 71, 13, 10, 26, 10]);
+
+    let overlap = kit::LintOverlap::new().unwrap();
+    overlap.show().unwrap();
+    let violations = kit::lint_layout(&overlap, (240.0, 120.0));
+    assert_eq!(violations.len(), 1, "{violations:?}");
+    assert_eq!(
+        violations[0].kind,
+        kit::ViolationKind::Overlap("LintOverlap::first-text".to_string())
+    );
+    assert_eq!(violations[0].id, "LintOverlap::second-text");
+
+    let tight = kit::lint_layout(&overlap, (100.0, 100.0));
+    assert!(
+        tight.iter().any(|violation| violation.kind == kit::ViolationKind::OutOfWindow),
+        "{tight:?}"
+    );
+
+    let clean = kit::LintClean::new().unwrap();
+    clean.show().unwrap();
+    let violations = kit::lint_layout(&clean, (240.0, 120.0));
+    assert!(violations.is_empty(), "{violations:?}");
 }

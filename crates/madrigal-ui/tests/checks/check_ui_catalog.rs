@@ -533,6 +533,8 @@ fn ui_catalog() {
     kit::mock_advance(Duration::from_millis(600));
     shell.show().unwrap();
     shell.set_page(0);
+    let violations = kit::lint_layout(&shell, (1920.0, 1080.0));
+    assert!(violations.is_empty(), "layout violations: {violations:#?}");
     snapshot(&shell, &snapshot_dir, "home.png");
     shell.set_page(1);
     shell.set_search_query("zzz-no-match".into());

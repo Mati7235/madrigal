@@ -50,7 +50,7 @@ Without `cargo` available the check is FAIL.
 | `paths_isolation` | offline | All paths contained within MADRIGAL_PROFILE_ROOT |
 | `files_atomic` | offline | All-or-nothing atomic writes with no temp leftovers |
 | `secrets_permissions` | offline | Secrets 0600, symlink rejection, keyring disabled |
-| `testkit_selftest` | offline | Headless UI harness: click, virtual clock, drag, PNG |
+| `testkit_selftest` | offline | Headless UI harness: click, virtual clock, drag, PNG, layout lint |
 | `db_migrations` | offline | Fresh DB migrates to latest, idempotent reopen, basic song/playlist/event roundtrip |
 | `db_recovery` | offline | Damaged header is quarantined with timestamp and fresh DB takes over; empty and healthy files are never quarantined |
 | `streams_orchestration` | offline | yt-dlp shim: resolution, client fallback, 429 backoff |
@@ -139,6 +139,10 @@ Harness contract (`madrigal-testkit`):
   (click does not fire if the press moved).
 - Screenshots: `snapshot_to` uses `Window::take_snapshot()` and saves PNG.
   `MADRIGAL_SNAPSHOT_DIR=<dir>` exports the UI checks' PNGs to `<dir>`.
+- Layout lint: `lint_layout(root, (w, h))` rebuilds the item tree from pre-order
+  spans and returns `Violation { id, kind, rect }` for elements escaping the window
+  (scroll containers exempt) and for sibling Texts overlapping by more than 2 px in
+  both axes. Call it after `show()`, when the layout is current.
 - Qualified `Component::id` ids; the crate compiles the `.slint` with forced
   debug info (`with_debug_info(true)`).
 - Crates compiling `.slint` do not inherit `unsafe_code = "forbid"` from the
