@@ -168,8 +168,8 @@ fn ui_shell() {
     kit::mock_advance(Duration::from_millis(600));
 
     shell.show().unwrap();
-    assert_eq!(shell.get_nowbar_width(), 960.0);
-    assert_eq!(shell.get_nowbar_bottom(), 664.0);
+    assert_eq!(shell.get_nowbar_width(), 1920.0);
+    assert_eq!(shell.get_nowbar_bottom(), 1080.0);
     let shot = kit::snapshot_dir(tmp.path()).join("shell.png");
     kit::snapshot_to(shell.window(), &shot).unwrap();
     let bytes = std::fs::read(&shot).unwrap();

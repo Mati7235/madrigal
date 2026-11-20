@@ -31,7 +31,8 @@ refreshes every binding through the `lang` property. The global lives in
 `ui/i18n.slint` so gallery and shell share one type; `ui/app.slint`
 re-exports `DemoGallery`, `MainShell` and `I18n` as the single compile root.
 
-Shell (`ui/shell/`, presenter `src/shell.rs`): `MainShell` window with a
+Shell (`ui/shell/`, presenter `src/shell.rs`): `MainShell` window, 1920×1080
+by default, with a
 `SideNav` (Home, Search, Explore, Library, Downloads, Settings; icon + label
 via `trl`), a `page` int property (0..5), a `PageHost` workspace, a
 NowPlayingBar placeholder strip (`player.noTrack` + `queue-count` seam), and
