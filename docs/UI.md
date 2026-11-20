@@ -32,7 +32,8 @@ refreshes every binding through the `lang` property. The global lives in
 re-exports `DemoGallery`, `MainShell` and `I18n` as the single compile root.
 
 Shell (`ui/shell/`, presenter `src/shell.rs`): `MainShell` window, 1920×1080
-by default, with a
+by default, whose sidebar and page host fill y=0 down to the 96px Now Playing
+bar, with a
 `SideNav` (Home, Search, Explore, Library, Downloads, Settings; icon + label
 via `trl`), a `page` int property (0..5), a `PageHost` workspace, a
 NowPlayingBar placeholder strip (`player.noTrack` + `queue-count` seam), and

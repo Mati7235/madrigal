@@ -543,6 +543,8 @@ export component MainShell inherits Window {
     out property<length> nowbar-bottom: nowbar.y + nowbar.height;
 
     main-row := HorizontalLayout {
+        y: 0px;
+        width: 100%;
         height: root.height - 96px;
         spacing: 0px;
         nav := SideNav {
