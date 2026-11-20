@@ -38,6 +38,7 @@ export component HomePage inherits Rectangle {
 
             home-chips := HorizontalLayout {
                 spacing: 8px;
+                alignment: start;
                 visible: root.chips.length > 0;
                 for label[i] in root.chips : home-chip := M3Chip {
                     text: label;
@@ -64,6 +65,7 @@ export component HomePage inherits Rectangle {
                 }
                 pins-row := HorizontalLayout {
                     spacing: 8px;
+                    alignment: start;
                     for pin[i] in root.pins : pin-chip := M3Chip {
                         text: pin.title;
                         selected: root.selected-item == 10000 + i;

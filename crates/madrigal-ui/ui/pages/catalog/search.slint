@@ -88,6 +88,7 @@ export component SearchPage inherits FocusScope {
                 focus-line: root.palette.primary;
                 hint-color: root.palette.on-surface-variant;
                 state-on-surface: root.palette.on-surface;
+                clear-label: I18n.trl(I18n.lang, "detail.clear");
                 accepted(text) => {
                     if (root.suggestion-index >= 0 && root.suggestion-index < root.suggestions.length) {
                         root.query = root.suggestions[root.suggestion-index];
@@ -105,6 +106,7 @@ export component SearchPage inherits FocusScope {
 
             source-row := HorizontalLayout {
                 spacing: 8px;
+                alignment: start;
                 for i in 2 : source-chip := M3Chip {
                     text: i == 0 ? I18n.trl(I18n.lang, "source.local") : I18n.trl(I18n.lang, "catalog.online");
                     selected: root.source == i;
@@ -157,6 +159,7 @@ export component SearchPage inherits FocusScope {
 
             filter-row := HorizontalLayout {
                 spacing: 8px;
+                alignment: start;
                 for i in 5 : filter-chip := M3Chip {
                     text: i == 0 ? I18n.trl(I18n.lang, "catalog.filter.all") : i == 1 ? I18n.trl(I18n.lang, "catalog.songs") : i == 2 ? I18n.trl(I18n.lang, "catalog.artists") : i == 3 ? I18n.trl(I18n.lang, "catalog.albums") : I18n.trl(I18n.lang, "catalog.playlists");
                     selected: root.filter-tab == i;
