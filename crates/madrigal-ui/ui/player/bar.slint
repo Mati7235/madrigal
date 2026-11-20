@@ -46,6 +46,7 @@ component BarMiniButton inherits Rectangle {
 }
 
 export component NowPlayingBar inherits Rectangle {
+    background: root.palette.surface-container-low;
     in property<Palette> palette;
     in property<string> title;
     in property<string> artist;
@@ -82,7 +83,7 @@ export component NowPlayingBar inherits Rectangle {
         width: parent.width - 16px;
         height: parent.height - 16px;
         border-radius: 24px;
-        background: root.palette.surface-container-low;
+        background: root.palette.surface-container-high;
         border-width: 0.5px;
         border-color: root.palette.outline-variant;
 
@@ -208,10 +209,16 @@ export component NowPlayingBar inherits Rectangle {
                 vertical-alignment: center;
             }
 
-            bar-vol-icon := Icon {
-                source: Icons.volume-2;
-                colorize: root.palette.on-surface-variant;
-                icon-size: 18px;
+            Rectangle {
+                width: 18px;
+                VerticalLayout {
+                    alignment: center;
+                    bar-vol-icon := Icon {
+                        source: Icons.volume-2;
+                        colorize: root.palette.on-surface-variant;
+                        icon-size: 18px;
+                    }
+                }
             }
 
             bar-vol := Rectangle {
@@ -263,61 +270,97 @@ export component NowPlayingBar inherits Rectangle {
                 }
             }
 
-            bar-prev := M3IconButton {
-                icon: Icons.skip-back;
-                icon-size: 18px;
-                icon-color: root.palette.on-surface-variant;
-                content: root.palette.on-surface-variant;
-                state-on-surface: root.palette.on-surface;
-                clicked => { root.prev-clicked(); }
+            Rectangle {
+                width: 40px;
+                VerticalLayout {
+                    alignment: center;
+                    bar-prev := M3IconButton {
+                        icon: Icons.skip-back;
+                        icon-size: 18px;
+                        icon-color: root.palette.on-surface-variant;
+                        content: root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.prev-clicked(); }
+                    }
+                }
             }
 
-            bar-play := M3IconButton {
-                icon: root.paused ? Icons.play : Icons.pause;
-                icon-size: 20px;
-                icon-color: root.paused ? root.palette.on-surface-variant : root.palette.on-primary;
-                selected: !root.paused;
-                fill: root.palette.primary;
-                content: root.paused ? root.palette.on-surface-variant : root.palette.on-primary;
-                state-on-surface: root.palette.on-surface;
-                clicked => { root.play-clicked(); }
+            Rectangle {
+                width: 40px;
+                VerticalLayout {
+                    alignment: center;
+                    bar-play := M3IconButton {
+                        icon: root.paused ? Icons.play : Icons.pause;
+                        icon-size: 20px;
+                        icon-color: root.paused ? root.palette.on-surface-variant : root.palette.on-primary;
+                        selected: !root.paused;
+                        fill: root.palette.primary;
+                        content: root.paused ? root.palette.on-surface-variant : root.palette.on-primary;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.play-clicked(); }
+                    }
+                }
             }
 
-            bar-next := M3IconButton {
-                icon: Icons.skip-forward;
-                icon-size: 18px;
-                icon-color: root.palette.on-surface-variant;
-                content: root.palette.on-surface-variant;
-                state-on-surface: root.palette.on-surface;
-                clicked => { root.next-clicked(); }
+            Rectangle {
+                width: 40px;
+                VerticalLayout {
+                    alignment: center;
+                    bar-next := M3IconButton {
+                        icon: Icons.skip-forward;
+                        icon-size: 18px;
+                        icon-color: root.palette.on-surface-variant;
+                        content: root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.next-clicked(); }
+                    }
+                }
             }
 
-            bar-expand := M3IconButton {
-                icon: Icons.chevron-up;
-                icon-size: 20px;
-                icon-color: root.palette.on-surface-variant;
-                content: root.palette.on-surface-variant;
-                state-on-surface: root.palette.on-surface;
-                clicked => { root.expand-clicked(); }
+            Rectangle {
+                width: 40px;
+                VerticalLayout {
+                    alignment: center;
+                    bar-expand := M3IconButton {
+                        icon: Icons.chevron-up;
+                        icon-size: 20px;
+                        icon-color: root.palette.on-surface-variant;
+                        content: root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.expand-clicked(); }
+                    }
+                }
             }
 
-            bar-like := BarMiniButton {
-                icon: root.liked ? Icons.star-filled : Icons.heart;
-                icon-color: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
-                selected: root.liked;
-                fill: root.liked ? root.palette.primary : transparent;
-                content: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
-                state-on-surface: root.palette.on-surface;
-                clicked => { root.like-clicked(); }
+            Rectangle {
+                width: 34px;
+                VerticalLayout {
+                    alignment: center;
+                    bar-like := BarMiniButton {
+                        icon: root.liked ? Icons.star-filled : Icons.heart;
+                        icon-color: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
+                        selected: root.liked;
+                        fill: root.liked ? root.palette.primary : transparent;
+                        content: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.like-clicked(); }
+                    }
+                }
             }
 
-            bar-queue := BarMiniButton {
-                icon: Icons.list-music;
-                icon-color: root.palette.on-surface-variant;
-                fill: transparent;
-                content: root.palette.on-surface-variant;
-                state-on-surface: root.palette.on-surface;
-                clicked => { root.queue-clicked(); }
+            Rectangle {
+                width: 34px;
+                VerticalLayout {
+                    alignment: center;
+                    bar-queue := BarMiniButton {
+                        icon: Icons.list-music;
+                        icon-color: root.palette.on-surface-variant;
+                        fill: transparent;
+                        content: root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.queue-clicked(); }
+                    }
+                }
             }
         }
     }

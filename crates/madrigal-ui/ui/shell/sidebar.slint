@@ -23,10 +23,16 @@ export component SideNav inherits Rectangle {
             HorizontalLayout {
                 padding-left: 16px;
                 spacing: 12px;
-                home-glyph := Icon {
-                    source: Icons.house;
-                    colorize: root.page == 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                    icon-size: 22px;
+                Rectangle {
+                    width: 22px;
+                    VerticalLayout {
+                        alignment: center;
+                        home-glyph := Icon {
+                            source: Icons.house;
+                            colorize: root.page == 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                            icon-size: 22px;
+                        }
+                    }
                 }
                 home-label := Text {
                     text: I18n.trl(I18n.lang, "nav.home");
@@ -53,10 +59,16 @@ export component SideNav inherits Rectangle {
             HorizontalLayout {
                 padding-left: 16px;
                 spacing: 12px;
-                search-glyph := Icon {
-                    source: Icons.search;
-                    colorize: root.page == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                    icon-size: 22px;
+                Rectangle {
+                    width: 22px;
+                    VerticalLayout {
+                        alignment: center;
+                        search-glyph := Icon {
+                            source: Icons.search;
+                            colorize: root.page == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                            icon-size: 22px;
+                        }
+                    }
                 }
                 search-label := Text {
                     text: I18n.trl(I18n.lang, "explore.search");
@@ -83,10 +95,16 @@ export component SideNav inherits Rectangle {
             HorizontalLayout {
                 padding-left: 16px;
                 spacing: 12px;
-                explore-glyph := Icon {
-                    source: Icons.compass;
-                    colorize: root.page == 2 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                    icon-size: 22px;
+                Rectangle {
+                    width: 22px;
+                    VerticalLayout {
+                        alignment: center;
+                        explore-glyph := Icon {
+                            source: Icons.compass;
+                            colorize: root.page == 2 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                            icon-size: 22px;
+                        }
+                    }
                 }
                 explore-label := Text {
                     text: I18n.trl(I18n.lang, "nav.explore");
@@ -113,10 +131,16 @@ export component SideNav inherits Rectangle {
             HorizontalLayout {
                 padding-left: 16px;
                 spacing: 12px;
-                library-glyph := Icon {
-                    source: Icons.library;
-                    colorize: root.page == 3 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                    icon-size: 22px;
+                Rectangle {
+                    width: 22px;
+                    VerticalLayout {
+                        alignment: center;
+                        library-glyph := Icon {
+                            source: Icons.library;
+                            colorize: root.page == 3 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                            icon-size: 22px;
+                        }
+                    }
                 }
                 library-label := Text {
                     text: I18n.trl(I18n.lang, "nav.lists");
@@ -143,10 +167,16 @@ export component SideNav inherits Rectangle {
             HorizontalLayout {
                 padding-left: 16px;
                 spacing: 12px;
-                downloads-glyph := Icon {
-                    source: Icons.arrow-down;
-                    colorize: root.page == 4 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                    icon-size: 22px;
+                Rectangle {
+                    width: 22px;
+                    VerticalLayout {
+                        alignment: center;
+                        downloads-glyph := Icon {
+                            source: Icons.arrow-down;
+                            colorize: root.page == 4 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                            icon-size: 22px;
+                        }
+                    }
                 }
                 downloads-label := Text {
                     text: I18n.trl(I18n.lang, "nav.downloads");
@@ -173,10 +203,16 @@ export component SideNav inherits Rectangle {
             HorizontalLayout {
                 padding-left: 16px;
                 spacing: 12px;
-                settings-glyph := Icon {
-                    source: Icons.settings;
-                    colorize: root.page == 5 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                    icon-size: 22px;
+                Rectangle {
+                    width: 22px;
+                    VerticalLayout {
+                        alignment: center;
+                        settings-glyph := Icon {
+                            source: Icons.settings;
+                            colorize: root.page == 5 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                            icon-size: 22px;
+                        }
+                    }
                 }
                 settings-label := Text {
                     text: I18n.trl(I18n.lang, "settings.title");
