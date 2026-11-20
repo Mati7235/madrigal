@@ -1,5 +1,6 @@
 import { Shape, Type } from "../tokens.slint";
 import { Cover } from "cover.slint";
+import { M3IconButton } from "buttons.slint";
 
 export component M3ListItem inherits Rectangle {
     in property<string> title;
@@ -9,14 +10,18 @@ export component M3ListItem inherits Rectangle {
     in property<image> cover;
     in property<bool> active: false;
     in property<float> progress: -1;
+    in property<image> action-icon;
+    in property<bool> action-visible: false;
     in property<color> row-bg;
     in property<color> active-bg;
+    in property<color> action-bg;
     in property<color> title-color;
     in property<color> subtitle-color;
     in property<color> accent;
     in property<color> progress-track;
     in property<color> progress-fill;
     callback action();
+    callback action-clicked();
 
     accessible-label: root.title;
     accessible-role: AccessibleRole.list-item;
@@ -25,6 +30,11 @@ export component M3ListItem inherits Rectangle {
     border-radius: Shape.small;
     background: root.active ? root.active-bg : item-touch.has-hover ? root.row-bg : transparent;
     animate background { duration: 100ms; easing: ease-in-out; }
+
+    item-touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.action(); }
+    }
 
     HorizontalLayout {
         padding-left: 10px;
@@ -65,9 +75,8 @@ export component M3ListItem inherits Rectangle {
             }
         }
 
-        download-frame := Rectangle {
+        if (root.progress >= 0) : download-frame := Rectangle {
             width: 120px;
-            visible: root.progress >= 0;
             VerticalLayout {
                 alignment: center;
                 download-bar := Rectangle {
@@ -99,13 +108,24 @@ export component M3ListItem inherits Rectangle {
             color: root.title-color;
             font-size: Type.body-large.size;
             vertical-alignment: center;
-            visible: root.active || item-touch.has-hover;
+            visible: !root.action-visible && (root.active || item-touch.has-hover);
             animate opacity { duration: 100ms; easing: ease-in-out; }
         }
-    }
 
-    item-touch := TouchArea {
-        mouse-cursor: pointer;
-        clicked => { root.action(); }
+        if (root.action-visible) : action-frame := Rectangle {
+            width: 40px;
+            VerticalLayout {
+                alignment: center;
+                action-button := M3IconButton {
+                    icon: root.action-icon;
+                    icon-size: 20px;
+                    fill: root.action-bg;
+                    content: root.accent;
+                    state-on-surface: root.title-color;
+                    accessible-label: root.action-label;
+                    clicked => { root.action-clicked(); }
+                }
+            }
+        }
     }
 }

@@ -1,8 +1,10 @@
 import { Palette, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { M3Chip, M3Card } from "../../components/cards.slint";
+import { M3Button } from "../../components/buttons.slint";
 import { M3TextField } from "../../components/fields.slint";
 import { Icon, Icons } from "../../components/icons.slint";
+import { M3ListItem } from "../../components/rows.slint";
 import { LibSongRow, LibPlaylistRow, LibCardRow, HistoryRow, StatRow } from "models.slint";
 
 export component LibraryPage inherits Rectangle {
@@ -139,13 +141,12 @@ export component LibraryPage inherits Rectangle {
             }
         }
 
-        tag-row := HorizontalLayout {
+        if (root.current == "playlists" || root.current == "library") : tag-row := HorizontalLayout {
             padding-left: 12px;
             padding-right: 12px;
             padding-bottom: 8px;
             spacing: 8px;
             alignment: start;
-            visible: root.current == "playlists" || root.current == "library";
 
             all-chip := M3Chip {
                 text: I18n.trl(I18n.lang, "library.tags.all");
@@ -186,69 +187,37 @@ export component LibraryPage inherits Rectangle {
             }
         }
 
-        tool-row := HorizontalLayout {
+        if (root.current == "songs" || root.current == "library" || root.current == "playlists") : tool-row := HorizontalLayout {
             padding-left: 12px;
             padding-right: 12px;
             padding-bottom: 8px;
             spacing: 8px;
             alignment: start;
-            visible: root.current == "songs" || root.current == "library" || root.current == "playlists";
 
-            sort-wrap := Rectangle {
-                height: 32px;
-                width: 180px;
-                border-radius: 16px;
-                border-width: 1px;
-                border-color: root.palette.outline-variant;
-                sort-label := Text {
-                    x: 16px;
-                    y: 0px;
-                    width: parent.width - 32px;
-                    height: 100%;
-                    text: root.sort-label;
-                    color: root.palette.on-surface-variant;
-                    font-size: Type.label-large.size;
-                    vertical-alignment: center;
-                    overflow: elide;
-                }
-                sort-touch := TouchArea {
-                    accessible-label: I18n.trl(I18n.lang, "library.sort.title");
-                    accessible-role: button;
-                    mouse-cursor: pointer;
-                    clicked => { root.sort-opened(); }
-                }
+            sort-touch := M3Button {
+                width: 200px;
+                text: I18n.trl(I18n.lang, "library.sort.title") + " · " + root.sort-label;
+                fill: transparent;
+                content: root.palette.on-surface;
+                line: root.palette.outline-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.sort-opened(); }
             }
 
-            multi-wrap := Rectangle {
-                height: 32px;
-                width: 120px;
-                border-radius: 16px;
-                border-width: 1px;
-                border-color: root.palette.outline-variant;
-                multi-label := Text {
-                    x: 0px;
-                    y: 0px;
-                    width: 100%;
-                    height: 100%;
-                    text: I18n.trl(I18n.lang, "action.select");
-                    color: root.multiselect ? root.palette.primary : root.palette.on-surface-variant;
-                    font-size: Type.label-large.size;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
-                }
-                multi-touch := TouchArea {
-                    accessible-label: I18n.trl(I18n.lang, "action.select");
-                    accessible-role: button;
-                    mouse-cursor: pointer;
-                    clicked => { root.multiselect-toggled(); }
-                }
+            multi-touch := M3Button {
+                width: 140px;
+                text: I18n.trl(I18n.lang, "action.select");
+                fill: root.multiselect ? root.palette.secondary-container : transparent;
+                content: root.multiselect ? root.palette.on-secondary-container : root.palette.on-surface;
+                line: root.multiselect ? transparent : root.palette.outline-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.multiselect-toggled(); }
             }
         }
 
-        select-bar := Rectangle {
+        if (root.multiselect) : select-bar := Rectangle {
             height: 40px;
             background: root.palette.surface-container;
-            visible: root.multiselect;
             select-text := Text {
                 x: 16px;
                 y: 0px;
@@ -301,12 +270,11 @@ export component LibraryPage inherits Rectangle {
                     spacing: 2px;
                     padding: 8px;
 
-                    songs-empty := Text {
+                    if (root.songs.length == 0) : songs-empty := Text {
                         text: I18n.trl(I18n.lang, "library.empty.songs");
                         color: root.palette.on-surface-variant;
                         font-size: Type.body-medium.size;
                         horizontal-alignment: center;
-                        visible: root.songs.length == 0;
                     }
 
                     for song in root.songs: Rectangle {
@@ -382,38 +350,32 @@ export component LibraryPage inherits Rectangle {
 
                 playlists-col := VerticalLayout {
                     width: 100%;
-                    spacing: 8px;
+                    spacing: 2px;
                     padding: 12px;
 
-                    playlists-empty := Text {
+                    if (root.playlists.length == 0) : playlists-empty := Text {
                         text: I18n.trl(I18n.lang, "library.empty.playlists");
                         color: root.palette.on-surface-variant;
                         font-size: Type.body-medium.size;
                         horizontal-alignment: center;
-                        visible: root.playlists.length == 0;
                     }
 
-                    playlists-rail := Flickable {
-                        height: 190px;
-                        content-width: playlists-row.preferred-width;
-                        visible: root.playlists.length > 0;
-
-                        playlists-row := HorizontalLayout {
-                            spacing: 12px;
-                            for pl in root.playlists : playlist-card := M3Card {
-                                width: 150px;
-                                height: 190px;
-                                media: true;
-                                title: pl.title;
-                                subtitle: pl.subtitle + (pl.tags == "" ? "" : " · " + pl.tags);
-                                fill: root.palette.surface-container-low;
-                                art-fill: root.palette.surface-container-high;
-                                title-color: root.palette.on-surface;
-                                subtitle-color: root.palette.on-surface-variant;
-                                shadow-color: root.palette.shadow;
-                                clicked => { root.playlist-opened(pl.id); }
-                            }
-                        }
+                    for pl in root.playlists : playlist-row := M3ListItem {
+                        title: pl.title;
+                        subtitle: pl.subtitle;
+                        action-label: I18n.trl(I18n.lang, "action.play");
+                        action-visible: true;
+                        action-icon: Icons.play;
+                        action-bg: root.palette.secondary-container;
+                        row-bg: root.palette.surface-container-low;
+                        active-bg: root.palette.secondary-container;
+                        title-color: root.palette.on-surface;
+                        subtitle-color: root.palette.on-surface-variant;
+                        accent: root.palette.on-secondary-container;
+                        progress-track: root.palette.surface-container-highest;
+                        progress-fill: root.palette.primary;
+                        action => { root.playlist-opened(pl.id); }
+                        action-clicked => { root.playlist-opened(pl.id); }
                     }
                 }
             }
@@ -430,10 +392,9 @@ export component LibraryPage inherits Rectangle {
                     spacing: 8px;
                     padding: 12px;
 
-                    cards-rail := Flickable {
+                    if (root.cards.length > 0) : cards-rail := Flickable {
                         height: 190px;
                         content-width: cards-row.preferred-width;
-                        visible: root.cards.length > 0;
 
                         cards-row := HorizontalLayout {
                             spacing: 12px;
@@ -506,12 +467,11 @@ export component LibraryPage inherits Rectangle {
                         }
                     }
 
-                    history-empty := Text {
+                    if (root.history.length == 0) : history-empty := Text {
                         text: I18n.trl(I18n.lang, "library.history.empty");
                         color: root.palette.on-surface-variant;
                         font-size: Type.body-medium.size;
                         horizontal-alignment: center;
-                        visible: root.history.length == 0;
                     }
 
                     for entry in root.history: Rectangle {
@@ -721,7 +681,7 @@ export component LibraryPage inherits Rectangle {
 
         sort-card := Rectangle {
             x: 12px;
-            y: 120px;
+            y: root.current == "songs" ? 104px : 144px;
             width: 220px;
             height: 48px + 48px * 5;
             border-radius: 12px;
