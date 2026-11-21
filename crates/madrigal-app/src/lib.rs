@@ -2,6 +2,7 @@ pub mod catalog;
 pub mod cli;
 pub mod lyrics;
 pub mod library;
+pub mod downloads;
 pub mod playback;
 pub mod state;
 pub mod store;

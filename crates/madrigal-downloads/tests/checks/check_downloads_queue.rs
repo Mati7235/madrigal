@@ -327,6 +327,60 @@ fn retry_then_quarantine_after_max_retries() {
     manager2.shutdown();
 }
 
+struct PartialRunner;
+
+impl DownloadRunner for PartialRunner {
+    fn run(
+        &self,
+        ctx: &RunContext,
+        _report: &dyn Fn(ProgressEvent),
+    ) -> Result<PathBuf, RunnerError> {
+        if let Some(parent) = ctx.output.parent() {
+            fs::create_dir_all(parent).expect("output dir");
+        }
+        fs::write(&ctx.output, b"partial-bytes").expect("partial write");
+        Err(RunnerError::Failed("connection cut".to_string()))
+    }
+}
+
+#[test]
+fn quarantine_keeps_partial_file() {
+    let _guard = SERIAL.lock().unwrap();
+    let root = tempfile::tempdir().expect("tempdir");
+    env::set_var("MADRIGAL_PROFILE_ROOT", root.path());
+    let cfg = config(root.path(), 1, 0, PathBuf::from("yt-dlp"));
+    let downloads_dir = cfg.downloads_dir.clone();
+    let manager = DownloadManager::new(cfg, PartialRunner);
+    let identity = TrackIdentity::youtube("PARTIAL001");
+    let song = track(&identity.id, "Partial");
+    let output = output_path(&downloads_dir, &song);
+    assert!(manager.enqueue(song, JobOptions::default()));
+    assert!(wait_state(
+        &manager,
+        &identity,
+        madrigal_downloads::DownloadState::Quarantined
+    ));
+
+    let quarantine_dir = downloads_dir.join("quarantine");
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let quarantined = loop {
+        let entries: Vec<PathBuf> = fs::read_dir(&quarantine_dir)
+            .map(|dir| dir.map(|entry| entry.expect("entry").path()).collect())
+            .unwrap_or_default();
+        if !entries.is_empty() || Instant::now() > deadline {
+            break entries;
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    };
+    assert_eq!(quarantined.len(), 1, "partial file should be quarantined");
+    assert_eq!(
+        fs::read(&quarantined[0]).expect("quarantined bytes"),
+        b"partial-bytes"
+    );
+    assert!(!output.exists());
+    manager.shutdown();
+}
+
 #[test]
 fn delete_removes_file_and_registry_row() {
     let _guard = SERIAL.lock().unwrap();

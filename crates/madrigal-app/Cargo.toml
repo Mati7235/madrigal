@@ -18,16 +18,19 @@ path = "src/main.rs"
 [dependencies]
 madrigal-core = { path = "../madrigal-core" }
 madrigal-db = { path = "../madrigal-db" }
+madrigal-downloads = { path = "../madrigal-downloads" }
 madrigal-i18n = { path = "../madrigal-i18n" }
 madrigal-innertube = { path = "../madrigal-innertube" }
 madrigal-library = { path = "../madrigal-library" }
 madrigal-localmedia = { path = "../madrigal-localmedia" }
 madrigal-lyrics = { path = "../madrigal-lyrics" }
+madrigal-net = { path = "../madrigal-net" }
 madrigal-paths = { path = "../madrigal-paths" }
 madrigal-player = { path = "../madrigal-player" }
 madrigal-scrobble = { path = "../madrigal-scrobble" }
 madrigal-settings = { path = "../madrigal-settings" }
 madrigal-ui = { path = "../madrigal-ui" }
+reqwest = { version = "0.12", features = ["blocking"] }
 rusqlite = "0.41"
 slint = "=1.19.0"
 tokio = { version = "1", features = ["rt"] }
@@ -63,3 +66,7 @@ path = "tests/checks/check_app_lyrics.rs"
 [[test]]
 name = "check_app_library"
 path = "tests/checks/check_app_library.rs"
+
+[[test]]
+name = "check_app_downloads"
+path = "tests/checks/check_app_downloads.rs"

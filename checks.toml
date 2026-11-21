@@ -303,3 +303,7 @@ group = "offline"
 [[check]]
 name = "app_library"
 group = "offline"
+
+[[check]]
+name = "app_downloads"
+group = "offline"

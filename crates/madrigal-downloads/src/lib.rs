@@ -795,8 +795,8 @@ fn run_job<R: DownloadRunner>(inner: &std::sync::Arc<Inner<R>>, key: &str) {
                 record.state = DownloadState::Quarantined;
                 let stale = record.output.clone();
                 drop(jobs);
-                remove_contained(&config.downloads_dir, &stale);
                 quarantine_file(&config.downloads_dir, &stale);
+                remove_contained(&config.downloads_dir, &stale);
             } else {
                 record.state = DownloadState::Failed;
             }

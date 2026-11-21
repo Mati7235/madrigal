@@ -11,6 +11,7 @@ use madrigal_ui::{
 use slint::ComponentHandle;
 
 use crate::catalog::{self, Wiring};
+use crate::downloads::Downloads;
 use crate::playback::{engine_config, Playback, PlaybackService, Snapshot, POLL_INTERVAL};
 use crate::store::Store;
 use crate::ui::{boot_ui, Ui};
@@ -20,6 +21,7 @@ pub struct AppState {
     pub ui: Ui,
     playback: Rc<RefCell<PlaybackService>>,
     _library: crate::library::LibraryService,
+    _downloads: Downloads,
     _poll: slint::Timer,
     _catalog: Wiring,
 }
@@ -58,6 +60,7 @@ impl AppState {
         wire_playback(&ui.shell, &core);
         crate::lyrics::wire(&ui.shell);
         let library = crate::library::wire_library(&ui.shell, &store);
+        let downloads = crate::downloads::register(&ui.shell, settings);
         let poll = start_poll(&ui.shell, Rc::clone(&service));
         let catalog = catalog::wire_catalog(&ui.shell, &settings.content)?;
 
@@ -66,6 +69,7 @@ impl AppState {
             ui,
             playback: service,
             _library: library,
+            _downloads: downloads,
             _poll: poll,
             _catalog: catalog,
         })
