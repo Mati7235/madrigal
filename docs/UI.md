@@ -212,9 +212,13 @@ tabs outlined button, 8px gaps), then 54px playlist rows: cover 36px, name,
 "N tracks" subtitle, play icon button on the right. No cards, no blank gap.
 The empty state is a list icon, "No playlists yet" and a New playlist button.
 
-Downloads: header row (title, count), 54px rows full width: cover 36px, title,
-subtitle, state or progress on the right, action icon buttons. Empty state is a
-download icon, "No downloads" and a hint pointing to the song menu > Download.
+Downloads: header row (title, count over the three groups), 54px rows full
+width in three groups that only appear when they have rows: "Activas"
+(queued, downloading, paused), "Descargadas" (completed, also restored from the
+download registry) and "Fallidas" with Retry. Rows show the 36px track cover,
+title, subtitle, state or progress on the right and the matching action icon
+buttons; tapping a finished row plays the local file. Empty state is a download
+icon, "No downloads" and a hint pointing to the song menu > Download.
 
 Settings: group list column 232px (16px padding, 44px items), page title at the
 16px margin in `Type.title-medium`, the section pane fills the rest. Every row

@@ -10,7 +10,7 @@ use madrigal_artwork::{bucket_for, sized_url, ArtworkCache, Source};
 use slint::{ComponentHandle, Model, ModelRc};
 
 use crate::player_ui::QueueTabData;
-use crate::{CatalogItem, CatalogSection, MainShell, QueueRow};
+use crate::{CatalogItem, CatalogSection, DownloadRow, MainShell, QueueRow};
 
 type CacheKey = (String, u32);
 type Done = Box<dyn FnOnce(RgbaImage) + Send + 'static>;
@@ -363,6 +363,61 @@ pub fn resolve_queue(shell: &MainShell, tabs: &QueueTabData) {
     resolve_queue_model(shell, MainShell::get_queue_searched, &tabs.searched, bucket);
     resolve_queue_model(shell, MainShell::get_queue_continue, &tabs.cont, bucket);
     resolve_queue_model(shell, MainShell::get_queue_auto, &tabs.auto, bucket);
+}
+
+fn patch_download(
+    shell: &MainShell,
+    get: fn(&MainShell) -> ModelRc<DownloadRow>,
+    index: usize,
+    thumbnail: String,
+    image: RgbaImage,
+) {
+    let model = get(shell);
+    let Some(mut row) = model.row_data(index) else {
+        return;
+    };
+    if row.thumbnail.as_str() != thumbnail {
+        return;
+    }
+    row.cover = to_slint_image(&image);
+    model.set_row_data(index, row);
+}
+
+fn resolve_download_model(shell: &MainShell, get: fn(&MainShell) -> ModelRc<DownloadRow>) {
+    let bucket = bucket_for(36.0, scale(shell));
+    let model = get(shell);
+    for index in 0..model.row_count() {
+        let Some(row) = model.row_data(index) else {
+            continue;
+        };
+        let thumbnail = row.thumbnail.to_string();
+        if thumbnail.is_empty() || row.cover.size().width > 0 {
+            continue;
+        }
+        let weak = shell.as_weak();
+        let load = thumbnail.clone();
+        request(
+            &load,
+            bucket,
+            Box::new(move |image| {
+                let weak = weak.clone();
+                let _ = slint::invoke_from_event_loop(move || {
+                    if let Some(shell) = weak.upgrade() {
+                        patch_download(&shell, get, index, thumbnail, image);
+                    }
+                });
+            }),
+        );
+    }
+}
+
+pub fn resolve_downloads(shell: &MainShell) {
+    if !enabled() {
+        return;
+    }
+    resolve_download_model(shell, MainShell::get_dl_rows);
+    resolve_download_model(shell, MainShell::get_dl_done);
+    resolve_download_model(shell, MainShell::get_dl_failed);
 }
 
 pub fn set_now_playing_cover(shell: &MainShell, thumbnail: &str) {

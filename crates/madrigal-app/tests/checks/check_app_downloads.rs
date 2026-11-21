@@ -4,14 +4,16 @@ use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
 use madrigal_app::actions::{wire_track_actions, TrackActions};
 use madrigal_app::downloads::{register_with, Downloads, MediaRequest, UrlResolver};
+use madrigal_app::playback::Playback;
 use madrigal_core::{Track, TrackIdentity};
 use madrigal_downloads::{DownloadState, JobOptions, ManagerConfig};
+use madrigal_player::engine::EngineConfig;
 use madrigal_settings::{Settings, Storage};
 use madrigal_testkit as kit;
 use madrigal_ui::{MainShell, TrackMenuRequest};
@@ -247,6 +249,14 @@ fn row_state(shell: &MainShell, id: &str) -> Option<i32> {
             }
         }
     }
+    let done = shell.get_dl_done();
+    for index in 0..done.row_count() {
+        if let Some(row) = done.row_data(index) {
+            if row.id.as_str() == id {
+                return Some(row.state);
+            }
+        }
+    }
     let failed = shell.get_dl_failed();
     for index in 0..failed.row_count() {
         if let Some(row) = failed.row_data(index) {
@@ -298,6 +308,7 @@ fn app_downloads() {
     pause_and_resume();
     quarantine_after_failure();
     menu_download();
+    finished_row_plays();
 
     println!("OK app_downloads");
 }
@@ -352,8 +363,9 @@ fn progress_queue_and_page() {
     assert_eq!(row_state(&h.shell, "PROGRESS1"), Some(3));
     assert_eq!(row_state(&h.shell, "PROGRESS2"), Some(3));
     assert_eq!(h.shell.get_dl_failed().row_count(), 0);
-    assert_eq!(h.shell.get_dl_rows().row_count(), 2);
-    let rows = h.shell.get_dl_rows();
+    assert_eq!(h.shell.get_dl_rows().row_count(), 0);
+    assert_eq!(h.shell.get_dl_done().row_count(), 2);
+    let rows = h.shell.get_dl_done();
     assert_eq!(
         rows.row_data(0).expect("row 0").title.as_str(),
         "Progress Song"
@@ -377,7 +389,7 @@ fn progress_queue_and_page() {
     h.shell.show().expect("show");
     kit::mock_advance(Duration::from_millis(200));
     assert_eq!(
-        h.shell.get_dl_rows().row_count(),
+        h.shell.get_dl_done().row_count(),
         2,
         "rows after timer pump"
     );
@@ -428,6 +440,7 @@ fn cancel_mid_run() {
         h.pump();
         if h.state(&track.identity).is_none()
             && h.shell.get_dl_rows().row_count() == 0
+            && h.shell.get_dl_done().row_count() == 0
             && h.shell.get_dl_failed().row_count() == 0
         {
             break;
@@ -489,6 +502,67 @@ fn quarantine_after_failure() {
         assert!(Instant::now() < deadline, "partial file never quarantined");
         thread::sleep(Duration::from_millis(2));
     }
+}
+
+fn finished_row_plays() {
+    let h = Harness::new(
+        Mode::Stream {
+            chunk: 256,
+            delay_ms: 2,
+        },
+        0,
+    );
+    let mut tracked = h.track("PLAY1", "Local Song");
+    tracked.thumbnail = Some("https://i.ytimg.com/vi/PLAY1/mqdefault.jpg".to_owned());
+    assert!(h.downloads.enqueue(tracked.clone(), JobOptions::default()));
+    h.wait_for(&tracked.identity, "finished download", |state| {
+        state == Some(DownloadState::Completed)
+    });
+    h.pump();
+
+    let playback = Playback::open(
+        EngineConfig {
+            vo: "null".to_owned(),
+            ao: "null".to_owned(),
+            gapless_audio: false,
+        },
+        &Settings::default().player,
+        madrigal_app::streams::orchestrator().expect("streams"),
+    )
+    .expect("playback");
+    let core = Arc::new(Mutex::new(playback));
+    let conn = madrigal_db::open(&h.root.path().join("library.sqlite3")).expect("db");
+    wire_track_actions(
+        &h.shell,
+        TrackActions {
+            conn: Rc::new(RefCell::new(conn)),
+            settings: Settings::default(),
+            downloads: Rc::clone(&h.downloads),
+            core: Some(Arc::clone(&core)),
+        },
+    );
+
+    assert_eq!(h.shell.get_dl_rows().row_count(), 0);
+    let done = h.shell.get_dl_done();
+    assert_eq!(done.row_count(), 1);
+    let row = done.row_data(0).expect("done row");
+    assert_eq!(row.id.as_str(), "PLAY1");
+    assert_eq!(row.state, 3);
+    assert_eq!(
+        row.thumbnail.as_str(),
+        "https://i.ytimg.com/vi/PLAY1/mqdefault.jpg"
+    );
+
+    h.shell.invoke_dl_play("PLAY1".into());
+    assert_eq!(h.shell.get_dl_last_action().as_str(), "dl-play");
+    let output = h.downloads.output_of(&tracked.identity).expect("output");
+    let expected = format!("local:{}", output.display());
+    let queue = core.lock().unwrap().snapshot().queue.all;
+    assert_eq!(
+        queue.last().map(|row| row.key.clone()),
+        Some(expected),
+        "finished row did not queue the local file"
+    );
 }
 
 fn menu_download() {

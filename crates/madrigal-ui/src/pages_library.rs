@@ -424,6 +424,7 @@ pub struct DownloadItem {
     pub downloaded_bytes: u64,
     pub total_bytes: Option<u64>,
     pub speed_bps: Option<f64>,
+    pub thumbnail: String,
 }
 
 fn download_row(item: &DownloadItem) -> DownloadRow {
@@ -444,20 +445,26 @@ fn download_row(item: &DownloadItem) -> DownloadRow {
         state: download_state_index(item.state),
         progress,
         speed: format_speed(item.speed_bps).into(),
+        thumbnail: item.thumbnail.clone().into(),
+        cover: slint::Image::default(),
     }
 }
 
-pub fn download_models(items: &[DownloadItem]) -> (Vec<DownloadRow>, Vec<DownloadRow>) {
+pub fn download_models(
+    items: &[DownloadItem],
+) -> (Vec<DownloadRow>, Vec<DownloadRow>, Vec<DownloadRow>) {
     let mut active = Vec::new();
+    let mut done = Vec::new();
     let mut failed = Vec::new();
     for item in items {
         match item.state {
             madrigal_downloads::DownloadState::Failed
             | madrigal_downloads::DownloadState::Quarantined => failed.push(download_row(item)),
+            madrigal_downloads::DownloadState::Completed => done.push(download_row(item)),
             _ => active.push(download_row(item)),
         }
     }
-    (active, failed)
+    (active, done, failed)
 }
 
 pub struct LibraryFixture {
@@ -580,6 +587,7 @@ pub fn load_downloads_fixture() -> Vec<DownloadItem> {
                 } else {
                     None
                 },
+                thumbnail: String::new(),
             }
         })
         .collect()
@@ -658,6 +666,8 @@ pub fn downloaded_rows(lib: &madrigal_library::Library<'_>) -> Vec<DownloadRow> 
             state: completed,
             progress: 1.0,
             speed: "".into(),
+            thumbnail: "".into(),
+            cover: slint::Image::default(),
         })
         .collect()
 }
@@ -680,8 +690,6 @@ pub struct LibraryModels {
     pub stat_albums: Vec<StatRow>,
     pub years: Vec<String>,
     pub year: i32,
-    pub downloads: Vec<DownloadRow>,
-    pub failed_downloads: Vec<DownloadRow>,
     pub selected_count: i32,
     pub liked: Option<bool>,
     pub recent_searches: Vec<String>,
@@ -721,8 +729,6 @@ pub fn apply_library(shell: &MainShell, models: &LibraryModels) {
     shell.set_lib_years(string_model(&models.years));
     shell.set_lib_year(models.year);
     shell.set_lib_selected_count(models.selected_count);
-    shell.set_dl_rows(row_model(&models.downloads));
-    shell.set_dl_failed(row_model(&models.failed_downloads));
     shell.set_search_recent(string_model(&models.recent_searches));
     if let Some(liked) = models.liked {
         shell.set_liked(liked);

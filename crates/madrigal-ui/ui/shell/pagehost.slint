@@ -41,6 +41,7 @@ export component PageHost inherits Rectangle {
     in property<[string]> lib-years;
     in property<int> lib-year;
     in property<[DownloadRow]> dl-rows;
+    in property<[DownloadRow]> dl-done;
     in property<[DownloadRow]> dl-failed;
 
     callback lib-chip-selected(int);
@@ -70,6 +71,7 @@ export component PageHost inherits Rectangle {
     callback dl-cancel(string);
     callback dl-retry(string);
     callback dl-retry-all();
+    callback dl-play(string);
     in-out property<int> detail-stack: 0;
     in-out property<DetailRef> detail-ref: { kind: DetailKind.album, id: "", title: "" };
 
@@ -283,12 +285,14 @@ export component PageHost inherits Rectangle {
         height: 100%;
         palette: root.palette;
         rows: root.dl-rows;
+        done: root.dl-done;
         failed: root.dl-failed;
         dl-pause(id) => { root.dl-pause(id); }
         dl-resume(id) => { root.dl-resume(id); }
         dl-cancel(id) => { root.dl-cancel(id); }
         dl-retry(id) => { root.dl-retry(id); }
         dl-retry-all() => { root.dl-retry-all(); }
+        dl-play(id) => { root.dl-play(id); }
     }
 
     if (root.page == 5) : settings-page := SettingsPage {

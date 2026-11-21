@@ -194,6 +194,8 @@ pub struct DownloadRecord {
     #[serde(default)]
     pub duration_secs: Option<u32>,
     #[serde(default)]
+    pub thumbnail: Option<String>,
+    #[serde(default)]
     pub track_number: Option<u32>,
     #[serde(default)]
     pub path: String,
@@ -217,7 +219,7 @@ impl DownloadRecord {
             artists: self.artists.clone(),
             album: self.album.clone(),
             duration_secs: self.duration_secs,
-            thumbnail: None,
+            thumbnail: self.thumbnail.clone(),
             track_number: self.track_number,
             local_path: if self.path.is_empty() {
                 None
@@ -242,6 +244,7 @@ impl DownloadRecord {
             artists: track.artists.clone(),
             album: track.album.clone(),
             duration_secs: track.duration_secs,
+            thumbnail: track.thumbnail.clone(),
             track_number: track.track_number,
             path: path.to_string_lossy().into_owned(),
             state: state.as_str().to_string(),
@@ -577,7 +580,7 @@ impl<R: DownloadRunner> DownloadManager<R> {
             return Vec::new();
         };
         let Ok(mut stmt) = conn.prepare(
-            "SELECT song_key, path, title, artists, album, duration_secs FROM downloads",
+            "SELECT song_key, path, title, artists, album, duration_secs, thumbnail FROM downloads ORDER BY created_at DESC",
         ) else {
             return Vec::new();
         };
@@ -588,12 +591,13 @@ impl<R: DownloadRunner> DownloadManager<R> {
             let artists: String = row.get(3)?;
             let album: Option<String> = row.get(4)?;
             let duration: Option<i64> = row.get(5)?;
-            Ok((key, path, title, artists, album, duration))
+            let thumbnail: Option<String> = row.get(6)?;
+            Ok((key, path, title, artists, album, duration, thumbnail))
         })
         .map(|rows| {
             rows
                 .flatten()
-                .map(|(key, path, title, artists, album, duration)| {
+                .map(|(key, path, title, artists, album, duration, thumbnail)| {
                     let identity = TrackIdentity::parse_prefixed(&key);
                     let (source, id) = match identity.source {
                         madrigal_core::TrackSource::Tidal => ("tidal", identity.id.clone()),
@@ -607,6 +611,7 @@ impl<R: DownloadRunner> DownloadManager<R> {
                         artists: serde_json::from_str(&artists).unwrap_or_default(),
                         album,
                         duration_secs: duration.and_then(|v| u32::try_from(v).ok()),
+                        thumbnail,
                         track_number: None,
                         path,
                         state: DownloadState::Completed.as_str().to_string(),

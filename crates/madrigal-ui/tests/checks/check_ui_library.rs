@@ -55,6 +55,8 @@ fn ui_library() {
     assert_eq!(trl("en", "library.sort.title"), "Sort");
     assert_eq!(trl("es", "downloads.failed"), "Fallidas");
     assert_eq!(trl("en", "downloads.failed"), "Failed");
+    assert_eq!(trl("es", "downloads.finished"), "Descargadas");
+    assert_eq!(trl("en", "downloads.finished"), "Downloaded");
     assert_eq!(trl("es", "library.history.clear"), "Borrar historial");
     assert_eq!(trl("en", "library.history.clear"), "Clear history");
     madrigal_ui::set_shell_lang(&shell, &lang, madrigal_i18n::Lang::En);
@@ -298,16 +300,21 @@ fn ui_library() {
     shell.invoke_lib_tags_closed();
 
     let items = load_downloads_fixture();
-    let (active, failed) = download_models(&items);
-    assert_eq!(active.len(), 4);
+    let (active, done, failed) = download_models(&items);
+    assert_eq!(active.len(), 3);
+    assert_eq!(done.len(), 1);
     assert_eq!(failed.len(), 2);
+    assert!(active.iter().all(|row| row.state != 3));
+    assert_eq!(done[0].state, 3);
     assert_eq!(active[1].progress, 0.5);
     assert_eq!(active[1].speed.as_str(), "256 KB/s");
     assert_eq!(active[0].state, 0);
     assert_eq!(failed[0].state, 4);
     shell.set_dl_rows(Rc::new(VecModel::from(active)).into());
+    shell.set_dl_done(Rc::new(VecModel::from(done)).into());
     shell.set_dl_failed(Rc::new(VecModel::from(failed)).into());
-    assert_eq!(shell.get_dl_rows().row_count(), 4);
+    assert_eq!(shell.get_dl_rows().row_count(), 3);
+    assert_eq!(shell.get_dl_done().row_count(), 1);
     assert_eq!(shell.get_dl_failed().row_count(), 2);
 
     shell.invoke_dl_pause("dl0".into());
@@ -324,6 +331,44 @@ fn ui_library() {
     assert_eq!(shell.get_dl_last_action().as_str(), "dl-retry-all");
 
     kit::mock_advance(Duration::from_millis(600));
+
+    assert!(kit::find_by_id(&shell, "DownloadsPage::dl-active-head").is_ok());
+    assert!(kit::find_by_id(&shell, "DownloadsPage::dl-done-head").is_ok());
+    kit::click_by_id(&shell, "DownloadsPage::dl-done-touch").unwrap();
+    assert_eq!(shell.get_dl_last_action().as_str(), "dl-play");
+    assert_eq!(shell.get_dl_last_arg().as_str(), "dl3");
+
+    let mut done_row = shell.get_dl_done().row_data(0).unwrap();
+    let mut pixels = slint::SharedPixelBuffer::<slint::Rgba8Pixel>::new(8, 8);
+    for pixel in pixels.make_mut_bytes().chunks_mut(4) {
+        pixel.copy_from_slice(&[200, 32, 32, 255]);
+    }
+    done_row.cover = slint::Image::from_rgba8(pixels);
+    shell.set_dl_done(Rc::new(VecModel::from(vec![done_row])).into());
+    shell.show().unwrap();
+    kit::mock_advance(Duration::from_millis(100));
+    let cover = kit::find_by_id(&shell, "DownloadsPage::dl-done-cover").unwrap();
+    let cover_size = cover.size();
+    assert_eq!(cover_size.width, 36.0);
+    assert_eq!(cover_size.height, 36.0);
+    let cover_pos = cover.absolute_position();
+    let shot = shell.window().take_snapshot().expect("snapshot");
+    let x = (cover_pos.x + cover_size.width / 2.0) as usize;
+    let y = (cover_pos.y + cover_size.height / 2.0) as usize;
+    let offset = (y * shot.width() as usize + x) * 4;
+    let bytes = shot.as_bytes();
+    assert!(
+        bytes[offset] > 150 && bytes[offset + 1] < 120,
+        "done row cover missing at {cover_pos:?}"
+    );
+
+    shell.set_dl_rows(Rc::new(VecModel::from(Vec::new())).into());
+    kit::mock_advance(Duration::from_millis(100));
+    assert!(kit::find_by_id(&shell, "DownloadsPage::dl-done-head").is_ok());
+    assert!(
+        kit::find_by_id(&shell, "DownloadsPage::dl-active-head").is_err(),
+        "active group shown while empty"
+    );
 
     shell.set_page(3);
     let chips = shell.get_lib_chips();

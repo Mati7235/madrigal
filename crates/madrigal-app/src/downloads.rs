@@ -13,10 +13,13 @@ use madrigal_downloads::{
 };
 use madrigal_settings::Settings;
 use madrigal_streams::Orchestrator;
-use madrigal_ui::{download_models, download_state_index, DownloadItem, MainShell};
+use madrigal_ui::{
+    download_models, download_state_index, filter_downloads, resolve_downloads, DownloadItem,
+    DownloadRow, MainShell,
+};
 use reqwest::header::{CONTENT_RANGE, RANGE, USER_AGENT};
 use reqwest::StatusCode;
-use slint::{ComponentHandle, ModelRc, VecModel};
+use slint::{ComponentHandle, Model, ModelRc, VecModel};
 
 const PUMP_INTERVAL: Duration = Duration::from_millis(150);
 const CHUNK_BYTES: usize = 64 * 1024;
@@ -368,6 +371,33 @@ impl Downloads {
         menu_state(&self.inner, identity)
     }
 
+    pub fn finished_track(&self, id: &str) -> Option<Track> {
+        let guard = self.inner.manager.borrow();
+        let manager = guard.as_ref()?;
+        if let Some(track) = self
+            .inner
+            .tracks
+            .borrow()
+            .iter()
+            .find(|track| track.identity.id == id)
+        {
+            if manager.state(&track.identity) != Some(DownloadState::Completed) {
+                return None;
+            }
+            let path = manager.output_of(&track.identity)?;
+            return Some(local_track(track, path));
+        }
+        let record = manager
+            .list_registry()
+            .into_iter()
+            .find(|record| record.id == id)?;
+        if !std::path::Path::new(&record.path).is_file() {
+            return None;
+        }
+        let path = PathBuf::from(&record.path);
+        Some(local_track(&record.to_track(), path))
+    }
+
     pub fn refresh(&self, shell: &MainShell) {
         apply(&self.inner, shell);
     }
@@ -410,7 +440,7 @@ fn with_identity(inner: &Rc<Inner>, id: &str, f: impl FnOnce(&TrackIdentity)) {
     }
 }
 
-fn record(shell: &MainShell, action: &str) {
+pub(crate) fn record(shell: &MainShell, action: &str) {
     shell.set_dl_action_count(shell.get_dl_action_count() + 1);
     shell.set_dl_last_action(action.into());
 }
@@ -420,7 +450,7 @@ fn items(inner: &Inner) -> Vec<DownloadItem> {
     let Some(manager) = guard.as_ref() else {
         return Vec::new();
     };
-    inner
+    let mut items: Vec<DownloadItem> = inner
         .tracks
         .borrow()
         .iter()
@@ -436,7 +466,63 @@ fn items(inner: &Inner) -> Vec<DownloadItem> {
                 downloaded_bytes,
                 total_bytes,
                 speed_bps,
+                thumbnail: track.thumbnail.clone().unwrap_or_default(),
             })
+        })
+        .collect();
+    for record in manager.list_registry() {
+        if !std::path::Path::new(&record.path).is_file() {
+            continue;
+        }
+        let identity = record.identity();
+        if items.iter().any(|item| item.record.identity() == identity) {
+            continue;
+        }
+        items.push(DownloadItem {
+            thumbnail: record.thumbnail.clone().unwrap_or_default(),
+            record,
+            state: DownloadState::Completed,
+            downloaded_bytes: 0,
+            total_bytes: None,
+            speed_bps: None,
+        });
+    }
+    items
+}
+
+fn local_track(track: &Track, path: PathBuf) -> Track {
+    let mut local = track.clone();
+    local.identity = TrackIdentity::local(path.to_string_lossy().into_owned());
+    local.local_path = Some(path.to_string_lossy().into_owned());
+    local
+}
+
+fn previous_covers(shell: &MainShell) -> Vec<(String, slint::Image)> {
+    let mut covers = Vec::new();
+    for model in [shell.get_dl_rows(), shell.get_dl_done(), shell.get_dl_failed()] {
+        for index in 0..model.row_count() {
+            if let Some(row) = model.row_data(index) {
+                if row.cover.size().width > 0 {
+                    covers.push((row.id.to_string(), row.cover.clone()));
+                }
+            }
+        }
+    }
+    covers
+}
+
+fn carry_covers(rows: Vec<DownloadRow>, covers: &[(String, slint::Image)]) -> Vec<DownloadRow> {
+    rows.into_iter()
+        .map(|mut row| {
+            if row.cover.size().width == 0 {
+                if let Some((_, cover)) = covers
+                    .iter()
+                    .find(|(id, cover)| *id == row.id.as_str() && cover.size().width > 0)
+                {
+                    row.cover = cover.clone();
+                }
+            }
+            row
         })
         .collect()
 }
@@ -461,9 +547,16 @@ fn menu_state(inner: &Inner, identity: &TrackIdentity) -> (i32, f32) {
 }
 
 fn apply(inner: &Rc<Inner>, shell: &MainShell) {
-    let (active, failed) = download_models(&items(inner));
+    let (active, done, failed) = download_models(&items(inner));
+    let covers = previous_covers(shell);
+    let query = shell.get_local_query();
+    let active = carry_covers(filter_downloads(active, &query), &covers);
+    let done = carry_covers(filter_downloads(done, &query), &covers);
+    let failed = carry_covers(filter_downloads(failed, &query), &covers);
     shell.set_dl_rows(ModelRc::new(VecModel::from(active)));
+    shell.set_dl_done(ModelRc::new(VecModel::from(done)));
     shell.set_dl_failed(ModelRc::new(VecModel::from(failed)));
+    resolve_downloads(shell);
     if shell.get_track_menu_open() {
         let request = shell.get_track_menu_track();
         let identity = TrackIdentity::parse_prefixed(request.id.as_str());

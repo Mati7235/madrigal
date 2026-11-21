@@ -13,7 +13,7 @@ use madrigal_ui::{
 use rusqlite::Connection;
 use slint::{ComponentHandle, ModelRc, VecModel};
 
-use crate::downloads::Downloads;
+use crate::downloads::{record, Downloads};
 use crate::playback::Playback;
 use crate::ui::lang_from_settings;
 
@@ -257,6 +257,28 @@ pub fn wire_track_actions(shell: &MainShell, actions: TrackActions) {
                     });
                 }
                 _ => {}
+            }
+        }
+    });
+
+    shell.on_dl_play({
+        let downloads = Rc::clone(&actions.downloads);
+        let core = actions.core.clone();
+        let weak = shell.as_weak();
+        move |id| {
+            let Some(shell) = weak.upgrade() else {
+                return;
+            };
+            record(&shell, "dl-play");
+            shell.set_dl_last_arg(id.clone());
+            let Some(core) = core.as_ref() else {
+                return;
+            };
+            let Some(track) = downloads.finished_track(id.as_str()) else {
+                return;
+            };
+            if let Err(message) = lock(core).enqueue_track(&track) {
+                eprintln!("downloads: play: {message}");
             }
         }
     });

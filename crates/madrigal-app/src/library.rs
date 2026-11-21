@@ -8,8 +8,8 @@ use madrigal_library::{Library, SongSort, SortDir};
 use madrigal_scrobble::Eligibility;
 use madrigal_settings::{Settings, SongSortType};
 use madrigal_ui::{
-    album_cards, apply_library, artist_cards, chip_order, downloaded_rows, event_years,
-    filter_cards, filter_downloads, filter_history, filter_playlists, filter_songs, history_rows,
+    album_cards, apply_library, artist_cards, chip_order, event_years,
+    filter_cards, filter_history, filter_playlists, filter_songs, history_rows,
     playlist_rows, song_rows, stats_streaks, stats_totals, top_album_rows, top_artist_rows,
     top_track_rows, track_source_from_index, year_model, LibraryModels, MainShell,
 };
@@ -164,7 +164,6 @@ pub fn build_models(conn: &Connection, settings: &Settings, view: &LibraryView) 
         }
     }
 
-    models.downloads = filter_downloads(downloaded_rows(&lib), &view.query);
     if let Some(key) = view.current.as_deref() {
         let identity = TrackIdentity::parse_prefixed(key);
         models.liked = Some(lib.is_liked(&identity).unwrap_or(false));

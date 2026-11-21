@@ -49,12 +49,14 @@ export component MainShell inherits Window {
     in-out property<[string]> lib-years;
     in-out property<int> lib-year: 0;
     in-out property<[DownloadRow]> dl-rows;
+    in-out property<[DownloadRow]> dl-done;
     in-out property<[DownloadRow]> dl-failed;
     in-out property<int> lib-action-count: 0;
     in-out property<string> lib-last-action: "";
     in-out property<string> lib-last-arg: "";
     in-out property<int> dl-action-count: 0;
     in-out property<string> dl-last-action: "";
+    in-out property<string> dl-last-arg: "";
     in-out property<string> track-title: "";
     in-out property<string> track-artist: "";
     in-out property<string> track-album: "";
@@ -273,6 +275,7 @@ export component MainShell inherits Window {
     callback dl-cancel(string);
     callback dl-retry(string);
     callback dl-retry-all();
+    callback dl-play(string);
     callback track-menu-requested(TrackMenuRequest);
     callback track-menu-opened(TrackMenuRequest);
     callback track-menu-action(string, string);
@@ -475,6 +478,7 @@ export component MainShell inherits Window {
     dl-cancel(id) => { root.dl-record("dl-cancel"); }
     dl-retry(id) => { root.dl-record("dl-retry"); }
     dl-retry-all() => { root.dl-record("dl-retry-all"); }
+    dl-play(id) => { root.dl-record("dl-play"); root.dl-last-arg = id; }
     recent-accepted(t) => {
         root.search-query = t;
         root.query-changed(t);
@@ -882,6 +886,7 @@ export component MainShell inherits Window {
                 lib-years: root.lib-years;
                 lib-year: root.lib-year;
                 dl-rows: root.dl-rows;
+                dl-done: root.dl-done;
                 dl-failed: root.dl-failed;
                 lib-chip-selected(i) => { root.lib-chip-selected(i); }
                 lib-chip-move-left() => { root.lib-chip-move-left(); }
@@ -910,6 +915,7 @@ export component MainShell inherits Window {
                 dl-cancel(id) => { root.dl-cancel(id); }
                 dl-retry(id) => { root.dl-retry(id); }
                 dl-retry-all() => { root.dl-retry-all(); }
+                dl-play(id) => { root.dl-play(id); }
                 detail-stack <=> root.detail-stack;
                 detail-ref <=> root.detail-ref;
                 home-chips: root.home-chips;

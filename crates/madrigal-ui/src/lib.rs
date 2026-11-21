@@ -11,8 +11,8 @@ mod shell;
 mod theme;
 
 pub use artwork::{
-    apply_cover, init_artwork, resolve_browse, resolve_detail, resolve_home, resolve_queue,
-    resolve_releases, resolve_search, set_now_playing_cover, to_slint_image,
+    apply_cover, init_artwork, resolve_browse, resolve_detail, resolve_downloads, resolve_home,
+    resolve_queue, resolve_releases, resolve_search, set_now_playing_cover, to_slint_image,
 };
 
 pub use pages_catalog::{
