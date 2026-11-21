@@ -308,7 +308,7 @@ fn ui_catalog() {
         "beat it"
     );
 
-    kit::click_by_id(&shell, "SearchPage::search-bar").unwrap();
+    kit::click_by_id(&shell, "MainShell::top-bar").unwrap();
     shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
         text: slint::platform::Key::DownArrow.into(),
     });

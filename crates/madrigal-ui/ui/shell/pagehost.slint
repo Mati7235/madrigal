@@ -67,7 +67,6 @@ export component PageHost inherits Rectangle {
     callback dl-cancel(string);
     callback dl-retry(string);
     callback dl-retry-all();
-    in property<bool> search-focused: false;
     in-out property<int> detail-stack: 0;
     in-out property<DetailRef> detail-ref: { kind: DetailKind.album, id: "" };
 
@@ -103,7 +102,6 @@ export component PageHost inherits Rectangle {
     in-out property<int> detail-tab: 0;
 
     callback chip-selected(int);
-    callback query-changed(string);
     callback suggestion-accepted(string);
     callback filter-selected(int);
     callback source-selected(int);
@@ -172,14 +170,12 @@ export component PageHost inherits Rectangle {
         width: 100%;
         height: 100%;
         palette: root.palette;
-        focus-requested: root.search-focused;
         query <=> root.search-query;
         suggestions: root.search-suggestions;
         suggestion-index <=> root.search-suggestion-index;
         filter-tab <=> root.search-filter-tab;
         results: root.search-results;
         source <=> root.search-source;
-        query-changed(text) => { root.query-changed(text); }
         suggestion-accepted(text) => { root.suggestion-accepted(text); }
         filter-selected(i) => { root.filter-selected(i); }
         source-selected(i) => { root.source-selected(i); }

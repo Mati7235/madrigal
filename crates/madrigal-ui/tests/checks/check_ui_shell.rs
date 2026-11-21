@@ -127,6 +127,26 @@ fn ui_shell() {
     assert!(!dispatch_key(&shell, "x"));
     assert_eq!(shell.get_play_toggle_count(), 1);
 
+    shell.set_page(0);
+    shell.set_search_query("beat".into());
+    kit::click_by_id(&shell, "MainShell::top-bar").unwrap();
+    shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
+        text: slint::platform::Key::Return.into(),
+    });
+    assert_eq!(shell.get_page(), 1);
+    assert_eq!(shell.get_search_query().as_str(), "beat");
+
+    shell.set_page(3);
+    shell.set_local_query("abbey".into());
+    kit::click_by_id(&shell, "MainShell::local-bar").unwrap();
+    shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
+        text: slint::platform::Key::Return.into(),
+    });
+    assert_eq!(shell.get_page(), 3);
+    assert_eq!(shell.get_local_query().as_str(), "abbey");
+    assert_eq!(shell.get_search_query().as_str(), "beat");
+    shell.set_page(0);
+
     shell.invoke_open_confirm("Borrar".into(), "Seguro".into());
     assert_eq!(shell.get_overlay(), 1);
     assert!(!dispatch_key(&shell, " "));
@@ -170,6 +190,8 @@ fn ui_shell() {
     shell.show().unwrap();
     assert_eq!(shell.get_nowbar_width(), 1920.0);
     assert_eq!(shell.get_nowbar_bottom(), 1080.0);
+    let violations = kit::lint_layout(&shell, (1920.0, 1080.0));
+    assert!(violations.is_empty(), "layout violations: {violations:#?}");
     let shot = kit::snapshot_dir(tmp.path()).join("shell.png");
     kit::snapshot_to(shell.window(), &shot).unwrap();
     let bytes = std::fs::read(&shot).unwrap();

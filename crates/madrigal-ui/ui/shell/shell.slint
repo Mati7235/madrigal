@@ -1,5 +1,6 @@
 import { Palette, Light, Dark, PureBlack, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
+import { M3SearchBar } from "../components/fields.slint";
 import { LibSongRow, LibPlaylistRow, LibCardRow, HistoryRow, StatRow, DownloadRow } from "../pages/library/models.slint";
 import { CatalogItem, CatalogSection, DetailKind, DetailRef, MoodEntry } from "../pages/catalog/refs.slint";
 import { SideNav } from "sidebar.slint";
@@ -19,6 +20,7 @@ export component MainShell inherits Window {
     in-out property<int> overlay: 0;
     in-out property<bool> sidebar-focused: false;
     in-out property<bool> search-focused: false;
+    in-out property<string> local-query: "";
     in-out property<int> queue-count: 0;
     in-out property<[string]> lib-chips;
     in-out property<int> lib-tab: 0;
@@ -488,6 +490,11 @@ export component MainShell inherits Window {
         if (key == "/") {
             root.search-focus-count += 1;
             root.search-focused = true;
+            if (root.page <= 2) {
+                top-bar.focus-input();
+            } else if (root.page <= 4) {
+                local-bar.focus-input();
+            }
             root.search-focus-requested();
             return true;
         }
@@ -556,6 +563,76 @@ export component MainShell inherits Window {
         }
         content-col := VerticalLayout {
             spacing: 0px;
+            topbar-row := Rectangle {
+                width: 100%;
+                height: root.page <= 2 ? 56px : 0px;
+                visible: root.page <= 2;
+                background: root.palette.surface;
+                top-bar := M3SearchBar {
+                    x: 16px;
+                    y: 8px;
+                    width: Math.min(560px, parent.width - 32px);
+                    height: 48px;
+                    value <=> root.search-query;
+                    ring: root.search-focused;
+                    hint: I18n.trl(I18n.lang, "search.musicHint");
+                    fill: root.palette.surface-container-high;
+                    content: root.palette.on-surface;
+                    focus-line: root.palette.primary;
+                    hint-color: root.palette.on-surface-variant;
+                    state-on-surface: root.palette.on-surface;
+                    clear-label: I18n.trl(I18n.lang, "detail.clear");
+                    accepted(text) => {
+                        if (root.page == 1 && root.search-suggestion-index >= 0 && root.search-suggestion-index < root.search-suggestions.length) {
+                            root.search-query = root.search-suggestions[root.search-suggestion-index];
+                            root.suggestion-accepted(root.search-query);
+                        } else {
+                            root.search-query = text;
+                            root.query-changed(text);
+                        }
+                        root.page = 1;
+                    }
+                    nav-key(text) => {
+                        if (root.page == 1) {
+                            if (text == Key.UpArrow) {
+                                if (root.search-suggestions.length > 0) {
+                                    root.search-suggestion-index = Math.max(root.search-suggestion-index - 1, 0);
+                                }
+                                return true;
+                            }
+                            if (text == Key.DownArrow) {
+                                if (root.search-suggestions.length > 0) {
+                                    root.search-suggestion-index = Math.min(root.search-suggestion-index + 1, root.search-suggestions.length - 1);
+                                }
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                }
+            }
+            localbar-row := Rectangle {
+                width: 100%;
+                height: root.page == 3 || root.page == 4 ? 56px : 0px;
+                visible: root.page == 3 || root.page == 4;
+                background: root.palette.surface;
+                local-bar := M3SearchBar {
+                    x: 16px;
+                    y: 8px;
+                    width: Math.min(560px, parent.width - 32px);
+                    height: 48px;
+                    value <=> root.local-query;
+                    ring: root.search-focused;
+                    hint: I18n.trl(I18n.lang, "search.downloadedHint");
+                    fill: root.palette.surface-container-high;
+                    content: root.palette.on-surface;
+                    focus-line: root.palette.primary;
+                    hint-color: root.palette.on-surface-variant;
+                    state-on-surface: root.palette.on-surface;
+                    clear-label: I18n.trl(I18n.lang, "detail.clear");
+                    accepted(text) => { root.local-query = text; }
+                }
+            }
             host := PageHost {
                 vertical-stretch: 1;
                 palette: root.palette;
@@ -611,7 +688,6 @@ export component MainShell inherits Window {
                 dl-cancel(id) => { root.dl-cancel(id); }
                 dl-retry(id) => { root.dl-retry(id); }
                 dl-retry-all() => { root.dl-retry-all(); }
-                search-focused: root.search-focused;
                 detail-stack <=> root.detail-stack;
                 detail-ref <=> root.detail-ref;
                 home-chips: root.home-chips;
@@ -642,7 +718,6 @@ export component MainShell inherits Window {
                 detail-sections: root.detail-sections;
                 detail-tab <=> root.detail-tab;
                 chip-selected(i) => { root.chip-selected(i); }
-                query-changed(text) => { root.query-changed(text); }
                 suggestion-accepted(text) => { root.suggestion-accepted(text); }
                 filter-selected(i) => { root.filter-selected(i); }
                 source-selected(i) => { root.source-selected(i); }

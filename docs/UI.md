@@ -135,11 +135,14 @@ Common: page margin 16px from the sidebar edge and from the top of the
 workspace, section gap 24px, rows 54px, content fills the workspace width, the
 workspace scrolls vertically and never overlaps the 96px player bar.
 
-Top bar (48px, spans the workspace, above the page): one `M3SearchBar`, 560px
-max width, left aligned at the page margin. Home, Search and Explore: placeholder
+Top bar (56px row: 8px top inset, 48px hit area, 44px pill; spans the
+workspace, above the page): one `M3SearchBar`, 560px max width, left aligned at
+the 16px page margin. Home, Search and Explore: placeholder
 "search music", Enter opens Search with the query. Library and Downloads:
 placeholder "search downloaded songs", filters the visible rows while typing.
-`/` focuses it. Search page no longer owns a bar.
+`/` focuses it. Search page no longer owns a bar. The bar lives in `MainShell`
+as a row above `PageHost` (`top-bar` on pages 0-2 over `search-query`,
+`local-bar` on 3-4 over `local-query`, hidden on Settings).
 
 Library, Lists tab: chips row, tag row and one tool row (sort tonal button,
 select outlined button, 8px gaps), then 54px playlist rows: cover 36px, name,

@@ -1,6 +1,5 @@
 import { Palette, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
-import { M3SearchBar } from "../../components/fields.slint";
 import { M3Chip, M3Card } from "../../components/cards.slint";
 import { M3ListItem } from "../../components/rows.slint";
 import { ScrollView } from "std-widgets.slint";
@@ -14,10 +13,8 @@ export component SearchPage inherits FocusScope {
     in-out property<int> filter-tab: 0;
     in property<[CatalogItem]> results;
     in-out property<int> source: 1;
-    in property<bool> focus-requested: false;
     property<bool> show-empty: root.query != "" && root.results.length == 0;
 
-    callback query-changed(string);
     callback suggestion-accepted(string);
     callback key-dispatched(string);
     callback filter-selected(int);
@@ -77,31 +74,6 @@ export component SearchPage inherits FocusScope {
                 color: root.palette.on-surface-variant;
                 font-size: 13px;
                 font-weight: 400;
-            }
-
-            search-bar := M3SearchBar {
-                value <=> root.query;
-                ring: root.focus-requested;
-                hint: I18n.trl(I18n.lang, "search.hint");
-                fill: root.palette.surface-container-high;
-                content: root.palette.on-surface;
-                focus-line: root.palette.primary;
-                hint-color: root.palette.on-surface-variant;
-                state-on-surface: root.palette.on-surface;
-                clear-label: I18n.trl(I18n.lang, "detail.clear");
-                accepted(text) => {
-                    if (root.suggestion-index >= 0 && root.suggestion-index < root.suggestions.length) {
-                        root.query = root.suggestions[root.suggestion-index];
-                        root.suggestion-accepted(root.query);
-                    } else {
-                        root.query = text;
-                        root.query-changed(text);
-                    }
-                }
-                nav-key(text) => {
-                    root.key-dispatched(text == Key.UpArrow ? "up" : text == Key.DownArrow ? "down" : "enter");
-                    true
-                }
             }
 
             source-row := HorizontalLayout {
