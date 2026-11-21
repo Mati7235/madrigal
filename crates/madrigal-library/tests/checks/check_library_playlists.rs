@@ -534,7 +534,7 @@ fn playlist_summaries_order_name_tracks_and_recent() {
 
     fx.conn
         .execute(
-            "UPDATE playlists SET updated_at = 1 WHERE id = ?1",
+            "UPDATE playlists SET updated_at = CASE id WHEN ?1 THEN 1 ELSE 2 END",
             rusqlite::params![alpha.id.as_str()],
         )
         .expect("age alpha");
