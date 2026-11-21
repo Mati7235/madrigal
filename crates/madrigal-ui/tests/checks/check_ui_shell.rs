@@ -136,6 +136,16 @@ fn ui_shell() {
     assert_eq!(shell.get_page(), 1);
     assert_eq!(shell.get_search_query().as_str(), "beat");
 
+    kit::mock_advance(Duration::from_millis(20));
+    kit::click_by_id(&shell, "MainShell::top-bar").unwrap();
+    kit::mock_advance(Duration::from_millis(20));
+    assert!(shell.get_search_input_focused());
+    kit::click_by_id(&shell, "M3SearchBar::search-clear").unwrap();
+    kit::mock_advance(Duration::from_millis(20));
+    assert_eq!(shell.get_search_query().as_str(), "");
+    assert!(shell.get_search_input_focused());
+    shell.set_search_query("beat".into());
+
     shell.set_page(3);
     shell.set_local_query("abbey".into());
     kit::click_by_id(&shell, "MainShell::local-bar").unwrap();

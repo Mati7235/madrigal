@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::{Mutex, MutexGuard};
 
 use madrigal_app::library::{Observed, Worker};
 use madrigal_innertube::CatalogClient;
@@ -9,6 +10,12 @@ const HISTORY_TAB: i32 = 5;
 const PLAYLISTS_TAB: i32 = 1;
 const STATS_TAB: i32 = 6;
 
+static TEST_LOCK: Mutex<()> = Mutex::new(());
+
+fn lock_profile() -> MutexGuard<'static, ()> {
+    TEST_LOCK.lock().unwrap_or_else(|err| err.into_inner())
+}
+
 fn fixture(name: &str) -> String {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../madrigal-innertube/tests/fixtures")
@@ -18,6 +25,7 @@ fn fixture(name: &str) -> String {
 
 #[test]
 fn worker_drives_lists_likes_history_and_filters() {
+    let _guard = lock_profile();
     let root = tempfile::tempdir().expect("tempdir");
     std::env::set_var(madrigal_paths::PROFILE_ROOT_ENV, root.path());
     madrigal_paths::ensure_dirs().expect("dirs");
@@ -135,4 +143,97 @@ fn worker_drives_lists_likes_history_and_filters() {
     obs.tab = PLAYLISTS_TAB;
     let models = worker.handle(obs.clone()).expect("tag refresh");
     assert!(models.tags.iter().any(|tag| tag == "rock"));
+}
+
+#[test]
+fn search_history_reaches_models() {
+    let _guard = lock_profile();
+    let root = tempfile::tempdir().expect("tempdir");
+    std::env::set_var(madrigal_paths::PROFILE_ROOT_ENV, root.path());
+    madrigal_paths::ensure_dirs().expect("dirs");
+    let conn = madrigal_db::open(&madrigal_paths::db_path()).expect("open");
+    let mut worker = Worker::new(conn, Settings::default());
+    let mut obs = Observed {
+        search_submit_count: 1,
+        search_submit: "beatles".to_owned(),
+        ..Observed::default()
+    };
+
+    let models = worker.handle(obs.clone()).expect("first search");
+    assert_eq!(models.recent_searches, vec!["beatles".to_owned()]);
+
+    obs.search_submit_count = 2;
+    obs.search_submit = "abbey road".to_owned();
+    let models = worker.handle(obs.clone()).expect("second search");
+    assert_eq!(
+        models.recent_searches,
+        vec!["abbey road".to_owned(), "beatles".to_owned()]
+    );
+
+    obs.search_submit_count = 3;
+    obs.search_submit = "beatles".to_owned();
+    let models = worker.handle(obs.clone()).expect("dedupe");
+    assert_eq!(
+        models.recent_searches,
+        vec!["beatles".to_owned(), "abbey road".to_owned()]
+    );
+
+    obs.search_remove_count = 1;
+    obs.search_remove = "abbey road".to_owned();
+    let models = worker.handle(obs.clone()).expect("remove");
+    assert_eq!(models.recent_searches, vec!["beatles".to_owned()]);
+
+    obs.search_clear_count = 1;
+    let models = worker.handle(obs).expect("clear");
+    assert!(models.recent_searches.is_empty());
+}
+
+#[test]
+fn history_records_playing_track_with_metadata() {
+    let _guard = lock_profile();
+    let root = tempfile::tempdir().expect("tempdir");
+    std::env::set_var(madrigal_paths::PROFILE_ROOT_ENV, root.path());
+    madrigal_paths::ensure_dirs().expect("dirs");
+    let conn = madrigal_db::open(&madrigal_paths::db_path()).expect("open");
+    let tracks = CatalogClient::parse_search_songs(&fixture("search_songs_beatles.json"))
+        .expect("parse songs");
+    let track = &tracks[0];
+    let mut worker = Worker::new(conn, Settings::default());
+    let mut obs = Observed {
+        track_id: track.identity.id.clone(),
+        track_source: 0,
+        track_title: track.title.clone(),
+        track_artist: track.artist_text(),
+        duration_ms: 200_000,
+        ..Observed::default()
+    };
+
+    worker.handle(obs.clone());
+
+    obs.tab = HISTORY_TAB;
+    obs.position_ms = 15_000;
+    let models = worker
+        .handle(obs.clone())
+        .expect("playing track in history");
+    assert_eq!(models.history.len(), 1);
+    assert_eq!(models.history[0].title.as_str(), track.title.as_str());
+    assert!(models.history[0]
+        .subtitle
+        .as_str()
+        .starts_with(&track.artist_text()));
+
+    obs.position_ms = 30_000;
+    worker.handle(obs.clone());
+    assert_eq!(worker.models().history.len(), 1);
+
+    let next = &tracks[1];
+    obs.track_id = next.identity.id.clone();
+    obs.track_title = next.title.clone();
+    obs.track_artist = next.artist_text();
+    obs.position_ms = 0;
+    worker.handle(obs.clone());
+    obs.position_ms = 15_000;
+    let models = worker.handle(obs).expect("second track");
+    assert_eq!(models.history.len(), 2);
+    assert_eq!(models.history[0].title.as_str(), next.title.as_str());
 }

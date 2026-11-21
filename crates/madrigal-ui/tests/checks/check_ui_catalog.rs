@@ -6,7 +6,7 @@ use madrigal_ui::{
     load_playlist_fixture, load_search_fixture, load_suggestions_fixture, playlist_item,
     set_shell_lang, wire_shell_i18n, MainShell,
 };
-use slint::{ComponentHandle, Model};
+use slint::{ComponentHandle, Model, VecModel};
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -380,6 +380,29 @@ fn ui_catalog() {
     assert_eq!(shell.get_search_suggestions().row_count(), 0);
     assert_eq!(shell.get_search_results().row_count(), 0);
     assert!(!shell.get_search_query().is_empty());
+
+    shell.set_search_query("".into());
+    madrigal_ui::apply_suggestions(&shell, "", &[]);
+    let recent = [
+        slint::SharedString::from("abbey road"),
+        slint::SharedString::from("beatles"),
+    ];
+    shell.set_search_recent(Rc::new(VecModel::from_slice(&recent)).into());
+    assert_eq!(shell.get_search_recent().row_count(), 2);
+    kit::lint_layout_at_sizes(&shell, "search-recent");
+    click_nth(&shell, "M3ListItem::action-button", 0);
+    assert_eq!(shell.get_search_remove_count(), 1);
+    assert_eq!(shell.get_search_last_removed().as_str(), "abbey road");
+    click_nth(&shell, "SearchPage::recent-clear", 0);
+    assert_eq!(shell.get_search_clear_count(), 1);
+    click_nth(&shell, "SearchPage::recent-row", 1);
+    assert_eq!(shell.get_search_query().as_str(), "beatles");
+    assert_eq!(shell.get_search_submit_count(), 2);
+    assert_eq!(shell.get_search_last_submitted().as_str(), "beatles");
+    shell.set_search_recent(
+        Rc::new(VecModel::from_slice(&[] as &[slint::SharedString])).into(),
+    );
+    assert_eq!(shell.get_search_recent().row_count(), 0);
 
     assert!(!shell.get_search_focused());
     let focus_signals: Rc<RefCell<u32>> = Rc::new(RefCell::new(0));
