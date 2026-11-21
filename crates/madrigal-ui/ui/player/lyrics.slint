@@ -360,7 +360,7 @@ export component LyricsView inherits Rectangle {
             x: 0px;
             y: 0px;
             width: root.measure-w;
-            padding-top: lyrics-list.height / 3;
+            padding-top: root.active-line >= 0 ? lyrics-list.height / 3 : Spacing.s8;
             padding-bottom: lyrics-list.height * 2 / 3;
             spacing: root.spacing-mult * Spacing.s8;
 
