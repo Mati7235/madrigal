@@ -1135,5 +1135,5 @@ pub fn parse_progress_line(line: &str, identity: &TrackIdentity) -> Option<Progr
 }
 
 pub fn default_downloads_dir() -> PathBuf {
-    madrigal_paths::data_dir().join("downloads")
+    madrigal_paths::music_dir().join("Madrigal")
 }
