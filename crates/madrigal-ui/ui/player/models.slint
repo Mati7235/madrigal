@@ -4,8 +4,15 @@ export struct QueueRow {
     current: bool,
 }
 
+export struct LyricWordRow {
+    text: string,
+    start: int,
+    end: int,
+}
+
 export struct LyricLineRow {
     text: string,
     translation: string,
     start: int,
+    words: [LyricWordRow],
 }

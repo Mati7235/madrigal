@@ -1,6 +1,6 @@
-import { Palette, Spacing, Type } from "../tokens.slint";
+import { Font, Palette, Spacing, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
-import { M3IconButton } from "../components/buttons.slint";
+import { M3Button, M3IconButton } from "../components/buttons.slint";
 import { Icons } from "../components/icons.slint";
 import { LyricLineRow } from "models.slint";
 
@@ -8,19 +8,77 @@ export component LyricsView inherits Rectangle {
     in property<Palette> palette;
     in property<[LyricLineRow]> rows;
     in property<int> active-line: -1;
+    in property<int> active-word: -1;
     in property<float> word-progress: 0;
     in property<float> font-px: 16;
     in property<float> spacing-mult: 1.5;
     in property<bool> click-seek: true;
+    in property<int> offset-ms: 0;
+    in-out property<bool> scroll-locked: false;
 
     callback line-seek(int);
     callback share-requested();
+    callback offset-requested(int);
+    callback scroll-locked-changed(bool);
 
     accessible-role: AccessibleRole.list;
     accessible-label: I18n.trl(I18n.lang, "player.tab.lyrics");
 
     property<length> head-h: 64px + Spacing.s8;
     property<length> tab-h: 36px;
+    property<length> measure-w: min(self.width, 720px);
+    property<float> type-scale: root.font-px / 16.0;
+    property<length> active-size: Type.title-large-emphasized.size * root.type-scale;
+    property<length> line-size: Type.title-medium.size * root.type-scale;
+    property<length> line-anchor-y: 0px;
+    property<duration> auto-duration: root.scroll-locked ? 0ms : 300ms;
+
+    property<int> offset-tenths: root.offset-ms / 100;
+    property<int> offset-abs: root.offset-ms < 0 ? -root.offset-ms / 100 : root.offset-ms / 100;
+    property<string> offset-text: (root.offset-tenths > 0 ? "+" : root.offset-tenths < 0 ? "-" : "") + (root.offset-abs / 10) + "." + (root.offset-abs - (root.offset-abs / 10) * 10) + " s";
+
+    public function reveal-line(y: length) {
+        root.line-anchor-y = y;
+        if (root.scroll-locked) {
+            return;
+        }
+        lyrics-list.content-y = lyrics-list.height / 3 - y;
+    }
+
+    public function seek-line(ms: int) {
+        scroll-idle.stop();
+        if (root.scroll-locked) {
+            root.scroll-locked = false;
+            root.scroll-locked-changed(false);
+        }
+        root.reveal-line(root.line-anchor-y);
+        root.line-seek(ms);
+    }
+
+    public function pause-auto-scroll() {
+        if (!root.scroll-locked) {
+            root.scroll-locked = true;
+            root.scroll-locked-changed(true);
+        }
+        scroll-idle.stop();
+        scroll-idle.start();
+    }
+
+    public function resume-auto-scroll() {
+        scroll-idle.stop();
+        if (!root.scroll-locked) {
+            return;
+        }
+        root.scroll-locked = false;
+        root.scroll-locked-changed(false);
+        root.reveal-line(root.line-anchor-y);
+    }
+
+    scroll-idle := Timer {
+        interval: 4s;
+        running: false;
+        triggered => { root.resume-auto-scroll(); }
+    }
 
     lyrics-head := Rectangle {
         x: 0px;
@@ -38,6 +96,49 @@ export component LyricsView inherits Rectangle {
             accessible-label: I18n.trl(I18n.lang, "player.shareLyrics");
             clicked => { root.share-requested(); }
         }
+
+        offset-row := HorizontalLayout {
+            x: parent.width - 40px - Spacing.s8 - 220px;
+            y: Spacing.s24 + (root.tab-h - 40px) / 2;
+            width: 220px;
+            height: 40px;
+            spacing: Spacing.s8;
+            alignment: end;
+
+            offset-minus := M3Button {
+                width: 72px;
+                text: "-0.1s";
+                accessible-text: I18n.trl(I18n.lang, "player.lyricsOffsetMinus");
+                fill: transparent;
+                content: root.palette.on-surface-variant;
+                line: root.palette.outline-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.offset-requested(-100); }
+            }
+
+            offset-value := Text {
+                width: 60px;
+                text: root.offset-text;
+                color: root.palette.on-surface-variant;
+                font-size: Type.label-large.size;
+                font-family: Type.label-large.family;
+                font-weight: Type.label-large.weight;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                accessible-label: I18n.trl(I18n.lang, "player.lyricsOffset") + " " + root.offset-text;
+            }
+
+            offset-plus := M3Button {
+                width: 72px;
+                text: "+0.1s";
+                accessible-text: I18n.trl(I18n.lang, "player.lyricsOffsetPlus");
+                fill: transparent;
+                content: root.palette.on-surface-variant;
+                line: root.palette.outline-variant;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.offset-requested(100); }
+            }
+        }
     }
 
     lyrics-empty := Text {
@@ -48,6 +149,7 @@ export component LyricsView inherits Rectangle {
         text: I18n.trl(I18n.lang, "player.noLyrics");
         color: root.palette.on-surface-variant;
         font-size: Type.title-medium.size;
+        font-family: Font.body;
         horizontal-alignment: center;
         vertical-alignment: center;
         visible: root.rows.length == 0;
@@ -62,48 +164,129 @@ export component LyricsView inherits Rectangle {
         content-height: lyrics-rows.preferred-height;
         visible: root.rows.length > 0;
 
+        animate content-y { duration: root.auto-duration; easing: ease-in-out; }
+
+        flicked => {
+            root.pause-auto-scroll();
+        }
+
         lyrics-rows := VerticalLayout {
             x: 0px;
             y: 0px;
-            width: 100%;
-            spacing: (root.spacing-mult * 8) * 1px;
+            width: root.measure-w;
+            padding-top: lyrics-list.height / 3;
+            padding-bottom: lyrics-list.height * 2 / 3;
+            spacing: root.spacing-mult * Spacing.s8;
 
             for idx in root.rows.length: line-col := Rectangle {
                 width: 100%;
                 height: line-content.preferred-height;
 
+                property<bool> line-active: idx == root.active-line;
+
+                changed line-active => {
+                    if (self.line-active) {
+                        root.reveal-line(self.y);
+                    }
+                }
+
+                changed y => {
+                    if (self.line-active) {
+                        root.reveal-line(self.y);
+                    }
+                }
+
                 line-content := VerticalLayout {
                     x: 0px;
                     y: 0px;
-                    width: 100%;
-                    spacing: 2px;
+                    width: root.measure-w;
+                    spacing: Spacing.s4;
 
-                    line-main := Text {
+                    if (root.rows[idx].words.length == 0) : line-main := Text {
                         text: root.rows[idx].text;
                         color: idx == root.active-line ? root.palette.primary : root.palette.on-surface-variant;
-                        font-size: root.font-px * 1px;
-                        font-weight: idx == root.active-line ? Type.title-medium.weight : Type.body-large.weight;
+                        font-size: idx == root.active-line ? root.active-size : root.line-size;
+                        font-family: idx == root.active-line ? Font.title : Font.body;
+                        font-weight: idx == root.active-line ? Type.title-large-emphasized.weight : Type.title-medium.weight;
                         wrap: word-wrap;
+                        horizontal-alignment: left;
                         width: 100%;
+                        animate color { duration: 250ms; easing: ease-out; }
+                    }
+
+                    if (root.rows[idx].words.length > 0) : line-words := HorizontalLayout {
+                        width: 100%;
+                        spacing: 0px;
+
+                        for w in root.rows[idx].words.length: word-cell := Rectangle {
+                            preferred-width: word-base.preferred-width;
+                            min-width: word-base.preferred-width;
+                            max-width: word-base.preferred-width;
+                            preferred-height: word-base.preferred-height;
+
+                            property<bool> word-past: idx == root.active-line && (w < root.active-word || (w == root.active-word && root.word-progress >= 0.999));
+
+                            word-base := Text {
+                                x: 0px;
+                                y: 0px;
+                                width: word-cell.preferred-width;
+                                text: root.rows[idx].words[w].text;
+                                color: word-cell.word-past ? root.palette.primary : root.palette.on-surface-variant;
+                                font-size: idx == root.active-line ? root.active-size : root.line-size;
+                                font-family: idx == root.active-line ? Font.title : Font.body;
+                                font-weight: idx == root.active-line ? Type.title-large-emphasized.weight : Type.title-medium.weight;
+                                wrap: no-wrap;
+                                horizontal-alignment: left;
+                                animate color { duration: 150ms; easing: ease-out; }
+                            }
+
+                            word-fill-clip := Rectangle {
+                                x: 0px;
+                                y: 0px;
+                                width: word-cell.width * clamp(root.word-progress, 0, 1);
+                                height: word-cell.height;
+                                clip: true;
+                                visible: idx == root.active-line && w == root.active-word && root.word-progress > 0.001 && root.word-progress < 0.999;
+
+                                word-fill := Text {
+                                    x: 0px;
+                                    y: 0px;
+                                    width: word-cell.width;
+                                    height: word-cell.height;
+                                    text: root.rows[idx].words[w].text;
+                                    color: root.palette.primary;
+                                    font-size: root.active-size;
+                                    font-family: Font.title;
+                                    font-weight: Type.title-large-emphasized.weight;
+                                    wrap: no-wrap;
+                                    horizontal-alignment: left;
+                                    accessible-role: AccessibleRole.none;
+                                }
+                            }
+                        }
                     }
 
                     line-trans := Text {
                         text: root.rows[idx].translation;
                         color: root.palette.on-surface-variant;
-                        font-size: root.font-px * 0.85px;
+                        font-size: Type.body-medium.size * root.type-scale;
+                        font-family: Font.body;
+                        font-weight: Type.body-medium.weight;
                         wrap: word-wrap;
+                        horizontal-alignment: left;
                         width: 100%;
                         height: root.rows[idx].translation == "" ? 0px : self.preferred-height;
                         visible: root.rows[idx].translation != "";
                     }
 
-                    line-sweep := Rectangle {
-                        width: min(parent.width, 420px);
-                        height: idx == root.active-line ? 3px : 0px;
+                    if (idx == root.active-line && root.rows[idx].words.length == 0) : line-sweep := Rectangle {
+                        width: parent.width;
+                        height: 3px;
                         border-radius: 2px;
                         background: root.palette.surface-container-highest;
 
                         line-fill := Rectangle {
+                            x: 0px;
                             width: parent.width * clamp(root.word-progress, 0, 1);
                             height: 100%;
                             border-radius: 2px;
@@ -117,9 +300,23 @@ export component LyricsView inherits Rectangle {
                     height: 100%;
                     enabled: root.click-seek;
                     mouse-cursor: root.click-seek ? pointer : default;
-                    clicked => { root.line-seek(root.rows[idx].start); }
+                    clicked => {
+                        root.seek-line(root.rows[idx].start);
+                    }
                 }
             }
         }
+    }
+
+    lyrics-back := M3Button {
+        x: (root.measure-w - self.width) / 2;
+        y: parent.height - self.height - Spacing.s24;
+        width: 220px;
+        text: I18n.trl(I18n.lang, "player.lyricsBackToLine");
+        fill: root.palette.secondary-container;
+        content: root.palette.on-secondary-container;
+        state-on-surface: root.palette.on-surface;
+        visible: root.scroll-locked && root.rows.length > 0;
+        clicked => { root.resume-auto-scroll(); }
     }
 }

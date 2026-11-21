@@ -31,6 +31,18 @@ Pure 60fps-consumer helpers (`karaoke.rs`):
 - `progress_within`: 0.0–1.0 sweep of the active word (`end_ms`, else next word start, else done); wordless lines use `end_ms` when present, else a 0.0/1.0 step at `start_ms`.
 - A line is active from exactly its start until the next line starts, even past the last word end.
 
+## Playback clock
+
+`LyricsClock` (`crates/madrigal-ui/src/lyrics_clock.rs`) is the position source the full player reads: `anchor` jumps to a position, `set_playing` freezes or resumes from the current one, `position_at` returns anchor plus elapsed while playing (frozen while paused, clamped at zero) and `lyric_position_at` adds the offset. `offset_ms` clamps to ±5 s and only shifts the lyric time, never the displayed position. `pump` advances the anchor by the timer interval so a mocked clock is deterministic.
+
+`wire_lyrics_clock` owns a 16 ms `slint::Timer` that runs only while the full player is open on a playing track; each tick writes `position-ms`, `active-line` (`karaoke::line_at`), `active-word` (`karaoke::word_at`) and `word-progress` (`karaoke::progress_within`), and bumps `lyrics-clock-ticks`. Seeks re-anchor the clock. Real mpv positions will anchor this same clock.
+
+## Full player lyrics
+
+- Auto-scroll keeps the active line at one third of the visible height with a 300 ms ease. A manual flick pauses it for 4 s and shows "Back to current line"; the button, a lyric seek or the 4 s timeout resume it.
+- Word-timed lines render one `Text` per word: past words are `primary`, future ones `on-surface-variant`, and the active word fills left to right with `word-progress` through a clipped overlay. Lines without word timing highlight as a whole and keep the sweep bar.
+- The lyrics header carries the sync control: −0.1 s / +0.1 s steps with the current offset, reported through `lyrics-offset-changed`.
+
 ## Embedded
 
 - `embedded::extract` reads tags via `lofty`: USLT/Vorbis `LYRICS`/`MP4 ©lyr` map to `ItemKey::Lyrics` (`lyrics_from_tag`); SYLT is parsed from raw ID3v2 frames because lofty keeps SYLT as opaque binary.

@@ -22,6 +22,13 @@ bar, cards, rows, detail and full player expose empty `cover` image slots until 
 
 Icons: Lucide (ISC) in ui/icons, tinted via Image.colorize.
 
+Fonts: Figtree (headings, section titles, tabs, buttons, nav labels) and Inter
+(body, track lists, subtitles, lyrics) are embedded from `ui/fonts/Figtree.ttf`
+and `ui/fonts/Inter-Variable.ttf`, both under SIL OFL 1.1 (`OFL-Figtree.txt`,
+`OFL-Inter.txt`). `tokens.slint` imports them and exposes `Font.title` /
+`Font.body`; every `Type` style carries its family, so pages never name a font.
+Lyrics follow the same split: the active line is Figtree, the rest Inter.
+
 Motion: hover/press state layers per token durations, press shape-morph
 (medium 12 to small 8), card hover lift via shadow. No scale transform: Slint
 has no GPU scale primitive, so press feedback is morph + state layer.
@@ -86,9 +93,13 @@ theme/gradient/blur/glow come from settings `PlayerBackground`
 (`apply_background_style`), big artwork, transport + seek slider, repeat /
 shuffle toggles, volume slider, lyrics + info buttons. `LyricsView` renders
 `madrigal-lyrics::Lyrics` through `karaoke::{line_at, word_at,
-progress_within}`: active-line highlight, per-word sweep, click-to-seek,
-`markers.translation` secondary line, font/spacing from
+progress_within}`: active-line highlight, per-word sweep when word timings
+exist, click-to-seek, `markers.translation` secondary line, font/spacing from
 `madrigal-settings::Lyrics`, share-as-image via `share_image::render_png`.
+Position comes from `LyricsClock` driven by a 16 ms timer (frozen when paused),
+and the active line is auto-scrolled to one third of the column (300 ms ease);
+a manual flick pauses that for 4 s behind a tonal "Back to current line"
+button. The header holds the −0.1 s / +0.1 s sync buttons and the offset value.
 `QueueDrawer` tabs All/Searched/Continue/Autoplaying from
 `queue_tabs_from_queue`, drag-reorder commits on `pointer-event(up)`,
 edit-lock toggle, per-row remove, current-track mark. Dialogs:
@@ -177,6 +188,11 @@ like at the end). Two columns below it: left 40% of the window (min 520px) with
 the up-to-420px artwork centered, title/artist, seek row with the times at the
 ends, transport (56px play), volume and the tool row; the right column takes
 the rest. Tabs sit 24px under the header at the column start, the lyrics view
-fills the column below them (line spacing from settings, active line in
-`primary`, other lines `on-surface-variant`, "Sin letra" when empty) and the
-share button shares the tabs band at the end.
+fills the column below them and stops at the 96px bar ("Sin letra" when empty),
+and the share button shares the tabs band at the end, flush with the 16px
+margin. Lyrics use a 720px measure from the column start: active line
+`Type.title-large-emphasized` in `primary`, other lines `Type.title-medium` in
+`on-surface-variant`, both scaled by the Lyrics font setting, line gap from the
+spacing setting (12px at the 1.5 default). The active line sits at y = one third
+of the lyrics viewport; the sync control and the share button share the tabs
+band at the end.

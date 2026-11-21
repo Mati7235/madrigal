@@ -1,4 +1,4 @@
-import { Palette, Light, Dark, PureBlack, Type } from "../tokens.slint";
+import { Palette, Light, Dark, PureBlack, Font, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
 import { M3SearchBar } from "../components/fields.slint";
 import { LibSongRow, LibPlaylistRow, LibCardRow, HistoryRow, StatRow, DownloadRow } from "../pages/library/models.slint";
@@ -15,6 +15,7 @@ import { SettingsRow, DiagLine } from "../pages/settings/rows.slint";
 
 export component MainShell inherits Window {
     in-out property<Palette> palette: Light.palette;
+    default-font-family: Font.body;
     in-out property<int> theme-kind: 0;
     in-out property<int> page: 0;
     in-out property<int> overlay: 0;
@@ -67,9 +68,12 @@ export component MainShell inherits Window {
     in-out property<int> player-panel: 0;
     in-out property<[LyricLineRow]> lyric-rows;
     in-out property<int> active-line: -1;
+    in-out property<int> active-word: -1;
     in-out property<float> word-progress: 0;
     in-out property<float> lyrics-font-px: 16;
     in-out property<float> lyrics-spacing: 1.5;
+    in-out property<int> lyrics-offset-ms: 0;
+    in-out property<bool> lyrics-scroll-locked: false;
     in-out property<int> queue-tab: 0;
     in-out property<bool> queue-locked: false;
     in-out property<[QueueRow]> queue-all;
@@ -101,6 +105,8 @@ export component MainShell inherits Window {
     in-out property<int> lyrics-seek-count: 0;
     in-out property<int> lyrics-seek-ms: 0;
     in-out property<int> lyrics-share-count: 0;
+    in-out property<int> lyrics-offset-count: 0;
+    in-out property<int> lyrics-clock-ticks: 0;
     in-out property<int> queue-play-count: 0;
     in-out property<int> queue-play-last: -1;
     in-out property<int> queue-remove-count: 0;
@@ -192,6 +198,7 @@ export component MainShell inherits Window {
     callback prompt-accepted(string);
     callback prompt-dismissed();
     callback handle-key(string) -> bool;
+    callback player-state-changed();
     callback play-pause-toggled();
     callback seek-requested(int);
     callback next-requested();
@@ -307,6 +314,7 @@ export component MainShell inherits Window {
     callback seek-to-requested(int);
     callback lyrics-seek-requested(int);
     callback lyrics-share-requested();
+    callback lyrics-offset-changed(int);
     callback queue-play-requested(int);
     callback queue-remove-requested(int);
     callback queue-move-requested(int, int);
@@ -363,6 +371,10 @@ export component MainShell inherits Window {
         }
         root.theme-kind = k;
     }
+
+    changed paused => { root.player-state-changed(); }
+    changed full-player-open => { root.player-state-changed(); }
+    changed has-track => { root.player-state-changed(); }
 
     navigate(p) => {
         root.page = p;
@@ -829,9 +841,11 @@ export component MainShell inherits Window {
         panel: root.player-panel;
         lyric-rows: root.lyric-rows;
         active-line: root.active-line;
+        active-word: root.active-word;
         word-progress: root.word-progress;
         lyrics-font-px: root.lyrics-font-px;
         lyrics-spacing: root.lyrics-spacing;
+        lyrics-offset-ms: root.lyrics-offset-ms;
         close-clicked => { root.full-player-open = false; root.player-dialog = 0; root.full-player-closed(); }
         play-clicked => { root.play-toggle-count += 1; root.play-pause-toggled(); }
         prev-clicked => { root.prev-count += 1; root.prev-requested(); }
@@ -848,6 +862,8 @@ export component MainShell inherits Window {
         eq-clicked => { root.player-dialog = 3; root.player-dialog-requested(3); }
         lyric-seek(ms) => { root.lyrics-seek-requested(ms); }
         lyric-share => { root.lyrics-share-requested(); }
+        lyric-offset(ms) => { root.lyrics-offset-changed(ms); }
+        lyric-scroll-locked(locked) => { root.lyrics-scroll-locked = locked; }
         line-at(t) => { root.line-at(t) }
         line-progress(t) => { root.line-progress(t) }
     }

@@ -24,9 +24,11 @@ export component FullPlayer inherits Rectangle {
     in property<int> panel: 0;
     in property<[LyricLineRow]> lyric-rows;
     in property<int> active-line: -1;
+    in property<int> active-word: -1;
     in property<float> word-progress: 0;
     in property<float> lyrics-font-px: 16;
     in property<float> lyrics-spacing: 1.5;
+    in property<int> lyrics-offset-ms: 0;
 
     callback close-clicked();
     callback play-clicked();
@@ -44,6 +46,8 @@ export component FullPlayer inherits Rectangle {
     callback eq-clicked();
     callback lyric-seek(int);
     callback lyric-share();
+    callback lyric-offset(int);
+    callback lyric-scroll-locked(bool);
     callback line-at(int) -> int;
     callback line-progress(int) -> float;
 
@@ -60,14 +64,6 @@ export component FullPlayer inherits Rectangle {
     property<length> art-size: min(420px, root.left-w - Spacing.s48);
     property<length> right-x: root.left-w + Spacing.s32;
     property<length> band-h: 64px;
-
-    tick := Timer {
-        interval: 16ms;
-        running: root.visible && !root.paused && root.duration-ms > 0;
-        triggered() => {
-            root.seek-to(root.position-ms + 16 > root.duration-ms ? root.duration-ms : root.position-ms + 16);
-        }
-    }
 
     bg-base := Rectangle {
         width: 100%;
@@ -132,6 +128,7 @@ export component FullPlayer inherits Rectangle {
                     text: I18n.trl(I18n.lang, "player.fullscreen");
                     color: root.palette.on-surface;
                     font-size: Type.title-large.size;
+                    font-family: Type.title-large.family;
                     font-weight: Type.title-large-emphasized.weight;
                     vertical-alignment: center;
                     width: 100%;
@@ -142,6 +139,7 @@ export component FullPlayer inherits Rectangle {
                     text: root.has-track ? root.album : I18n.trl(I18n.lang, "player.nowPlaying");
                     color: root.palette.on-surface-variant;
                     font-size: Type.body-medium.size;
+                    font-family: Type.body-medium.family;
                     vertical-alignment: center;
                     width: 100%;
                     overflow: elide;
@@ -220,6 +218,7 @@ export component FullPlayer inherits Rectangle {
                         text: root.has-track ? root.title : I18n.trl(I18n.lang, "player.noTrack");
                         color: root.palette.on-surface;
                         font-size: Type.headline-small.size;
+                        font-family: Type.headline-small.family;
                         font-weight: Type.headline-small-emphasized.weight;
                         horizontal-alignment: center;
                         vertical-alignment: center;
@@ -231,6 +230,7 @@ export component FullPlayer inherits Rectangle {
                         text: root.has-track ? root.artist : "";
                         color: root.palette.on-surface-variant;
                         font-size: Type.title-medium.size;
+                        font-family: Type.title-medium.family;
                         horizontal-alignment: center;
                         vertical-alignment: center;
                         overflow: elide;
@@ -250,6 +250,7 @@ export component FullPlayer inherits Rectangle {
                         text: root.pos-text;
                         color: root.palette.on-surface-variant;
                         font-size: Type.body-medium.size;
+                        font-family: Type.body-medium.family;
                         vertical-alignment: center;
                     }
 
@@ -299,6 +300,7 @@ export component FullPlayer inherits Rectangle {
                         text: root.dur-text;
                         color: root.palette.on-surface-variant;
                         font-size: Type.body-medium.size;
+                        font-family: Type.body-medium.family;
                         vertical-alignment: center;
                     }
                 }
@@ -511,6 +513,7 @@ export component FullPlayer inherits Rectangle {
                             text: root.has-track ? root.title : I18n.trl(I18n.lang, "player.noTrack");
                             color: root.palette.on-surface;
                             font-size: Type.headline-large.size;
+                            font-family: Type.headline-large.family;
                             font-weight: Type.headline-large-emphasized.weight;
                             wrap: word-wrap;
                             width: 100%;
@@ -520,6 +523,7 @@ export component FullPlayer inherits Rectangle {
                             text: root.has-track ? root.artist : "";
                             color: root.palette.on-surface-variant;
                             font-size: Type.title-large.size;
+                            font-family: Type.title-large.family;
                             wrap: word-wrap;
                             width: 100%;
                         }
@@ -528,6 +532,7 @@ export component FullPlayer inherits Rectangle {
                             text: root.has-track ? root.album : "";
                             color: root.palette.on-surface-variant;
                             font-size: Type.body-large.size;
+                            font-family: Type.body-large.family;
                             wrap: word-wrap;
                             width: 100%;
                         }
@@ -543,11 +548,15 @@ export component FullPlayer inherits Rectangle {
                     palette: root.palette;
                     rows: root.lyric-rows;
                     active-line: root.active-line;
+                    active-word: root.active-word;
                     word-progress: root.word-progress;
                     font-px: root.lyrics-font-px;
                     spacing-mult: root.lyrics-spacing;
+                    offset-ms: root.lyrics-offset-ms;
                     line-seek(ms) => { root.lyric-seek(ms); }
                     share-requested => { root.lyric-share(); }
+                    offset-requested(ms) => { root.lyric-offset(ms); }
+                    scroll-locked-changed(locked) => { root.lyric-scroll-locked(locked); }
                 }
 
                 full-panel-tabs := HorizontalLayout {
@@ -569,6 +578,7 @@ export component FullPlayer inherits Rectangle {
                             text: I18n.trl(I18n.lang, "player.nowPlaying");
                             color: root.panel == 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                             font-size: Type.label-large.size;
+                            font-family: Type.label-large.family;
                             font-weight: Type.label-large.weight;
                             horizontal-alignment: center;
                             vertical-alignment: center;
@@ -596,6 +606,7 @@ export component FullPlayer inherits Rectangle {
                             text: I18n.trl(I18n.lang, "player.tab.lyrics");
                             color: root.panel == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                             font-size: Type.label-large.size;
+                            font-family: Type.label-large.family;
                             font-weight: Type.label-large.weight;
                             horizontal-alignment: center;
                             vertical-alignment: center;

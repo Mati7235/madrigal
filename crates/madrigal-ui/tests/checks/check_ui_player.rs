@@ -11,14 +11,16 @@ use std::time::Duration;
 fn fixture_lyrics() -> madrigal_lyrics::Lyrics {
     use madrigal_lyrics::{LineMarkers, LyricLine, Lyrics, WordTiming};
     let words = |pairs: &[(i64, i64, &str)]| {
-        pairs
-            .iter()
-            .map(|(start, end, text)| WordTiming {
-                start_ms: *start,
-                end_ms: Some(*end),
-                text: (*text).to_owned(),
-            })
-            .collect::<Vec<_>>()
+        Some(
+            pairs
+                .iter()
+                .map(|(start, end, text)| WordTiming {
+                    start_ms: *start,
+                    end_ms: Some(*end),
+                    text: (*text).to_owned(),
+                })
+                .collect::<Vec<_>>(),
+        )
     };
     Lyrics {
         lines: vec![
@@ -26,14 +28,14 @@ fn fixture_lyrics() -> madrigal_lyrics::Lyrics {
                 start_ms: 0,
                 end_ms: Some(1500),
                 text: "Hola".to_owned(),
-                words: Some(words(&[(0, 500, "Ho"), (500, 1000, "la")])),
+                words: words(&[(0, 500, "Ho"), (500, 1000, "la")]),
                 markers: LineMarkers::default(),
             },
             LyricLine {
                 start_ms: 2000,
                 end_ms: Some(3500),
                 text: "Mundo".to_owned(),
-                words: Some(words(&[(2000, 2500, "Mun"), (2500, 3000, "do")])),
+                words: words(&[(2000, 2500, "Mun"), (2500, 3000, "do")]),
                 markers: LineMarkers {
                     translation: Some("World".to_owned()),
                     ..Default::default()
@@ -49,6 +51,37 @@ fn fixture_lyrics() -> madrigal_lyrics::Lyrics {
         ],
         synced: true,
     }
+}
+
+fn session_lyrics() -> madrigal_lyrics::Lyrics {
+    use madrigal_lyrics::{LineMarkers, LyricLine, WordTiming};
+    let mut lyrics = fixture_lyrics();
+    lyrics.lines[0].words = None;
+    lyrics.lines[2].start_ms = 6_000;
+    lyrics.lines[2].end_ms = Some(8_000);
+    lyrics.lines.push(LyricLine {
+        start_ms: 12_000,
+        end_ms: Some(14_000),
+        text: "Vuelta".to_owned(),
+        words: Some(vec![WordTiming {
+            start_ms: 12_000,
+            end_ms: Some(13_000),
+            text: "Vuelta".to_owned(),
+        }]),
+        markers: LineMarkers::default(),
+    });
+    lyrics
+}
+
+fn in_player_surface(id: &str) -> bool {
+    id.starts_with("FullPlayer::") || id.starts_with("LyricsView::")
+}
+
+fn word_lyrics_fixture() -> madrigal_lyrics::Lyrics {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../madrigal-lyrics/tests/fixtures/enhanced.lrc");
+    let text = std::fs::read_to_string(path).expect("enhanced lrc fixture");
+    madrigal_lyrics::lrc_enhanced::parse(&text).expect("parse enhanced lrc")
 }
 
 fn fixture_queue() -> madrigal_player::queue::Queue {
@@ -92,6 +125,8 @@ fn ui_player() {
         ("player.tempoPitch", "Tempo y tono", "Tempo and pitch"),
         ("player.playbackError", "Error de reproducción", "Playback error"),
         ("player.shareLyrics", "Compartir letra", "Share lyrics"),
+        ("player.lyricsBackToLine", "Volver a la línea actual", "Back to current line"),
+        ("player.lyricsOffsetPlus", "Desfase de la letra +0,1 s", "Lyrics offset +0.1 s"),
         ("queue.tab.all", "Todas", "All"),
         ("queue.tab.searched", "Filtradas", "Searched"),
         ("queue.tab.continue", "Siguen", "Continue"),
@@ -219,36 +254,97 @@ fn ui_player() {
 
     kit::click_by_id(&shell, "FullPlayer::full-lyrics-btn").unwrap();
     assert_eq!(shell.get_player_panel(), 1);
-    shell.set_position_ms(0);
+
+    let session = session_lyrics();
+    set_lyrics(&shell, &session);
+    assert_eq!(shell.get_lyric_rows().row_count(), 4);
+    assert_eq!(shell.get_lyric_rows().row_data(1).unwrap().words.row_count(), 2);
+
+    shell.invoke_seek_to_requested(0);
+    assert_eq!(shell.get_position_ms(), 0);
+    assert_eq!(shell.get_active_line(), 0);
+    let ticks_before = shell.get_lyrics_clock_ticks();
     shell.set_paused(false);
-    let mut saw_mid_word = false;
-    let mut saw_second_line = false;
-    for _ in 0..200 {
-        kit::mock_advance(Duration::from_millis(16));
-        if shell.get_active_line() == 0
-            && shell.get_word_progress() > 0.0
-            && shell.get_word_progress() < 1.0
-        {
-            saw_mid_word = true;
-        }
-        if shell.get_active_line() == 1 {
-            saw_second_line = true;
-            if shell.get_word_progress() > 0.0 && shell.get_word_progress() < 1.0 {
-                break;
-            }
-        }
-    }
-    assert!(saw_mid_word, "no word sweep on line 0");
-    assert!(saw_second_line, "never reached line 1");
+    kit::mock_advance(Duration::from_millis(2_100));
+    assert!(
+        shell.get_lyrics_clock_ticks() > ticks_before + 100,
+        "clock did not tick: {} -> {}",
+        ticks_before,
+        shell.get_lyrics_clock_ticks()
+    );
+    assert!((shell.get_position_ms() - 2_100).abs() <= 32, "position {}", shell.get_position_ms());
     assert_eq!(shell.get_active_line(), 1);
+    assert_eq!(shell.get_active_word(), 0);
+    kit::mock_advance(Duration::from_millis(100));
     assert!(shell.get_word_progress() > 0.0 && shell.get_word_progress() < 1.0);
-    shell.set_paused(true);
+    kit::mock_advance(Duration::from_millis(3_900));
+    assert_eq!(shell.get_active_line(), 2);
+    kit::mock_advance(Duration::from_millis(6_000));
+    assert_eq!(shell.get_active_line(), 3);
+
+    let paused_ticks = shell.get_lyrics_clock_ticks();
+    let paused_pos = shell.get_position_ms();
+    shell.invoke_play_pause_toggled();
+    assert!(shell.get_paused());
+    kit::mock_advance(Duration::from_millis(1_000));
+    assert_eq!(shell.get_lyrics_clock_ticks(), paused_ticks, "clock kept ticking while paused");
+    assert_eq!(shell.get_position_ms(), paused_pos, "position moved while paused");
+    assert_eq!(shell.get_active_line(), 3);
+
+    shell.invoke_seek_to_requested(1_600);
+    assert_eq!(shell.get_active_line(), 0);
+    for _ in 0..5 {
+        kit::click_by_id(&shell, "LyricsView::offset-plus").unwrap();
+    }
+    assert_eq!(shell.get_lyrics_offset_ms(), 500);
+    assert_eq!(shell.get_lyrics_offset_count(), 5);
+    assert_eq!(shell.get_active_line(), 1, "offset did not move the line boundary");
+    kit::click_by_id(&shell, "LyricsView::offset-minus").unwrap();
+    assert_eq!(shell.get_lyrics_offset_ms(), 400);
+    assert_eq!(shell.get_active_line(), 1);
+    shell.invoke_lyrics_offset_changed(-400);
+    assert_eq!(shell.get_lyrics_offset_ms(), 0);
+    assert_eq!(shell.get_active_line(), 0);
+
+    let list = kit::find_by_id(&shell, "LyricsView::lyrics-list").unwrap();
+    assert!(!shell.get_lyrics_scroll_locked());
+    list.scroll(0.0, -160.0);
+    kit::mock_advance(Duration::from_millis(400));
+    assert!(shell.get_lyrics_scroll_locked(), "manual scroll did not pause auto scroll");
+    let back: Vec<_> =
+        kit::ElementHandle::find_by_element_id(&shell, "LyricsView::lyrics-back").collect();
+    assert_eq!(back.len(), 1);
+    assert!(back[0].size().height > 0.0, "back button hidden");
+    kit::click(&back[0]);
+    assert!(!shell.get_lyrics_scroll_locked(), "back button kept auto scroll paused");
+    kit::mock_advance(Duration::from_millis(400));
+
+    list.scroll(0.0, -200.0);
+    kit::mock_advance(Duration::from_millis(400));
+    assert!(shell.get_lyrics_scroll_locked());
+    kit::mock_advance(Duration::from_millis(4_000));
+    assert!(!shell.get_lyrics_scroll_locked(), "auto scroll did not resume after 4s");
+    kit::mock_advance(Duration::from_millis(400));
 
     let lines: Vec<_> = kit::ElementHandle::find_by_element_id(&shell, "LyricsView::line-touch").collect();
-    assert_eq!(lines.len(), 3);
+    assert_eq!(lines.len(), 4);
     kit::click(&lines[1]);
     assert_eq!(shell.get_lyrics_seek_ms(), 2000);
     assert_eq!(shell.get_lyrics_seek_count(), 1);
+    assert!(!shell.get_lyrics_scroll_locked());
+    kit::mock_advance(Duration::from_millis(400));
+
+    let list_pos = list.absolute_position();
+    let list_size = list.size();
+    let active = shell.get_active_line() as usize;
+    let line_pos = lines[active].absolute_position();
+    let third = list_size.height / 3.0;
+    assert!(
+        (line_pos.y - list_pos.y - third).abs() < 12.0,
+        "active line at {} instead of {}",
+        line_pos.y - list_pos.y,
+        third
+    );
 
     let share_path = tmp.path().join("share.png");
     std::env::set_var("MADRIGAL_SHARE_OUT", &share_path);
@@ -406,11 +502,51 @@ fn ui_player() {
     shell.invoke_full_player_closed();
     dispatch_key(&shell, "f");
     shell.set_paused(true);
-    shell.set_position_ms(60_000);
+    set_lyrics(&shell, &session);
+    shell.invoke_seek_to_requested(0);
     shell.show().unwrap();
-    let shot = kit::snapshot_dir(tmp.path()).join("player.png");
-    kit::snapshot_to(shell.window(), &shot).unwrap();
-    let bytes = std::fs::read(&shot).unwrap();
-    assert_eq!(&bytes[0..8], &[137, 80, 78, 71, 13, 10, 26, 10]);
-    assert!(bytes.len() > 4096, "snapshot too small: {}", bytes.len());
+    kit::mock_advance(Duration::from_millis(400));
+
+    let snap_dir = kit::snapshot_dir(tmp.path());
+    let shot_0s = snap_dir.join("player-0s.png");
+    kit::snapshot_to(shell.window(), &shot_0s).unwrap();
+
+    shell.invoke_seek_to_requested(6_500);
+    kit::mock_advance(Duration::from_millis(400));
+    assert_eq!(shell.get_active_line(), 2);
+    let shot_mid = snap_dir.join("player-mid.png");
+    kit::snapshot_to(shell.window(), &shot_mid).unwrap();
+
+    let violations: Vec<_> = kit::lint_layout(&shell, (1920.0, 1080.0))
+        .into_iter()
+        .filter(|violation| match &violation.kind {
+            kit::ViolationKind::Overlap(other) => {
+                in_player_surface(&violation.id) && in_player_surface(other)
+            }
+            kit::ViolationKind::OutOfWindow => true,
+        })
+        .collect();
+    assert!(violations.is_empty(), "player layout violations: {violations:#?}");
+
+    let worded = word_lyrics_fixture();
+    set_lyrics(&shell, &worded);
+    assert_eq!(shell.get_lyric_rows().row_count(), 1);
+    assert_eq!(shell.get_lyric_rows().row_data(0).unwrap().words.row_count(), 3);
+    shell.invoke_seek_to_requested(10_900);
+    kit::mock_advance(Duration::from_millis(400));
+    assert_eq!(shell.get_active_line(), 0);
+    assert_eq!(shell.get_active_word(), 1);
+    assert!(
+        shell.get_word_progress() > 0.1 && shell.get_word_progress() < 0.9,
+        "word progress {}",
+        shell.get_word_progress()
+    );
+    let shot_words = snap_dir.join("player-words.png");
+    kit::snapshot_to(shell.window(), &shot_words).unwrap();
+
+    for shot in [&shot_0s, &shot_mid, &shot_words] {
+        let bytes = std::fs::read(shot).unwrap();
+        assert_eq!(&bytes[0..8], &[137, 80, 78, 71, 13, 10, 26, 10]);
+        assert!(bytes.len() > 4096, "snapshot too small: {}", bytes.len());
+    }
 }

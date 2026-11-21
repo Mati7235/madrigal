@@ -1,11 +1,26 @@
 use slint::{ComponentHandle, Model, ModelRc, VecModel};
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
-use crate::{LyricLineRow, MainShell, QueueRow};
+use crate::lyrics_clock::{LyricsClock, MAX_OFFSET_MS};
+use crate::{LyricLineRow, LyricWordRow, MainShell, QueueRow};
 
 static LYRICS_CACHE: Mutex<Option<madrigal_lyrics::Lyrics>> = Mutex::new(None);
 static DRAG: Mutex<DragState> = Mutex::new(DragState { from: -1, press_y: 0.0 });
+
+const CLOCK_TICK_MS: u64 = 16;
+
+struct ClockWiring {
+    clock: Rc<RefCell<LyricsClock>>,
+    timer: Rc<slint::Timer>,
+    running: Rc<Cell<bool>>,
+}
+
+thread_local! {
+    static CLOCK: RefCell<Option<ClockWiring>> = const { RefCell::new(None) };
+}
 
 struct DragState {
     from: i32,
@@ -142,6 +157,110 @@ pub fn apply_playback_state(shell: &MainShell, state: &PlaybackUiState) {
     shell.set_lyrics_font_px(state.lyrics_font_px);
     shell.set_lyrics_spacing(state.lyrics_spacing);
     set_queue_models(shell, &state.queue);
+    anchor_clock(state.position_ms as i64);
+    set_clock_playing(!state.paused);
+    sync_clock(shell);
+}
+
+fn anchor_clock(position_ms: i64) {
+    CLOCK.with(|slot| {
+        if let Some(wiring) = slot.borrow().as_ref() {
+            wiring.clock.borrow_mut().anchor(position_ms, Instant::now());
+        }
+    });
+}
+
+fn set_clock_playing(playing: bool) {
+    CLOCK.with(|slot| {
+        if let Some(wiring) = slot.borrow().as_ref() {
+            wiring.clock.borrow_mut().set_playing(playing, Instant::now());
+        }
+    });
+}
+
+fn set_clock_offset(ms: i64) {
+    CLOCK.with(|slot| {
+        if let Some(wiring) = slot.borrow().as_ref() {
+            wiring.clock.borrow_mut().set_offset(ms);
+        }
+    });
+}
+
+fn clock_should_run(shell: &MainShell) -> bool {
+    shell.get_full_player_open() && shell.get_has_track() && !shell.get_paused()
+}
+
+fn start_clock(shell: &MainShell, wiring: &ClockWiring) {
+    if wiring.running.get() {
+        return;
+    }
+    wiring.running.set(true);
+    let weak = shell.as_weak();
+    let clock = wiring.clock.clone();
+    let running = wiring.running.clone();
+    let timer = wiring.timer.clone();
+    wiring.timer.start(
+        slint::TimerMode::Repeated,
+        Duration::from_millis(CLOCK_TICK_MS),
+        move || {
+            let Some(shell) = weak.upgrade() else {
+                running.set(false);
+                timer.stop();
+                return;
+            };
+            if !clock_should_run(&shell) {
+                running.set(false);
+                timer.stop();
+                return;
+            }
+            clock_tick(&shell, &clock);
+        },
+    );
+}
+
+fn sync_clock(shell: &MainShell) {
+    CLOCK.with(|slot| {
+        let slot = slot.borrow();
+        let Some(wiring) = slot.as_ref() else {
+            return;
+        };
+        if clock_should_run(shell) {
+            start_clock(shell, wiring);
+        } else {
+            wiring.running.set(false);
+            wiring.timer.stop();
+        }
+    });
+}
+
+fn clock_tick(shell: &MainShell, clock: &Rc<RefCell<LyricsClock>>) {
+    let now = Instant::now();
+    let position = {
+        let mut clock = clock.borrow_mut();
+        clock.pump(Duration::from_millis(CLOCK_TICK_MS), now);
+        clock.position_at(now)
+    };
+    let duration = shell.get_duration_ms().max(0) as i64;
+    let position = if duration > 0 { position.min(duration) } else { position };
+    shell.set_position_ms(position as i32);
+    refresh_karaoke(shell, position);
+    shell.set_lyrics_clock_ticks(shell.get_lyrics_clock_ticks() + 1);
+}
+
+pub fn wire_lyrics_clock(shell: &MainShell) {
+    let clock = Rc::new(RefCell::new(LyricsClock::new(Instant::now())));
+    let timer = Rc::new(slint::Timer::default());
+    let running = Rc::new(Cell::new(false));
+    let previous = CLOCK.with(|slot| {
+        let previous = slot.borrow_mut().take();
+        *slot.borrow_mut() = Some(ClockWiring { clock, timer, running });
+        previous
+    });
+    if let Some(previous) = previous {
+        previous.running.set(false);
+        previous.timer.stop();
+    }
+    sync_clock(shell);
 }
 
 pub fn set_queue_models(shell: &MainShell, tabs: &QueueTabData) {
@@ -154,6 +273,40 @@ pub fn set_queue_models(shell: &MainShell, tabs: &QueueTabData) {
 }
 
 pub fn set_lyrics(shell: &MainShell, lyrics: &madrigal_lyrics::Lyrics) {
+    let words_model = |line: &madrigal_lyrics::LyricLine| {
+        let rows: Vec<LyricWordRow> = match line.words.as_ref() {
+            Some(words) if !words.is_empty() => {
+                let mut cursor = 0usize;
+                words
+                    .iter()
+                    .map(|word| {
+                        let text = word.text.trim();
+                        let after = match line.text.get(cursor..).and_then(|rest| rest.find(text)) {
+                            Some(at) => cursor + at + text.len(),
+                            None => line.text.len(),
+                        };
+                        let space = line
+                            .text
+                            .get(after..)
+                            .and_then(|rest| rest.chars().next())
+                            .is_some_and(char::is_whitespace);
+                        cursor = after.min(line.text.len());
+                        let display = if space { format!("{text}\u{00A0}") } else { text.to_owned() };
+                        LyricWordRow {
+                            text: display.into(),
+                            start: word.start_ms.clamp(i32::MIN as i64, i32::MAX as i64) as i32,
+                            end: word
+                                .end_ms
+                                .unwrap_or(word.start_ms)
+                                .clamp(i32::MIN as i64, i32::MAX as i64) as i32,
+                        }
+                    })
+                    .collect()
+            }
+            _ => Vec::new(),
+        };
+        ModelRc::new(Rc::new(VecModel::from_slice(rows.as_slice())))
+    };
     let rows: Vec<LyricLineRow> = lyrics
         .lines
         .iter()
@@ -161,22 +314,33 @@ pub fn set_lyrics(shell: &MainShell, lyrics: &madrigal_lyrics::Lyrics) {
             text: line.text.clone().into(),
             translation: line.markers.translation.clone().unwrap_or_default().into(),
             start: line.start_ms.clamp(i32::MIN as i64, i32::MAX as i64) as i32,
+            words: words_model(line),
         })
         .collect();
     shell.set_lyric_rows(ModelRc::new(Rc::new(VecModel::from_slice(rows.as_slice()))));
     *LYRICS_CACHE.lock().unwrap() = Some(lyrics.clone());
-    refresh_karaoke(shell, shell.get_position_ms());
+    refresh_karaoke(shell, shell.get_position_ms() as i64);
 }
 
 pub fn clear_lyrics(shell: &MainShell) {
     shell.set_lyric_rows(ModelRc::new(Rc::new(VecModel::from(Vec::<LyricLineRow>::new()))));
     *LYRICS_CACHE.lock().unwrap() = None;
     shell.set_active_line(-1);
+    shell.set_active_word(-1);
     shell.set_word_progress(0.0);
 }
 
 pub fn active_lyric_at(lyrics: &madrigal_lyrics::Lyrics, t_ms: i32) -> i32 {
     madrigal_lyrics::karaoke::line_at(lyrics, t_ms as i64).map(|i| i as i32).unwrap_or(-1)
+}
+
+pub fn active_word_at(lyrics: &madrigal_lyrics::Lyrics, t_ms: i32) -> i32 {
+    let t = t_ms as i64;
+    madrigal_lyrics::karaoke::line_at(lyrics, t)
+        .and_then(|index| lyrics.lines.get(index))
+        .and_then(|line| madrigal_lyrics::karaoke::word_at(line, t))
+        .map(|index| index as i32)
+        .unwrap_or(-1)
 }
 
 pub fn lyric_progress_at(lyrics: &madrigal_lyrics::Lyrics, t_ms: i32) -> f32 {
@@ -187,16 +351,25 @@ pub fn lyric_progress_at(lyrics: &madrigal_lyrics::Lyrics, t_ms: i32) -> f32 {
     }
 }
 
-fn refresh_karaoke(shell: &MainShell, t_ms: i32) {
+fn clock_offset_ms() -> i64 {
+    CLOCK.with(|slot| {
+        slot.borrow().as_ref().map(|wiring| wiring.clock.borrow().offset_ms()).unwrap_or(0)
+    })
+}
+
+fn refresh_karaoke(shell: &MainShell, position_ms: i64) {
+    let t = (position_ms + clock_offset_ms()).clamp(0, i32::MAX as i64) as i32;
     let cache = LYRICS_CACHE.lock().unwrap();
     match cache.as_ref() {
         Some(lyrics) => {
-            shell.set_active_line(active_lyric_at(lyrics, t_ms));
-            shell.set_word_progress(lyric_progress_at(lyrics, t_ms));
+            shell.set_active_line(active_lyric_at(lyrics, t));
+            shell.set_word_progress(lyric_progress_at(lyrics, t));
+            shell.set_active_word(active_word_at(lyrics, t));
         }
         None => {
             shell.set_active_line(-1);
             shell.set_word_progress(0.0);
+            shell.set_active_word(-1);
         }
     }
 }
@@ -344,6 +517,15 @@ fn set_eq_band(shell: &MainShell, index: usize, value: f32) {
 }
 
 pub fn wire_player_callbacks(shell: &MainShell) {
+    wire_lyrics_clock(shell);
+    shell.on_player_state_changed({
+        let shell = shell.as_weak();
+        move || {
+            if let Some(shell) = shell.upgrade() {
+                sync_clock(&shell);
+            }
+        }
+    });
     shell.on_line_at(|t| {
         LYRICS_CACHE.lock().unwrap().as_ref().map(|lyrics| active_lyric_at(lyrics, t)).unwrap_or(-1)
     });
@@ -354,7 +536,10 @@ pub fn wire_player_callbacks(shell: &MainShell) {
         let shell = shell.as_weak();
         move || {
             if let Some(shell) = shell.upgrade() {
-                shell.set_paused(!shell.get_paused());
+                let paused = !shell.get_paused();
+                shell.set_paused(paused);
+                set_clock_playing(!paused);
+                sync_clock(&shell);
             }
         }
     });
@@ -389,6 +574,7 @@ pub fn wire_player_callbacks(shell: &MainShell) {
         move || {
             if let Some(shell) = shell.upgrade() {
                 shell.set_full_player_open(true);
+                sync_clock(&shell);
             }
         }
     });
@@ -399,6 +585,7 @@ pub fn wire_player_callbacks(shell: &MainShell) {
                 shell.set_full_player_open(false);
                 shell.set_player_dialog(0);
                 shell.set_player_dismiss_count(shell.get_player_dismiss_count() + 1);
+                sync_clock(&shell);
             }
         }
     });
@@ -433,8 +620,8 @@ pub fn wire_player_callbacks(shell: &MainShell) {
             if let Some(shell) = shell.upgrade() {
                 let clamped = ms.clamp(0, shell.get_duration_ms().max(0));
                 shell.set_position_ms(clamped);
-                shell.set_active_line(shell.invoke_line_at(clamped));
-                shell.set_word_progress(shell.invoke_line_progress(clamped));
+                anchor_clock(clamped as i64);
+                refresh_karaoke(&shell, clamped as i64);
                 shell.set_seek_count(shell.get_seek_count() + 1);
                 shell.set_seek_last_ms(clamped);
             }
@@ -446,10 +633,23 @@ pub fn wire_player_callbacks(shell: &MainShell) {
             if let Some(shell) = shell.upgrade() {
                 let clamped = ms.clamp(0, shell.get_duration_ms().max(0));
                 shell.set_position_ms(clamped);
-                shell.set_active_line(shell.invoke_line_at(clamped));
-                shell.set_word_progress(shell.invoke_line_progress(clamped));
+                anchor_clock(clamped as i64);
+                refresh_karaoke(&shell, clamped as i64);
                 shell.set_lyrics_seek_count(shell.get_lyrics_seek_count() + 1);
                 shell.set_lyrics_seek_ms(clamped);
+            }
+        }
+    });
+    shell.on_lyrics_offset_changed({
+        let shell = shell.as_weak();
+        move |delta| {
+            if let Some(shell) = shell.upgrade() {
+                let next = (shell.get_lyrics_offset_ms() as i64 + delta as i64)
+                    .clamp(-MAX_OFFSET_MS, MAX_OFFSET_MS);
+                set_clock_offset(next);
+                shell.set_lyrics_offset_ms(next as i32);
+                refresh_karaoke(&shell, shell.get_position_ms() as i64);
+                shell.set_lyrics_offset_count(shell.get_lyrics_offset_count() + 1);
             }
         }
     });
