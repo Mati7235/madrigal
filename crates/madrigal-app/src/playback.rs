@@ -437,6 +437,10 @@ impl Playback {
         self.error.take()
     }
 
+    pub fn engine_logs(&self) -> Vec<String> {
+        self.player.engine().logs()
+    }
+
     pub fn poll(&mut self, now: Instant) {
         if let Err(err) = self.player.poll_failed_load(now) {
             self.error = Some(err.to_string());

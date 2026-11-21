@@ -88,3 +88,7 @@ path = "tests/checks/check_app_streams.rs"
 [[test]]
 name = "check_app_account"
 path = "tests/checks/check_app_account.rs"
+
+[[test]]
+name = "check_app_playback_live"
+path = "tests/checks/check_app_playback_live.rs"

@@ -245,6 +245,10 @@ name = "lyrics_live"
 group = "live"
 
 [[check]]
+name = "app_playback_live"
+group = "live"
+
+[[check]]
 name = "ai_providers"
 group = "offline"
 

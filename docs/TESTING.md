@@ -105,6 +105,7 @@ Without `cargo` available the check is FAIL.
 | `catalog_live` | live | Real network: search/suggestions/home/charts(ZZ)/moods counts and non-emptiness |
 | `streams_live` | live | Real network: 2 fixture ids resolved via innertube:visionos and fully downloaded in 1 MiB ranges |
 | `lyrics_live` | live | Real network: LRCLIB-only fetch of Yesterday/Beatles/125s with >= 10 lines |
+| `app_playback_live` | live | Real network: live search for a real song, play through the booted app with `ao=auto`, position advances and keeps moving; engine logs dumped on failure |
 | `ai_providers` | offline | AI chat completions (OpenAI-compat/Gemini), validation, translation chain, mix/suggestion parsing, key secrecy |
 | `together_lan` | offline | LAN sessions: discovery, approve, gated add/control, kick/ban/transfer, LWW play-state, queue reorder, log order, link roundtrip, malformed frames |
 | `curation` | offline | AI-slop blocklist parse/modes/counters, offline gate, cache sweep caps, explicit/video filters |

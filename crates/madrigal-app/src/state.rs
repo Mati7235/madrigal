@@ -93,6 +93,12 @@ impl AppState {
         let mut playback = lock(&core);
         playback.enqueue_files(&paths)
     }
+
+    pub fn engine_logs(&self) -> Vec<String> {
+        let core = self.playback.borrow().core();
+        let playback = lock(&core);
+        playback.engine_logs()
+    }
 }
 
 fn wire_playback(shell: &MainShell, core: &Arc<Mutex<Playback>>) {
