@@ -246,12 +246,14 @@ pub fn wire_track_actions(shell: &MainShell, actions: TrackActions) {
                     shell.invoke_detail_requested(DetailRef {
                         kind: DetailKind::Artist,
                         id: request.artist.clone(),
+                        title: request.artist.clone(),
                     });
                 }
                 "album" if !request.album.is_empty() => {
                     shell.invoke_detail_requested(DetailRef {
                         kind: DetailKind::Album,
                         id: request.album.clone(),
+                        title: request.album.clone(),
                     });
                 }
                 _ => {}
