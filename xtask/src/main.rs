@@ -2,18 +2,32 @@ use std::process::ExitCode;
 
 use xtask::{discover, execute, find_registry, load_registry, parse_args, select, Runner};
 
-const USAGE: &str = "uso: cargo xtask checks [--group offline|native|live|visual] [--only <check>[,<check>...]] [--crate <crate>] [--max-fails N]";
+const USAGE: &str = "uso: cargo xtask checks [--group offline|native|live|visual] [--only <check>[,<check>...]] [--crate <crate>] [--max-fails N]
+       cargo xtask appimage";
 
 fn main() -> ExitCode {
     let mut argv: Vec<String> = std::env::args().skip(1).collect();
     if argv.first().is_some_and(|a| a == "xtask") {
         argv.remove(0);
     }
-    if argv.first().is_none_or(|a| a != "checks") {
-        eprintln!("{USAGE}");
-        return ExitCode::from(2);
+    match argv.first().map(String::as_str) {
+        Some("checks") => checks(&argv[1..]),
+        Some("appimage") if argv.len() == 1 => match xtask::appimage::run() {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(err) => {
+                eprintln!("{err}");
+                ExitCode::from(1)
+            }
+        },
+        _ => {
+            eprintln!("{USAGE}");
+            ExitCode::from(2)
+        }
     }
-    let opts = match parse_args(&argv[1..]) {
+}
+
+fn checks(argv: &[String]) -> ExitCode {
+    let opts = match parse_args(argv) {
         Ok(opts) => opts,
         Err(err) => {
             eprintln!("{err}\n{USAGE}");

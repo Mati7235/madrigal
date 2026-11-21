@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Madrigal
+GenericName=Music Player
+Comment=Play and manage your music library
+Exec=madrigal %F
+Icon=madrigal
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+Keywords=music;audio;player;
+MimeType=audio/mpeg;audio/flac;audio/x-flac;audio/mp4;audio/x-m4a;audio/ogg;audio/x-wav;
