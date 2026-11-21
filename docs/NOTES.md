@@ -544,7 +544,16 @@ background threads and bounds every call that can hang (`connect`,
 with `desktop::DBUS_TIMEOUT` (3 s), so boot never waits and shutdown waits at
 most one timeout before the feature stays off.
 
-## mpv end-of-file errors
+## mpv audio output and end-of-file errors
+
+`ao` is a driver list, not a mode: `auto` is not an entry in it. Setting
+`--ao=auto` explicitly makes mpv look for a driver named `auto`, log
+`Audio output auto not found!` and finish the file at once with
+`audio output initialization failed (reason 4)`, so the position never leaves
+0:00. Autoprobe only happens when the option stays unset; pair it with
+`audio-fallback-to-null=yes` so a machine without a reachable device plays
+(and advances) on the null AO. `EngineConfig::ao == "auto"` is translated to
+that pair in `madrigal-player`.
 
 `libmpv2` 6 reports an `EndFile` event that carries a negative `error` code as
 `Err(mpv_error)` from `wait_event`, not as `Event::EndFile`. The engine maps

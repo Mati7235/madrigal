@@ -180,3 +180,44 @@ fn engine_properties_pause_and_gapless_sequence() {
 
     engine.stop().expect("stop");
 }
+
+#[test]
+fn auto_ao_starts_playback() {
+    if !have_ffmpeg() || !have_libmpv() {
+        println!("SKIP player_engine auto ao (missing ffmpeg or libmpv)");
+        return;
+    }
+    let root = tempfile::tempdir().expect("tempdir");
+    let wav = make_wav(root.path(), "auto.wav", 440, 8);
+    let config = EngineConfig {
+        vo: "null".to_owned(),
+        ao: "auto".to_owned(),
+        gapless_audio: false,
+    };
+    let engine = Engine::open(&config).expect("open engine");
+    engine.set_volume(0.0).expect("mute");
+    engine
+        .load(wav.to_string_lossy().as_ref())
+        .expect("load wav");
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let mut loaded = false;
+    let mut position = 0.0;
+    while Instant::now() < deadline {
+        for event in engine.drain() {
+            if event == EngineEvent::FileLoaded {
+                loaded = true;
+            }
+        }
+        position = engine.position().unwrap_or(0.0);
+        if loaded && position > 0.2 {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    assert!(loaded, "no FileLoaded with ao=auto");
+    assert!(
+        position > 0.2,
+        "ao=auto did not start playback (position {position}):\n{}",
+        engine.logs().join("\n")
+    );
+}

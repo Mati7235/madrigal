@@ -74,9 +74,14 @@ pub struct Engine {
 
 impl Engine {
     pub fn open(config: &EngineConfig) -> Result<Self, Error> {
+        let auto_ao = config.ao.is_empty() || config.ao == "auto";
         let mpv = Mpv::with_initializer(|init| {
             init.set_option("vo", config.vo.as_str())?;
-            init.set_option("ao", config.ao.as_str())?;
+            if auto_ao {
+                init.set_option("audio-fallback-to-null", "yes")?;
+            } else {
+                init.set_option("ao", config.ao.as_str())?;
+            }
             init.set_option(
                 "gapless-audio",
                 if config.gapless_audio { "yes" } else { "no" },

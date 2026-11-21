@@ -83,7 +83,7 @@ Without `cargo` available the check is FAIL.
 | `playlist_exchange` | offline | Versioned JSON/CSV playlist exchange roundtrip, preview, atomic export |
 | `backup_schedule` | offline | Schedule next-run math, overwrite/keep naming, poll trigger |
 | `player_queue` | offline | Pure queue logic: repeat cycles, seeded shuffle distribution, move/remove, edit lock |
-| `player_engine` | native | libmpv playback over ffmpeg WAVs: props, pause, af log-verify, gapless EndFile(Eof)->StartFile; SKIP without ffmpeg/libmpv |
+| `player_engine` | native | libmpv playback over ffmpeg WAVs: props, pause, af log-verify, gapless EndFile(Eof)->StartFile, ao=auto autoprobe; SKIP without ffmpeg/libmpv |
 | `player_session` | native | Session save/restore with paused state and deferred stream resolution; SKIP without ffmpeg/libmpv |
 | `player_diag` | offline | Diag log rotation/filter/export, single-instance socket semantics, latency p50/p95 |
 | `player_stream_info` | native | StreamInfo snapshot on playing WAV (codec/abr/rate/buffer/speed/state), idle None; SKIP without ffmpeg/libmpv |
