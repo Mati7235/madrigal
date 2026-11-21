@@ -102,12 +102,13 @@ export component MainShell inherits Window {
     in-out property<string> eq-preset: "flat";
     in-out property<string> error-code: "";
     in-out property<string> error-message: "";
+    in-out property<bool> stream-has-data: false;
     in-out property<string> stream-codec: "";
     in-out property<string> stream-bitrate: "";
     in-out property<string> stream-rate: "";
-    in-out property<string> stream-loudness: "";
-    in-out property<string> stream-buffer: "";
-    in-out property<string> stream-state: "";
+    in-out property<string> stream-quality: "";
+    in-out property<int> stream-origin: 0;
+    in-out property<string> stream-resolution: "";
     in-out property<int> like-count: 0;
     in-out property<int> queue-open-count: 0;
     in-out property<int> lyrics-seek-count: 0;
@@ -1009,12 +1010,13 @@ export component MainShell inherits Window {
         height: 100%;
         visible: root.player-dialog == 5;
         palette: root.palette;
+        has-data: root.stream-has-data;
         codec: root.stream-codec;
         bitrate: root.stream-bitrate;
         sample-rate: root.stream-rate;
-        loudness: root.stream-loudness;
-        buffer: root.stream-buffer;
-        state: root.stream-state;
+        quality: root.stream-quality;
+        origin: root.stream-origin;
+        resolution: root.stream-resolution;
         dismissed => { root.player-dialog = 0; root.player-dialog-dismissed(); }
     }
 }

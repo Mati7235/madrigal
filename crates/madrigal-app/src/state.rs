@@ -5,8 +5,8 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use madrigal_player::engine::EngineConfig;
 use madrigal_ui::{
     apply_background_style, apply_lyrics_settings, apply_player_settings, repeat_from_index,
-    repeat_index, set_now_playing_cover, set_queue_models, sync_lyrics_clock, track_source_index,
-    wire_player_callbacks, MainShell,
+    repeat_index, set_now_playing_cover, set_queue_models, set_stream_info, sync_lyrics_clock,
+    track_source_index, wire_player_callbacks, MainShell,
 };
 use slint::ComponentHandle;
 
@@ -336,6 +336,7 @@ pub fn apply_snapshot(shell: &MainShell, snapshot: &Snapshot, queue_changed: boo
     shell.set_shuffle(snapshot.shuffle);
     shell.set_queue_locked(snapshot.locked);
     shell.set_queue_current_index(snapshot.queue_index);
+    set_stream_info(shell, snapshot.stream.as_ref());
     if queue_changed {
         set_queue_models(shell, &snapshot.queue);
         shell.set_queue_count(snapshot.queue.all.len() as i32);

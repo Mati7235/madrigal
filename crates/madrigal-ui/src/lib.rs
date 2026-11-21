@@ -40,8 +40,9 @@ pub use player_ui::{
     apply_lyrics_settings, apply_playback_state, apply_player_settings, background_from_appearance,
     background_index, chain_fetcher, clear_lyrics, dialog_index, eq_preset_gains,
     lyric_progress_at, lyrics_delivery, maybe_fetch_lyrics, open_player_dialog, queue_tabs_from_queue,
-    render_share_png, repeat_from_index, repeat_index, set_lyrics, set_queue_models,
-    set_stream_info, show_error, sync_lyrics_clock, track_source_from_index, track_source_index,
+    render_share_png, repeat_from_index, repeat_index, resolution_route, sample_rate_text, set_lyrics,
+    set_queue_models, set_stream_info, show_error, sync_lyrics_clock, track_source_from_index,
+    track_source_index,
     wire_lyrics_clock, wire_lyrics_fetch, wire_player_callbacks, PlaybackUiState,
     PlayerBackgroundStyle, PlayerDialog, QueueRowData, QueueTabData,
 };

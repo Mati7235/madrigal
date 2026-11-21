@@ -2,7 +2,8 @@ use madrigal_testkit as kit;
 use madrigal_ui::{
     apply_background_style, apply_lyrics_settings, apply_playback_state, apply_player_settings,
     dispatch_key, lyrics_delivery, open_player_dialog, queue_tabs_from_queue, render_share_png,
-    set_lyrics, set_stream_info, show_error, wire_lyrics_fetch, wire_player_callbacks,
+    resolution_route, sample_rate_text, set_lyrics, set_stream_info, show_error, wire_lyrics_fetch,
+    wire_player_callbacks,
     wire_shell_i18n, CachedLyrics, FetchTask, LyricsCache, LyricsFetcher, LyricsSource, MainShell,
     PlaybackUiState, PlayerBackgroundStyle, PlayerDialog, QueueTabData,
 };
@@ -244,6 +245,10 @@ fn ui_player() {
         ("queue.tab.autoplaying", "Recomendadas", "Recommended"),
         ("audio.equalizer", "Ecualizador", "Equalizer"),
         ("stream.title", "Información del audio", "Audio information"),
+        ("stream.empty", "Sin datos todavía", "No data yet"),
+        ("stream.unknown", "Sin datos todavía", "No data yet"),
+        ("stream.route.builtin", "Reproductor integrado", "Built-in player"),
+        ("stream.route.local", "Archivo local", "Local file"),
     ] {
         let es_hit: slint::SharedString = shell
             .global::<madrigal_ui::I18n>()
@@ -585,7 +590,11 @@ fn ui_player() {
     assert!(dispatch_key(&shell, "Escape"));
     assert_eq!(shell.get_player_dialog(), 0);
 
-    use madrigal_player::stream_info::{PlaybackState, StreamInfo};
+    use madrigal_player::stream_info::{PlaybackState, StreamInfo, StreamOrigin};
+    assert_eq!(sample_rate_text(44_100), "44.1 kHz");
+    assert_eq!(sample_rate_text(48_000), "48 kHz");
+    assert_eq!(resolution_route("innertube:visionos"), "innertube");
+    assert_eq!(resolution_route("web_safari"), "web_safari");
     set_stream_info(
         &shell,
         Some(&StreamInfo {
@@ -597,20 +606,65 @@ fn ui_player() {
             buffer_health: Some(80.0),
             speed: 1.0,
             state: PlaybackState::Playing,
+            origin: Some(StreamOrigin::Streaming),
+            resolution_path: Some("innertube:visionos".to_owned()),
         }),
     );
     shell.invoke_player_dialog_requested(5);
     assert_eq!(shell.get_player_dialog(), 5);
+    assert!(shell.get_stream_has_data());
     assert_eq!(shell.get_stream_codec().as_str(), "opus");
     assert_eq!(shell.get_stream_bitrate().as_str(), "160 kbps");
-    assert_eq!(shell.get_stream_rate().as_str(), "48000 Hz");
-    assert_eq!(shell.get_stream_loudness().as_str(), "-14.0 dB");
-    assert_eq!(shell.get_stream_buffer().as_str(), "80%");
-    assert!(shell.get_stream_state().as_str().contains("Playing"));
+    assert_eq!(shell.get_stream_rate().as_str(), "48 kHz");
+    assert_eq!(shell.get_stream_quality().as_str(), "80");
+    assert_eq!(shell.get_stream_origin(), 2);
+    assert_eq!(shell.get_stream_resolution().as_str(), "innertube");
+    assert_eq!(kit::ElementHandle::find_by_accessible_label(&shell, "Códec: opus").count(), 1);
+    assert_eq!(
+        kit::ElementHandle::find_by_accessible_label(&shell, "Origen: Streaming").count(),
+        1
+    );
+    assert_eq!(
+        kit::ElementHandle::find_by_accessible_label(&shell, "Ruta de resolución: Reproductor integrado").count(),
+        1
+    );
+    set_stream_info(
+        &shell,
+        Some(&StreamInfo {
+            codec: None,
+            abr_kbps: None,
+            sample_rate: None,
+            media_id: "song-a1".to_owned(),
+            loudness_hint: None,
+            buffer_health: None,
+            speed: 1.0,
+            state: PlaybackState::Paused,
+            origin: Some(StreamOrigin::Local),
+            resolution_path: Some("local".to_owned()),
+        }),
+    );
+    assert_eq!(
+        kit::ElementHandle::find_by_accessible_label(&shell, "Códec: Sin datos todavía").count(),
+        1
+    );
+    assert_eq!(
+        kit::ElementHandle::find_by_accessible_label(&shell, "Origen: Archivo local o descarga").count(),
+        1
+    );
+    assert_eq!(
+        kit::ElementHandle::find_by_accessible_label(&shell, "Ruta de resolución: Archivo local").count(),
+        1
+    );
     assert!(dispatch_key(&shell, "Escape"));
     assert_eq!(shell.get_player_dialog(), 0);
     set_stream_info(&shell, None);
+    assert!(!shell.get_stream_has_data());
     assert_eq!(shell.get_stream_codec().as_str(), "");
+    shell.invoke_player_dialog_requested(5);
+    let empty = kit::find_by_id(&shell, "StreamInfoPanel::info-empty").unwrap();
+    assert_eq!(empty.accessible_label().unwrap().as_str(), "Sin datos todavía");
+    assert!(dispatch_key(&shell, "Escape"));
+    assert_eq!(shell.get_player_dialog(), 0);
 
     shell.invoke_queue_opened();
     assert!(shell.get_queue_open());

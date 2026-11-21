@@ -760,17 +760,21 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("stream.channels", "Canales", "Channels"),
     ("stream.client", "Cliente de YouTube", "YouTube client"),
     ("stream.codec", "Códec", "Codec"),
+    ("stream.empty", "Sin datos todavía", "No data yet"),
     ("stream.potDetected", "Provider de PO tokens detectado", "PO token provider detected"),
     ("stream.potMissing", "Provider de PO tokens no detectado", "PO token provider not detected"),
     ("stream.potUnknown", "La detección del provider no confirma que este stream haya usado un PO token.", "Provider detection does not confirm that this stream used a PO token."),
     ("stream.quality", "Calidad recibida", "Received quality"),
     ("stream.resolution", "Ruta de resolución", "Resolution path"),
+    ("stream.route.builtin", "Reproductor integrado", "Built-in player"),
+    ("stream.route.cache", "Caché", "Cache"),
+    ("stream.route.local", "Archivo local", "Local file"),
     ("stream.samplerate", "Frecuencia de muestreo", "Sample rate"),
     ("stream.source", "Origen", "Source"),
     ("stream.source.local", "Archivo local o descarga", "Local file or download"),
     ("stream.source.stream", "Streaming", "Streaming"),
     ("stream.title", "Información del audio", "Audio information"),
-    ("stream.unknown", "No disponible", "Unavailable"),
+    ("stream.unknown", "Sin datos todavía", "No data yet"),
 ];
 
 fn find(key: &str) -> Option<&'static (&'static str, &'static str, &'static str)> {

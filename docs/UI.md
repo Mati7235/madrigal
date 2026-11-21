@@ -129,7 +129,8 @@ button. The header holds the −0.1 s / +0.1 s sync buttons and the offset value
 edit-lock toggle, per-row remove, current-track mark. Dialogs:
 `SleepTimerDialog`, `TempoPitchDialog`, `EqualizerDialog` (10 bands +
 presets), `PlaybackErrorDialog`, `StreamInfoPanel` (from
-`madrigal-player::stream_info::StreamInfo`). `PlaybackUiState` is injected
+`madrigal-player::stream_info::StreamInfo`, fed by the playback snapshot and
+showing an empty state when no stream is loaded). `PlaybackUiState` is injected
 with `apply_playback_state`; `wire_player_callbacks` owns all player state
 transitions. Asserted by `ui_player`.
 

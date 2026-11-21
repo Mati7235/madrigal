@@ -6,6 +6,7 @@ use madrigal_app::desktop::{Desktop, ERROR_CODE};
 use madrigal_app::playback::{track_from_file, Playback, PlaybackService};
 use madrigal_app::state::AppState;
 use madrigal_player::engine::EngineConfig;
+use madrigal_player::stream_info::StreamOrigin;
 use madrigal_settings::{Player as PlayerConfig, RepeatMode, Settings};
 use madrigal_testkit as kit;
 use madrigal_ui::MainShell;
@@ -103,6 +104,11 @@ fn app_playback() {
     assert_eq!(snapshot.title, "track");
     assert_eq!(snapshot.track_source, madrigal_core::TrackSource::Local);
     assert_eq!(snapshot.queue_index, 0);
+    let stream = snapshot.stream.expect("stream info while playing");
+    assert_eq!(stream.origin, Some(StreamOrigin::Local));
+    assert_eq!(stream.resolution_path.as_deref(), Some("local"));
+    assert_eq!(stream.codec.as_deref(), Some("pcm_s16le"));
+    assert_eq!(stream.sample_rate, Some(44_100));
     assert_eq!(snapshot.queue.all.len(), 2);
     assert!(
         snapshot.duration_ms >= 7000,
@@ -189,6 +195,12 @@ fn app_playback() {
     assert_eq!(shell.get_track_source(), 2);
     assert_eq!(shell.get_queue_count(), 2);
     assert!(shell.get_duration_ms() >= 7000);
+    assert!(shell.get_stream_has_data(), "sin datos de stream en el shell");
+    assert_eq!(shell.get_stream_origin(), 1);
+    assert_eq!(shell.get_stream_resolution().as_str(), "local");
+    assert_eq!(shell.get_stream_codec().as_str(), "pcm_s16le");
+    assert_eq!(shell.get_stream_rate().as_str(), "44.1 kHz");
+    assert!(!shell.get_stream_bitrate().is_empty());
 
     shell.invoke_next_requested();
     let started = Instant::now();

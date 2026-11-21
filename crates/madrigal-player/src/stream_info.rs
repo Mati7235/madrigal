@@ -6,10 +6,18 @@ pub enum PlaybackState {
     Paused,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StreamOrigin {
+    Local,
+    Streaming,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct StreamMeta {
     pub media_id: String,
     pub loudness_hint: Option<f64>,
+    pub origin: Option<StreamOrigin>,
+    pub resolution_path: Option<String>,
 }
 
 impl StreamMeta {
@@ -17,14 +25,26 @@ impl StreamMeta {
         Self {
             media_id: media_id.into(),
             loudness_hint: None,
+            origin: None,
+            resolution_path: None,
         }
     }
 
     pub fn with_loudness(media_id: impl Into<String>, loudness_hint: f64) -> Self {
         Self {
-            media_id: media_id.into(),
             loudness_hint: Some(loudness_hint),
+            ..Self::new(media_id)
         }
+    }
+
+    pub fn with_origin(mut self, origin: StreamOrigin) -> Self {
+        self.origin = Some(origin);
+        self
+    }
+
+    pub fn with_resolution_path(mut self, path: impl Into<String>) -> Self {
+        self.resolution_path = Some(path.into());
+        self
     }
 }
 
@@ -38,6 +58,8 @@ pub struct StreamInfo {
     pub buffer_health: Option<f64>,
     pub speed: f64,
     pub state: PlaybackState,
+    pub origin: Option<StreamOrigin>,
+    pub resolution_path: Option<String>,
 }
 
 impl StreamInfo {
@@ -63,6 +85,8 @@ impl StreamInfo {
             } else {
                 PlaybackState::Playing
             },
+            origin: meta.origin,
+            resolution_path: meta.resolution_path.clone(),
         })
     }
 }

@@ -67,6 +67,7 @@ pub struct Player<S: StreamSource> {
     awaiting: Option<u64>,
     resolver: Option<Resolver>,
     last_error_log: Option<String>,
+    route: Option<String>,
 }
 
 const LOAD_GRACE: Duration = Duration::from_secs(2);
@@ -87,6 +88,7 @@ impl<S: StreamSource> Player<S> {
             awaiting: None,
             resolver: None,
             last_error_log: None,
+            route: None,
         }
     }
 
@@ -102,6 +104,10 @@ impl<S: StreamSource> Player<S> {
 
     pub fn engine(&self) -> &Engine {
         &self.engine
+    }
+
+    pub fn route(&self) -> Option<&str> {
+        self.route.as_deref()
     }
 
     pub fn source(&self) -> &S {
@@ -339,6 +345,7 @@ impl<S: StreamSource> Player<S> {
         self.awaiting = None;
         self.pending = None;
         self.last_error_log = None;
+        self.route = None;
         if self.source.resolves_remotely(&track) {
             self.engine.stop()?;
             return self.request_resolve(track);
@@ -405,6 +412,7 @@ impl<S: StreamSource> Player<S> {
     }
 
     fn apply_load(&mut self, resolved: &ResolvedStream) -> Result<(), Error> {
+        self.route = resolved.resolution_path.clone();
         self.engine
             .load_stream(&resolved.url, resolved.user_agent.as_deref())?;
         if resolved.start_offset_secs > 0.0 {

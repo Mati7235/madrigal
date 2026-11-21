@@ -615,24 +615,50 @@ pub fn open_player_dialog(shell: &MainShell, dialog: PlayerDialog) {
     shell.set_player_dialog(dialog_index(dialog));
 }
 
+pub fn sample_rate_text(rate: u32) -> String {
+    let khz = f64::from(rate) / 1000.0;
+    if (khz - khz.round()).abs() < 0.05 {
+        format!("{khz:.0} kHz")
+    } else {
+        format!("{khz:.1} kHz")
+    }
+}
+
+pub fn resolution_route(path: &str) -> &str {
+    if path.starts_with("innertube") {
+        "innertube"
+    } else {
+        path
+    }
+}
+
 pub fn set_stream_info(shell: &MainShell, info: Option<&madrigal_player::stream_info::StreamInfo>) {
     match info {
         Some(info) => {
+            shell.set_stream_has_data(true);
             shell.set_stream_codec(info.codec.clone().unwrap_or_default().into());
             shell.set_stream_bitrate(info.abr_kbps.map(|kbps| format!("{kbps:.0} kbps")).unwrap_or_default().into());
-            shell.set_stream_rate(info.sample_rate.map(|rate| format!("{} Hz", rate)).unwrap_or_default().into());
-            shell.set_stream_loudness(info.loudness_hint.map(|loud| format!("{loud:.1} dB")).unwrap_or_default().into());
-            shell.set_stream_buffer(info.buffer_health.map(|health| format!("{health:.0}%")).unwrap_or_default().into());
-            shell.set_stream_state(format!("{:?} @ {:.2}x", info.state, info.speed).into());
+            shell.set_stream_rate(info.sample_rate.map(sample_rate_text).unwrap_or_default().into());
+            shell.set_stream_quality(info.buffer_health.map(|health| format!("{health:.0}")).unwrap_or_default().into());
+            shell.set_stream_origin(info.origin.map(stream_origin_index).unwrap_or(0));
+            shell.set_stream_resolution(info.resolution_path.as_deref().map(resolution_route).unwrap_or_default().into());
         }
         None => {
+            shell.set_stream_has_data(false);
             shell.set_stream_codec("".into());
             shell.set_stream_bitrate("".into());
             shell.set_stream_rate("".into());
-            shell.set_stream_loudness("".into());
-            shell.set_stream_buffer("".into());
-            shell.set_stream_state("".into());
+            shell.set_stream_quality("".into());
+            shell.set_stream_origin(0);
+            shell.set_stream_resolution("".into());
         }
+    }
+}
+
+fn stream_origin_index(origin: madrigal_player::stream_info::StreamOrigin) -> i32 {
+    match origin {
+        madrigal_player::stream_info::StreamOrigin::Local => 1,
+        madrigal_player::stream_info::StreamOrigin::Streaming => 2,
     }
 }
 

@@ -11,6 +11,7 @@ use madrigal_player::engine::{Engine, EngineConfig};
 use madrigal_player::player::Player;
 use madrigal_player::session::SessionState;
 use madrigal_player::source::{ResolvedStream, StreamSource};
+use madrigal_player::stream_info::{StreamInfo, StreamMeta, StreamOrigin};
 use madrigal_settings::Player as PlayerConfig;
 use madrigal_settings::{RepeatMode, TransitionMode};
 use madrigal_streams::Orchestrator;
@@ -58,6 +59,7 @@ pub struct Snapshot {
     pub queue_index: i32,
     pub queue_revision: u64,
     pub queue: QueueTabData,
+    pub stream: Option<StreamInfo>,
 }
 
 pub struct AppSource {
@@ -79,7 +81,9 @@ impl StreamSource for AppSource {
                     .streams
                     .resolve(track, None)
                     .map_err(|err| err.to_string())?;
-                Ok(ResolvedStream::new(stream.url).with_user_agent(stream.user_agent))
+                Ok(ResolvedStream::new(stream.url)
+                    .with_user_agent(stream.user_agent)
+                    .with_resolution_path(stream.resolution_path))
             }
             TrackSource::Tidal => Err(format!("unsupported source: {}", track.source)),
         }
@@ -95,13 +99,13 @@ fn resolve_local(track: &TrackIdentity) -> Result<ResolvedStream, String> {
         return Err("el track no tiene url".to_owned());
     }
     if track.id.starts_with("http://") || track.id.starts_with("https://") {
-        return Ok(ResolvedStream::new(track.id.clone()));
+        return Ok(ResolvedStream::new(track.id.clone()).with_resolution_path("local"));
     }
     let path = Path::new(&track.id);
     if !path.is_file() {
         return Err(format!("no es un archivo: {}", track.id));
     }
-    Ok(ResolvedStream::new(track.id.clone()))
+    Ok(ResolvedStream::new(track.id.clone()).with_resolution_path("local"))
 }
 
 pub fn engine_config(settings: &madrigal_settings::Settings, ao: &str) -> EngineConfig {
@@ -482,6 +486,18 @@ impl Playback {
                 .and_then(|meta| meta.thumbnail.clone())
                 .unwrap_or_default();
         }
+        let stream = current.and_then(|identity| {
+            let origin = if identity.source == TrackSource::Local {
+                StreamOrigin::Local
+            } else {
+                StreamOrigin::Streaming
+            };
+            let mut stream_meta = StreamMeta::new(identity.id.clone()).with_origin(origin);
+            if let Some(route) = self.player.route() {
+                stream_meta = stream_meta.with_resolution_path(route);
+            }
+            StreamInfo::snapshot(self.player.engine(), &stream_meta)
+        });
         Snapshot {
             title: meta.map(|meta| meta.title.clone()).unwrap_or_default(),
             artist: meta.map(|meta| meta.artist.clone()).unwrap_or_default(),
@@ -502,6 +518,7 @@ impl Playback {
             queue_index: queue.current_index().map(|i| i as i32).unwrap_or(-1),
             queue_revision: self.revision,
             queue: tabs,
+            stream,
         }
     }
 }
