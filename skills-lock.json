@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "skills": {
+    "impeccable": {
+      "source": "pbakaus/impeccable",
+      "commit": "b49177d32788f2dc585c42831d845dacf1ebed2c",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/impeccable/SKILL.md",
+      "computedHash": "08bd5bf141cb507f46bd8347890cd985865606f15adf88295ed3a73bc9ad5d96"
+    },
+    "unslop": {
+      "source": "cursor/plugins",
+      "commit": "792440e8a560a4a3f63748cdee70491ecd412982",
+      "sourceType": "github",
+      "skillPath": "harness/pstack/claude-code/skills/unslop/SKILL.md",
+      "computedHash": "4bbcb6719a8f0f6f7fb46752e1c360791d7758a837708e300a06fc7d6907938c"
+    }
+  }
+}
