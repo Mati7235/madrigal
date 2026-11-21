@@ -14,6 +14,8 @@ export component DetailPage inherits Rectangle {
     in property<string> title: "";
     in property<string> subtitle: "";
     in property<string> description: "";
+    in property<bool> desc-long: false;
+    in-out property<bool> desc-expanded: false;
     in property<image> cover;
     in property<bool> loading: false;
     in property<string> error: "";
@@ -28,6 +30,10 @@ export component DetailPage inherits Rectangle {
     callback detail-requested(DetailRef);
     callback play-requested(CatalogItem);
     callback retry-requested();
+
+    changed description => {
+        root.desc-expanded = false;
+    }
 
     background: root.palette.surface;
     accessible-role: text;
@@ -88,7 +94,18 @@ export component DetailPage inherits Rectangle {
                 font-size: Type.body-medium.size;
                 font-family: Type.body-medium.family;
                 wrap: word-wrap;
+                max-lines: root.desc-expanded ? 0 : 3;
+                overflow: elide;
                 visible: root.description != "";
+            }
+
+            if (root.desc-long) : desc-toggle := M3Button {
+                width: 88px;
+                text: I18n.trl(I18n.lang, root.desc-expanded ? "detail.less" : "detail.more");
+                fill: transparent;
+                content: root.palette.primary;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.desc-expanded = !root.desc-expanded; }
             }
 
             detail-actions := HorizontalLayout {

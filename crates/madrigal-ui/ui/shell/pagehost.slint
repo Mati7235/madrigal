@@ -100,6 +100,7 @@ export component PageHost inherits Rectangle {
     in property<string> detail-title: "";
     in property<string> detail-subtitle: "";
     in property<string> detail-description: "";
+    in property<bool> detail-desc-long: false;
     in property<image> detail-cover;
     in property<bool> detail-loading: false;
     in property<string> detail-error: "";
@@ -344,6 +345,7 @@ export component PageHost inherits Rectangle {
         title: root.detail-title;
         subtitle: root.detail-subtitle;
         description: root.detail-description;
+        desc-long: root.detail-desc-long;
         cover: root.detail-cover;
         loading: root.detail-loading;
         error: root.detail-error;

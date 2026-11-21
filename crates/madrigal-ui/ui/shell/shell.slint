@@ -198,6 +198,7 @@ export component MainShell inherits Window {
     in property<string> detail-title: "";
     in property<string> detail-subtitle: "";
     in property<string> detail-description: "";
+    in property<bool> detail-desc-long: false;
     in property<image> detail-cover;
     in property<bool> detail-loading: false;
     in property<string> detail-error: "";
@@ -935,6 +936,7 @@ export component MainShell inherits Window {
                 detail-title: root.detail-title;
                 detail-subtitle: root.detail-subtitle;
                 detail-description: root.detail-description;
+                detail-desc-long: root.detail-desc-long;
                 detail-cover: root.detail-cover;
                 detail-loading: root.detail-loading;
                 detail-error: root.detail-error;

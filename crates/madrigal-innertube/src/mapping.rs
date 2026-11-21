@@ -89,6 +89,13 @@ pub fn album_result_to_album(album: &AlbumResult) -> Album {
     }
 }
 
+fn clean_description(text: &str) -> String {
+    let cut = text
+        .find("From Wikipedia (")
+        .map_or(text, |index| &text[..index]);
+    cut.trim_end().to_owned()
+}
+
 pub fn artist_page(page: &GetArtist) -> ArtistPage {
     let songs = page
         .top_releases
@@ -111,7 +118,7 @@ pub fn artist_page(page: &GetArtist) -> ArtistPage {
             name: page.name.clone(),
             subscribers: page.subscribers.clone(),
             thumbnail: best_thumbnail(&page.thumbnails),
-            description: page.description.clone(),
+            description: page.description.as_deref().map(clean_description),
         },
         songs,
         albums,
@@ -219,5 +226,20 @@ pub fn watch_track_to_track(track: &WatchPlaylistTrack) -> Track {
         track_number: None,
         local_path: None,
         set_video_id: None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::clean_description;
+
+    #[test]
+    fn description_drops_wikipedia_attribution() {
+        let text = "First paragraph.\n\nSecond paragraph.\n\nFrom Wikipedia (";
+        assert_eq!(
+            clean_description(text),
+            "First paragraph.\n\nSecond paragraph."
+        );
+        assert_eq!(clean_description("Just a line."), "Just a line.");
     }
 }

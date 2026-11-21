@@ -4,7 +4,8 @@ use madrigal_ui::{
     apply_suggestions, begin_detail_load, close_detail, dispatch_key, is_detail_open,
     load_album_fixture, load_artist_fixture, load_browse_fixture, load_explore_fixtures,
     load_home_fixture, load_playlist_fixture, load_search_fixture, load_suggestions_fixture,
-    playlist_item, set_shell_lang, wire_shell_i18n, DetailKind, DetailRef, MainShell,
+    playlist_item, set_shell_lang, subscriber_label, wire_shell_i18n, DetailKind, DetailRef,
+    MainShell,
 };
 use slint::{ComponentHandle, Model, VecModel};
 use std::cell::RefCell;
@@ -513,6 +514,27 @@ fn ui_catalog() {
     assert_eq!(opened.borrow().last().unwrap().0, DetailKind::Artist);
     assert!(is_detail_open(&shell));
     assert_eq!(shell.get_detail_title().as_str(), "The Beatles");
+    assert_eq!(
+        subscriber_label("5.48M subscribers", madrigal_i18n::Lang::Es).as_deref(),
+        Some("5,48 M suscriptores")
+    );
+    assert_eq!(
+        subscriber_label("5.48M subscribers", madrigal_i18n::Lang::En).as_deref(),
+        Some("5.48M subscribers")
+    );
+    assert_eq!(
+        shell.get_detail_subtitle().as_str(),
+        "9,8 M suscriptores"
+    );
+    assert!(shell.get_detail_desc_long());
+    let toggle = kit::find_by_id(&shell, "DetailPage::desc-toggle").unwrap();
+    assert_eq!(toggle.accessible_label().unwrap().as_str(), "Más");
+    kit::click(&toggle);
+    kit::mock_advance(Duration::from_millis(50));
+    assert_eq!(toggle.accessible_label().unwrap().as_str(), "Menos");
+    kit::click(&toggle);
+    kit::mock_advance(Duration::from_millis(50));
+    assert_eq!(toggle.accessible_label().unwrap().as_str(), "Más");
     assert_eq!(shell.get_detail_tracks().row_count(), 5);
     assert_eq!(shell.get_detail_albums().row_count(), 10);
     assert_eq!(

@@ -1,6 +1,7 @@
-use slint::{ModelRc, SharedString, VecModel};
+use slint::{ComponentHandle, ModelRc, SharedString, VecModel};
 
 use madrigal_core::{Album, Artist, Episode, Playlist, Podcast, Track};
+use madrigal_i18n::Lang;
 use madrigal_innertube::{
     AlbumPage, ArtistPage, BrowseItem, BrowsePage, CatalogClient, ChartsPage, HomeFeed, HomeItem,
     MoodListing, NewReleases, PlaylistPage,
@@ -361,6 +362,7 @@ fn clear_detail(shell: &MainShell, kind: DetailKind, id: &str, title: &str) {
     shell.set_detail_title(title.into());
     shell.set_detail_subtitle("".into());
     shell.set_detail_description("".into());
+    shell.set_detail_desc_long(false);
     shell.set_detail_cover(slint::Image::default());
     shell.set_detail_loading(false);
     shell.set_detail_error("".into());
@@ -375,6 +377,7 @@ pub fn begin_detail_load(shell: &MainShell, reference: &DetailRef) {
     shell.set_detail_title(reference.title.clone());
     shell.set_detail_subtitle("".into());
     shell.set_detail_description("".into());
+    shell.set_detail_desc_long(false);
     shell.set_detail_cover(slint::Image::default());
     shell.set_detail_loading(true);
     shell.set_detail_error("".into());
@@ -411,6 +414,27 @@ pub fn apply_album_detail(shell: &MainShell, detail: &AlbumPage) {
     artwork::resolve_detail(shell);
 }
 
+pub fn subscriber_label(raw: &str, lang: Lang) -> Option<String> {
+    let token = raw.split_whitespace().next()?.trim();
+    if !token.chars().next().is_some_and(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    let (number, unit) = match token.chars().last() {
+        Some('K' | 'M' | 'B') => token.split_at(token.len() - 1),
+        _ => (token, ""),
+    };
+    let number = match lang {
+        Lang::Es => number.replace('.', ","),
+        Lang::En => number.to_owned(),
+    };
+    let value = match (lang, unit) {
+        (Lang::Es, "") => number,
+        (Lang::Es, unit) => format!("{number} {unit}"),
+        (Lang::En, unit) => format!("{number}{unit}"),
+    };
+    Some(madrigal_i18n::tr(lang, "artist.subscribers").replace("%1", &value))
+}
+
 pub fn apply_artist_detail(shell: &MainShell, detail: &ArtistPage) {
     clear_detail(
         shell,
@@ -418,22 +442,24 @@ pub fn apply_artist_detail(shell: &MainShell, detail: &ArtistPage) {
         detail.artist.id.as_str(),
         detail.artist.name.as_str(),
     );
+    let lang = crate::lang_from_code(shell.global::<crate::I18n>().get_lang().as_str());
     shell.set_detail_subtitle(
         detail
             .artist
             .subscribers
             .as_deref()
+            .and_then(|raw| subscriber_label(raw, lang))
             .unwrap_or_default()
             .into(),
     );
-    shell.set_detail_description(
-        detail
-            .artist
-            .description
-            .as_deref()
-            .unwrap_or_default()
-            .into(),
-    );
+    let description = detail
+        .artist
+        .description
+        .as_deref()
+        .unwrap_or_default()
+        .to_owned();
+    shell.set_detail_desc_long(description.lines().count() > 3 || description.chars().count() > 220);
+    shell.set_detail_description(description.into());
     shell.set_detail_tracks(ModelRc::new(VecModel::from_slice(&song_results(
         &detail.songs,
     ))));
