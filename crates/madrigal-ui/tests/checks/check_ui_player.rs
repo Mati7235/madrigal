@@ -1,12 +1,94 @@
 use madrigal_testkit as kit;
 use madrigal_ui::{
     apply_background_style, apply_lyrics_settings, apply_playback_state, apply_player_settings,
-    dispatch_key, open_player_dialog, queue_tabs_from_queue, render_share_png, set_lyrics,
-    set_stream_info, show_error, wire_player_callbacks, wire_shell_i18n, MainShell, PlaybackUiState,
-    PlayerBackgroundStyle, PlayerDialog, QueueTabData,
+    dispatch_key, lyrics_delivery, open_player_dialog, queue_tabs_from_queue, render_share_png,
+    set_lyrics, set_stream_info, show_error, wire_lyrics_fetch, wire_player_callbacks,
+    wire_shell_i18n, CachedLyrics, FetchTask, LyricsCache, LyricsFetcher, LyricsSource, MainShell,
+    PlaybackUiState, PlayerBackgroundStyle, PlayerDialog, QueueTabData,
 };
 use slint::{ComponentHandle, LogicalPosition, Model};
-use std::time::Duration;
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
+
+type LyricsReply = Result<Option<madrigal_lyrics::chain::ChainOutcome>, String>;
+
+struct FakeSource {
+    pending: Mutex<Sender<(String, Sender<LyricsReply>)>>,
+}
+
+impl LyricsSource for FakeSource {
+    fn fetch(&self, task: &FetchTask) -> LyricsReply {
+        let (respond, reply) = channel();
+        self.pending
+            .lock()
+            .unwrap()
+            .send((task.track.identity.id.clone(), respond))
+            .unwrap();
+        reply.recv().map_err(|err| err.to_string())?
+    }
+}
+
+struct EmptyCache;
+
+impl LyricsCache for EmptyCache {
+    fn lookup(&self, _identity: &madrigal_core::TrackIdentity) -> Option<CachedLyrics> {
+        None
+    }
+}
+
+fn outcome(lyrics: madrigal_lyrics::Lyrics) -> madrigal_lyrics::chain::ChainOutcome {
+    madrigal_lyrics::chain::ChainOutcome { lyrics, provider: "fake" }
+}
+
+fn plain_lyrics() -> madrigal_lyrics::Lyrics {
+    madrigal_lyrics::lrc::parse("Primera línea\nSegunda línea\n")
+}
+
+fn line_lyrics(text: &str) -> madrigal_lyrics::Lyrics {
+    madrigal_lyrics::Lyrics {
+        lines: vec![madrigal_lyrics::LyricLine {
+            start_ms: 0,
+            end_ms: None,
+            text: text.to_owned(),
+            words: None,
+            markers: Default::default(),
+        }],
+        synced: false,
+    }
+}
+
+fn pump_until(timeout: Duration, mut done: impl FnMut() -> bool) {
+    let deadline = Instant::now() + timeout;
+    loop {
+        let _ = slint::quit_event_loop();
+        slint::run_event_loop().unwrap();
+        if done() {
+            return;
+        }
+        assert!(Instant::now() < deadline, "timed out waiting for the lyrics fetch");
+        std::thread::sleep(Duration::from_millis(5));
+    }
+}
+
+fn wait_for_request(requests: &Receiver<(String, Sender<LyricsReply>)>, id: &str) -> Sender<LyricsReply> {
+    let (sent_id, respond) = requests.recv_timeout(Duration::from_secs(5)).expect("lyrics request");
+    assert_eq!(sent_id, id);
+    respond
+}
+
+fn assert_player_layout(shell: &MainShell, label: &str) {
+    let violations: Vec<_> = kit::lint_layout(shell, (1920.0, 1080.0))
+        .into_iter()
+        .filter(|violation| match &violation.kind {
+            kit::ViolationKind::Overlap(other) => {
+                in_player_surface(&violation.id) && in_player_surface(other)
+            }
+            kit::ViolationKind::OutOfWindow => true,
+        })
+        .collect();
+    assert!(violations.is_empty(), "{label} layout violations: {violations:#?}");
+}
 
 fn fixture_lyrics() -> madrigal_lyrics::Lyrics {
     use madrigal_lyrics::{LineMarkers, LyricLine, Lyrics, WordTiming};
@@ -127,6 +209,12 @@ fn ui_player() {
         ("player.shareLyrics", "Compartir letra", "Share lyrics"),
         ("player.lyricsBackToLine", "Volver a la línea actual", "Back to current line"),
         ("player.lyricsOffsetPlus", "Desfase de la letra +0,1 s", "Lyrics offset +0.1 s"),
+        ("player.lyricsSearching", "Buscando letra", "Searching lyrics"),
+        ("player.lyricsNotFound", "No hay letra para esta canción", "No lyrics for this track"),
+        ("player.lyricsError", "No se pudo buscar la letra", "Could not search lyrics"),
+        ("player.lyricsSyncedChip", "Sincronizada", "Synced"),
+        ("player.lyricsPlainChip", "Sin sincronizar", "Not synced"),
+        ("common.retry", "Reintentar", "Retry"),
         ("queue.tab.all", "Todas", "All"),
         ("queue.tab.searched", "Filtradas", "Searched"),
         ("queue.tab.continue", "Siguen", "Continue"),
@@ -169,6 +257,9 @@ fn ui_player() {
         queue: QueueTabData::default(),
         lyrics_font_px: 16.0,
         lyrics_spacing: 1.5,
+        track_id: "video-1".to_owned(),
+        track_source: madrigal_core::TrackSource::Youtube,
+        queue_index: 1,
     };
     apply_playback_state(&shell, &state);
     assert!(shell.get_has_track());
@@ -517,16 +608,7 @@ fn ui_player() {
     let shot_mid = snap_dir.join("player-mid.png");
     kit::snapshot_to(shell.window(), &shot_mid).unwrap();
 
-    let violations: Vec<_> = kit::lint_layout(&shell, (1920.0, 1080.0))
-        .into_iter()
-        .filter(|violation| match &violation.kind {
-            kit::ViolationKind::Overlap(other) => {
-                in_player_surface(&violation.id) && in_player_surface(other)
-            }
-            kit::ViolationKind::OutOfWindow => true,
-        })
-        .collect();
-    assert!(violations.is_empty(), "player layout violations: {violations:#?}");
+    assert_player_layout(&shell, "player");
 
     let worded = word_lyrics_fixture();
     set_lyrics(&shell, &worded);
@@ -544,7 +626,149 @@ fn ui_player() {
     let shot_words = snap_dir.join("player-words.png");
     kit::snapshot_to(shell.window(), &shot_words).unwrap();
 
-    for shot in [&shot_0s, &shot_mid, &shot_words] {
+    let (pending_tx, pending_rx) = channel();
+    let fetcher = std::rc::Rc::new(LyricsFetcher::new(
+        Box::new(EmptyCache),
+        Box::new(FakeSource { pending: Mutex::new(pending_tx) }),
+        lyrics_delivery(&shell),
+    ));
+    wire_lyrics_fetch(&shell, fetcher);
+
+    let fetch_state = PlaybackUiState {
+        title: "Yesterday".to_owned(),
+        artist: "The Beatles".to_owned(),
+        album: "Help!".to_owned(),
+        position_ms: 0,
+        duration_ms: 125_000,
+        paused: true,
+        liked: false,
+        repeat: madrigal_settings::RepeatMode::Off,
+        shuffle: false,
+        volume: 0.7,
+        background: PlayerBackgroundStyle::Theme,
+        queue_tab: 0,
+        queue_locked: false,
+        queue: QueueTabData::default(),
+        lyrics_font_px: 16.0,
+        lyrics_spacing: 1.5,
+        track_id: "NrgmdOz227I".to_owned(),
+        track_source: madrigal_core::TrackSource::Youtube,
+        queue_index: 1,
+    };
+
+    apply_playback_state(
+        &shell,
+        &PlaybackUiState { track_id: String::new(), queue_index: 0, ..fetch_state.clone() },
+    );
+    assert_eq!(shell.get_lyrics_state(), 0, "idle state");
+    assert_eq!(shell.get_lyric_rows().row_count(), 0);
+    kit::mock_advance(Duration::from_millis(200));
+    assert_player_layout(&shell, "lyrics idle");
+
+    apply_playback_state(&shell, &fetch_state);
+    assert_eq!(shell.get_lyrics_state(), 1, "searching state");
+    assert_eq!(shell.get_lyrics_fetch_count(), 1);
+    let respond = wait_for_request(&pending_rx, "NrgmdOz227I");
+    kit::mock_advance(Duration::from_millis(400));
+    let shot_searching = snap_dir.join("player-lyrics-searching.png");
+    kit::snapshot_to(shell.window(), &shot_searching).unwrap();
+    assert_player_layout(&shell, "lyrics searching");
+
+    respond.send(Ok(Some(outcome(fixture_lyrics())))).unwrap();
+    pump_until(Duration::from_secs(5), || shell.get_lyrics_state() == 2);
+    assert!(shell.get_lyrics_synced(), "synced flag");
+    assert_eq!(shell.get_lyric_rows().row_count(), 3);
+    assert_eq!(shell.get_active_line(), 0, "synced lyrics lost the active line");
+    kit::mock_advance(Duration::from_millis(400));
+    assert_player_layout(&shell, "lyrics found synced");
+    shell.invoke_seek_to_requested(700);
+    kit::mock_advance(Duration::from_millis(400));
+    assert_eq!(shell.get_active_line(), 0);
+    assert_eq!(shell.get_active_word(), 1);
+    let shot_found = snap_dir.join("player-lyrics-found.png");
+    kit::snapshot_to(shell.window(), &shot_found).unwrap();
+
+    apply_playback_state(
+        &shell,
+        &PlaybackUiState { track_id: "missing-track".to_owned(), queue_index: 2, ..fetch_state.clone() },
+    );
+    assert_eq!(shell.get_lyrics_state(), 1);
+    let respond = wait_for_request(&pending_rx, "missing-track");
+    respond.send(Ok(None)).unwrap();
+    pump_until(Duration::from_secs(5), || shell.get_lyrics_state() == 3);
+    assert_eq!(shell.get_lyric_rows().row_count(), 0);
+    kit::mock_advance(Duration::from_millis(200));
+    let shot_notfound = snap_dir.join("player-lyrics-notfound.png");
+    kit::snapshot_to(shell.window(), &shot_notfound).unwrap();
+    assert_player_layout(&shell, "lyrics not found");
+    let retry = kit::find_by_id(&shell, "LyricsView::lyrics-retry").expect("retry button");
+    assert!(retry.size().height > 0.0, "retry button hidden");
+
+    kit::click(&retry);
+    assert_eq!(shell.get_lyrics_state(), 1, "retry starts a new search");
+    assert_eq!(shell.get_lyrics_retry_count(), 1);
+    assert_eq!(shell.get_lyrics_fetch_count(), 3);
+    let respond = wait_for_request(&pending_rx, "missing-track");
+    respond.send(Ok(Some(outcome(plain_lyrics())))).unwrap();
+    pump_until(Duration::from_secs(5), || shell.get_lyrics_state() == 2);
+    assert!(!shell.get_lyrics_synced(), "plain flag");
+    assert_eq!(shell.get_lyric_rows().row_count(), 2);
+    shell.invoke_seek_to_requested(2_000);
+    assert_eq!(shell.get_active_line(), -1, "plain lyrics got a live highlight");
+    shell.invoke_play_pause_toggled();
+    let paused_at = shell.get_position_ms();
+    kit::mock_advance(Duration::from_millis(600));
+    assert!(shell.get_position_ms() > paused_at, "clock did not run");
+    assert_eq!(shell.get_active_line(), -1, "clock moved the line on plain lyrics");
+    shell.invoke_play_pause_toggled();
+    kit::mock_advance(Duration::from_millis(200));
+    let shot_plain = snap_dir.join("player-lyrics-plain.png");
+    kit::snapshot_to(shell.window(), &shot_plain).unwrap();
+    assert_player_layout(&shell, "lyrics found plain");
+
+    apply_playback_state(
+        &shell,
+        &PlaybackUiState { track_id: "broken-track".to_owned(), queue_index: 3, ..fetch_state.clone() },
+    );
+    let respond = wait_for_request(&pending_rx, "broken-track");
+    respond.send(Err("provider timeout".to_owned())).unwrap();
+    pump_until(Duration::from_secs(5), || shell.get_lyrics_state() == 4);
+    assert_eq!(shell.get_lyrics_error().as_str(), "provider timeout");
+    kit::mock_advance(Duration::from_millis(200));
+    let shot_error = snap_dir.join("player-lyrics-error.png");
+    kit::snapshot_to(shell.window(), &shot_error).unwrap();
+    assert_player_layout(&shell, "lyrics error");
+
+    apply_playback_state(
+        &shell,
+        &PlaybackUiState { track_id: "stale-track".to_owned(), queue_index: 4, ..fetch_state.clone() },
+    );
+    let respond_stale = wait_for_request(&pending_rx, "stale-track");
+    apply_playback_state(
+        &shell,
+        &PlaybackUiState { track_id: "fresh-track".to_owned(), queue_index: 5, ..fetch_state.clone() },
+    );
+    let respond_fresh = wait_for_request(&pending_rx, "fresh-track");
+    respond_stale.send(Ok(Some(outcome(line_lyrics("Stale line"))))).unwrap();
+    std::thread::sleep(Duration::from_millis(100));
+    let _ = slint::quit_event_loop();
+    slint::run_event_loop().unwrap();
+    assert_eq!(shell.get_lyrics_state(), 1, "stale response changed the state");
+    assert_eq!(shell.get_lyric_rows().row_count(), 0, "stale response rendered lyrics");
+    respond_fresh.send(Ok(Some(outcome(line_lyrics("Fresh line"))))).unwrap();
+    pump_until(Duration::from_secs(5), || shell.get_lyrics_state() == 2);
+    assert_eq!(shell.get_lyric_rows().row_data(0).unwrap().text.as_str(), "Fresh line");
+
+    for shot in [
+        &shot_0s,
+        &shot_mid,
+        &shot_words,
+        &shot_searching,
+        &shot_found,
+        &shot_notfound,
+        &shot_plain,
+        &shot_error,
+    ] {
         let bytes = std::fs::read(shot).unwrap();
         assert_eq!(&bytes[0..8], &[137, 80, 78, 71, 13, 10, 26, 10]);
         assert!(bytes.len() > 4096, "snapshot too small: {}", bytes.len());

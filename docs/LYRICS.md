@@ -43,6 +43,14 @@ Pure 60fps-consumer helpers (`karaoke.rs`):
 - Word-timed lines render one `Text` per word: past words are `primary`, future ones `on-surface-variant`, and the active word fills left to right with `word-progress` through a clipped overlay. Lines without word timing highlight as a whole and keep the sweep bar.
 - The lyrics header carries the sync control: −0.1 s / +0.1 s steps with the current offset, reported through `lyrics-offset-changed`.
 
+## Fetch flow
+
+- `LyricsFetcher` (`crates/madrigal-ui/src/lyrics_fetch.rs`) takes the current track, builds the query with `chain::query_for`, then reads the db cache through `fetch_lyrics`: `v1:miss` and cached hits resolve without any provider call.
+- Misses run `chain::fetch_track` on a background thread with its own tokio runtime and sqlite connection; the settings provider order feeds `ChainConfig`. Results return to the UI through `slint::invoke_from_event_loop`.
+- Every request carries an id. A new request (track change or retry) invalidates the previous one, and a result whose id is no longer current is dropped both on the worker and again when the event loop applies it.
+- States (`lyrics-state`): 0 idle, 1 searching, 2 found, 3 not found, 4 error. Searching renders an indeterminate bar with "Buscando letra"; not found and error carry a Retry button that re-runs the fetch; error shows the failure message. Found renders the lyrics plus a synced/not-synced chip next to the offset control.
+- Plain lyrics (`synced == false`) render without live highlight: `active_line` and `active_word` stay at -1 and the clock only moves the position.
+
 ## Embedded
 
 - `embedded::extract` reads tags via `lofty`: USLT/Vorbis `LYRICS`/`MP4 ©lyr` map to `ItemKey::Lyrics` (`lyrics_from_tag`); SYLT is parsed from raw ID3v2 frames because lofty keeps SYLT as opaque binary.

@@ -188,7 +188,8 @@ like at the end). Two columns below it: left 40% of the window (min 520px) with
 the up-to-420px artwork centered, title/artist, seek row with the times at the
 ends, transport (56px play), volume and the tool row; the right column takes
 the rest. Tabs sit 24px under the header at the column start, the lyrics view
-fills the column below them and stops at the 96px bar ("Sin letra" when empty),
+fills the column below them and stops at the 96px bar (idle "Sin letra", searching
+bar, not found or error with Retry; the synced chip sits beside the sync control),
 and the share button shares the tabs band at the end, flush with the 16px
 margin. Lyrics use a 720px measure from the column start: active line
 `Type.title-large-emphasized` in `primary`, other lines `Type.title-medium` in

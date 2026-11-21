@@ -29,6 +29,9 @@ export component FullPlayer inherits Rectangle {
     in property<float> lyrics-font-px: 16;
     in property<float> lyrics-spacing: 1.5;
     in property<int> lyrics-offset-ms: 0;
+    in property<int> lyrics-state: 0;
+    in property<bool> lyrics-synced: false;
+    in property<string> lyrics-error: "";
 
     callback close-clicked();
     callback play-clicked();
@@ -47,6 +50,7 @@ export component FullPlayer inherits Rectangle {
     callback lyric-seek(int);
     callback lyric-share();
     callback lyric-offset(int);
+    callback lyric-retry();
     callback lyric-scroll-locked(bool);
     callback line-at(int) -> int;
     callback line-progress(int) -> float;
@@ -553,9 +557,13 @@ export component FullPlayer inherits Rectangle {
                     font-px: root.lyrics-font-px;
                     spacing-mult: root.lyrics-spacing;
                     offset-ms: root.lyrics-offset-ms;
+                    state: root.lyrics-state;
+                    synced: root.lyrics-synced;
+                    error-text: root.lyrics-error;
                     line-seek(ms) => { root.lyric-seek(ms); }
                     share-requested => { root.lyric-share(); }
                     offset-requested(ms) => { root.lyric-offset(ms); }
+                    retry-requested => { root.lyric-retry(); }
                     scroll-locked-changed(locked) => { root.lyric-scroll-locked(locked); }
                 }
 

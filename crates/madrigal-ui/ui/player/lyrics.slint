@@ -14,12 +14,23 @@ export component LyricsView inherits Rectangle {
     in property<float> spacing-mult: 1.5;
     in property<bool> click-seek: true;
     in property<int> offset-ms: 0;
+    in property<int> state: 0;
+    in property<bool> synced: false;
+    in property<string> error-text: "";
     in-out property<bool> scroll-locked: false;
+    property<int> spin-phase: 0;
 
     callback line-seek(int);
     callback share-requested();
     callback offset-requested(int);
+    callback retry-requested();
     callback scroll-locked-changed(bool);
+
+    spin-timer := Timer {
+        interval: 40ms;
+        running: root.state == 1;
+        triggered => { root.spin-phase = Math.mod(root.spin-phase + 1, 100); }
+    }
 
     accessible-role: AccessibleRole.list;
     accessible-label: I18n.trl(I18n.lang, "player.tab.lyrics");
@@ -97,6 +108,31 @@ export component LyricsView inherits Rectangle {
             clicked => { root.share-requested(); }
         }
 
+        sync-chip := Rectangle {
+            x: offset-row.x - self.width - Spacing.s8;
+            y: Spacing.s24 + (root.tab-h - self.height) / 2;
+            width: sync-chip-text.preferred-width + 2 * Spacing.s12;
+            height: 28px;
+            border-radius: self.height / 2;
+            background: root.synced ? root.palette.secondary-container : root.palette.surface-container-highest;
+            visible: root.state == 2 && root.rows.length > 0;
+
+            sync-chip-text := Text {
+                x: Spacing.s12;
+                y: (parent.height - self.height) / 2;
+                text: root.synced
+                    ? I18n.trl(I18n.lang, "player.lyricsSyncedChip")
+                    : I18n.trl(I18n.lang, "player.lyricsPlainChip");
+                color: root.synced ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+                font-size: Type.label-medium.size;
+                font-family: Type.label-medium.family;
+                font-weight: Type.label-medium.weight;
+                letter-spacing: Type.label-medium.tracking;
+                vertical-alignment: center;
+                accessible-label: self.text;
+            }
+        }
+
         offset-row := HorizontalLayout {
             x: parent.width - 40px - Spacing.s8 - 220px;
             y: Spacing.s24 + (root.tab-h - 40px) / 2;
@@ -152,7 +188,140 @@ export component LyricsView inherits Rectangle {
         font-family: Font.body;
         horizontal-alignment: center;
         vertical-alignment: center;
-        visible: root.rows.length == 0;
+        accessible-role: AccessibleRole.text;
+        visible: root.rows.length == 0 && (root.state == 0 || root.state == 2);
+    }
+
+    lyrics-searching := Rectangle {
+        x: 0px;
+        y: root.head-h;
+        width: 100%;
+        height: parent.height - root.head-h;
+        background: transparent;
+        visible: root.state == 1;
+
+        searching-block := VerticalLayout {
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.preferred-height) / 2;
+            width: min(480px, parent.width);
+            height: self.preferred-height;
+            cross-axis-alignment: center;
+            spacing: Spacing.s16;
+
+            search-track := Rectangle {
+                width: 160px;
+                height: 4px;
+                border-radius: 2px;
+                background: root.palette.surface-container-highest;
+                clip: true;
+
+                search-fill := Rectangle {
+                    width: 56px;
+                    height: 4px;
+                    border-radius: 2px;
+                    background: root.palette.primary;
+                    x: (parent.width - self.width)
+                        * (root.spin-phase < 50 ? root.spin-phase / 50.0 : (100 - root.spin-phase) / 50.0);
+                }
+            }
+
+            search-text := Text {
+                text: I18n.trl(I18n.lang, "player.lyricsSearching");
+                color: root.palette.on-surface-variant;
+                font-size: Type.body-medium.size;
+                font-family: Type.body-medium.family;
+                horizontal-alignment: center;
+                width: 100%;
+                accessible-role: AccessibleRole.text;
+            }
+        }
+    }
+
+    lyrics-notfound := Rectangle {
+        x: 0px;
+        y: root.head-h;
+        width: 100%;
+        height: parent.height - root.head-h;
+        background: transparent;
+        visible: root.state == 3;
+
+        notfound-block := VerticalLayout {
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.preferred-height) / 2;
+            width: min(480px, parent.width);
+            height: self.preferred-height;
+            cross-axis-alignment: center;
+            spacing: Spacing.s16;
+
+            notfound-text := Text {
+                text: I18n.trl(I18n.lang, "player.lyricsNotFound");
+                color: root.palette.on-surface;
+                font-size: Type.title-medium.size;
+                font-family: Font.title;
+                font-weight: Type.title-medium.weight;
+                horizontal-alignment: center;
+                width: 100%;
+                accessible-role: AccessibleRole.text;
+            }
+
+            lyrics-retry := M3Button {
+                width: 132px;
+                text: I18n.trl(I18n.lang, "common.retry");
+                fill: root.palette.secondary-container;
+                content: root.palette.on-secondary-container;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.retry-requested(); }
+            }
+        }
+    }
+
+    lyrics-error := Rectangle {
+        x: 0px;
+        y: root.head-h;
+        width: 100%;
+        height: parent.height - root.head-h;
+        background: transparent;
+        visible: root.state == 4;
+
+        error-block := VerticalLayout {
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.preferred-height) / 2;
+            width: min(480px, parent.width);
+            height: self.preferred-height;
+            cross-axis-alignment: center;
+            spacing: Spacing.s12;
+
+            error-title := Text {
+                text: I18n.trl(I18n.lang, "player.lyricsError");
+                color: root.palette.on-surface;
+                font-size: Type.title-medium.size;
+                font-family: Font.title;
+                font-weight: Type.title-medium.weight;
+                horizontal-alignment: center;
+                width: 100%;
+                accessible-role: AccessibleRole.text;
+            }
+
+            error-detail := Text {
+                text: root.error-text;
+                color: root.palette.on-surface-variant;
+                font-size: Type.body-small.size;
+                font-family: Type.body-small.family;
+                horizontal-alignment: center;
+                wrap: word-wrap;
+                width: 100%;
+                accessible-role: AccessibleRole.text;
+            }
+
+            lyrics-error-retry := M3Button {
+                width: 132px;
+                text: I18n.trl(I18n.lang, "common.retry");
+                fill: root.palette.secondary-container;
+                content: root.palette.on-secondary-container;
+                state-on-surface: root.palette.on-surface;
+                clicked => { root.retry-requested(); }
+            }
+        }
     }
 
     lyrics-list := Flickable {

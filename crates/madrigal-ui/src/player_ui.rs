@@ -1,10 +1,13 @@
 use slint::{ComponentHandle, Model, ModelRc, VecModel};
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use crate::lyrics_clock::{LyricsClock, MAX_OFFSET_MS};
+use crate::lyrics_fetch::{
+    ChainSource, DbLyricsCache, Generation, LyricsEvent, LyricsFetcher,
+};
 use crate::{LyricLineRow, LyricWordRow, MainShell, QueueRow};
 
 static LYRICS_CACHE: Mutex<Option<madrigal_lyrics::Lyrics>> = Mutex::new(None);
@@ -20,6 +23,13 @@ struct ClockWiring {
 
 thread_local! {
     static CLOCK: RefCell<Option<ClockWiring>> = const { RefCell::new(None) };
+    static FETCH: RefCell<Option<FetchWiring>> = const { RefCell::new(None) };
+    static LAST_TRACK: RefCell<Option<String>> = const { RefCell::new(None) };
+}
+
+struct FetchWiring {
+    fetcher: Rc<LyricsFetcher>,
+    generation: Generation,
 }
 
 struct DragState {
@@ -121,6 +131,9 @@ pub struct PlaybackUiState {
     pub queue: QueueTabData,
     pub lyrics_font_px: f32,
     pub lyrics_spacing: f32,
+    pub track_id: String,
+    pub track_source: madrigal_core::TrackSource,
+    pub queue_index: i32,
 }
 
 pub fn repeat_index(mode: madrigal_settings::RepeatMode) -> i32 {
@@ -156,10 +169,30 @@ pub fn apply_playback_state(shell: &MainShell, state: &PlaybackUiState) {
     shell.set_queue_locked(state.queue_locked);
     shell.set_lyrics_font_px(state.lyrics_font_px);
     shell.set_lyrics_spacing(state.lyrics_spacing);
+    shell.set_track_id(state.track_id.clone().into());
+    shell.set_track_source(track_source_index(state.track_source));
+    shell.set_queue_current_index(state.queue_index);
     set_queue_models(shell, &state.queue);
     anchor_clock(state.position_ms as i64);
     set_clock_playing(!state.paused);
     sync_clock(shell);
+    maybe_fetch_lyrics(shell);
+}
+
+pub fn track_source_index(source: madrigal_core::TrackSource) -> i32 {
+    match source {
+        madrigal_core::TrackSource::Youtube => 0,
+        madrigal_core::TrackSource::Tidal => 1,
+        madrigal_core::TrackSource::Local => 2,
+    }
+}
+
+pub fn track_source_from_index(index: i32) -> madrigal_core::TrackSource {
+    match index {
+        1 => madrigal_core::TrackSource::Tidal,
+        2 => madrigal_core::TrackSource::Local,
+        _ => madrigal_core::TrackSource::Youtube,
+    }
 }
 
 fn anchor_clock(position_ms: i64) {
@@ -318,6 +351,7 @@ pub fn set_lyrics(shell: &MainShell, lyrics: &madrigal_lyrics::Lyrics) {
         })
         .collect();
     shell.set_lyric_rows(ModelRc::new(Rc::new(VecModel::from_slice(rows.as_slice()))));
+    shell.set_lyrics_synced(lyrics.synced);
     *LYRICS_CACHE.lock().unwrap() = Some(lyrics.clone());
     refresh_karaoke(shell, shell.get_position_ms() as i64);
 }
@@ -330,11 +364,140 @@ pub fn clear_lyrics(shell: &MainShell) {
     shell.set_word_progress(0.0);
 }
 
+pub fn lyrics_delivery(shell: &MainShell) -> Arc<dyn Fn(LyricsEvent) + Send + Sync> {
+    let weak = shell.as_weak();
+    Arc::new(move |event| {
+        let weak = weak.clone();
+        let _ = slint::invoke_from_event_loop(move || {
+            if let Some(shell) = weak.upgrade() {
+                apply_lyrics_event(&shell, event);
+            }
+        });
+    })
+}
+
+pub fn chain_fetcher(shell: &MainShell) -> Rc<LyricsFetcher> {
+    Rc::new(LyricsFetcher::new(
+        Box::new(DbLyricsCache::default_profile()),
+        Box::new(ChainSource::default_profile()),
+        lyrics_delivery(shell),
+    ))
+}
+
+pub fn wire_lyrics_fetch(shell: &MainShell, fetcher: Rc<LyricsFetcher>) {
+    let generation = fetcher.generation();
+    FETCH.with(|slot| *slot.borrow_mut() = Some(FetchWiring { fetcher, generation }));
+    LAST_TRACK.with(|slot| *slot.borrow_mut() = None);
+    shell.on_lyrics_retry_requested({
+        let shell = shell.as_weak();
+        move || {
+            if let Some(shell) = shell.upgrade() {
+                shell.set_lyrics_retry_count(shell.get_lyrics_retry_count() + 1);
+                fetch_current_lyrics(&shell);
+            }
+        }
+    });
+}
+
+pub fn apply_lyrics_event(shell: &MainShell, event: LyricsEvent) {
+    let current = FETCH.with(|slot| {
+        slot.borrow()
+            .as_ref()
+            .is_some_and(|wiring| wiring.generation.is_current(event.request_id()))
+    });
+    if !current {
+        return;
+    }
+    match event {
+        LyricsEvent::Found { lyrics, .. } => {
+            set_lyrics(shell, &lyrics);
+            shell.set_lyrics_error("".into());
+            shell.set_lyrics_state(2);
+        }
+        LyricsEvent::NotFound { .. } => {
+            clear_lyrics(shell);
+            shell.set_lyrics_error("".into());
+            shell.set_lyrics_state(3);
+        }
+        LyricsEvent::Failed { message, .. } => {
+            clear_lyrics(shell);
+            shell.set_lyrics_error(message.into());
+            shell.set_lyrics_state(4);
+        }
+    }
+}
+
+fn current_track(shell: &MainShell) -> Option<madrigal_core::Track> {
+    let id = shell.get_track_id();
+    if id.is_empty() {
+        return None;
+    }
+    let artist = shell.get_track_artist();
+    let album = shell.get_track_album();
+    let duration_ms = shell.get_duration_ms();
+    Some(madrigal_core::Track {
+        identity: madrigal_core::TrackIdentity::new(
+            track_source_from_index(shell.get_track_source()),
+            id.to_string(),
+        ),
+        title: shell.get_track_title().to_string(),
+        artists: if artist.is_empty() { Vec::new() } else { vec![artist.to_string()] },
+        album: (!album.is_empty()).then(|| album.to_string()),
+        duration_secs: (duration_ms > 0).then(|| (duration_ms as u32).div_ceil(1000)),
+        thumbnail: None,
+        track_number: None,
+        local_path: None,
+        set_video_id: None,
+    })
+}
+
+fn maybe_fetch_lyrics(shell: &MainShell) {
+    let key = format!("{}:{}", shell.get_track_id(), shell.get_queue_current_index());
+    let changed = LAST_TRACK.with(|slot| {
+        let mut slot = slot.borrow_mut();
+        let changed = slot.as_deref() != Some(key.as_str());
+        if changed {
+            *slot = Some(key);
+        }
+        changed
+    });
+    if changed {
+        fetch_current_lyrics(shell);
+    }
+}
+
+fn fetch_current_lyrics(shell: &MainShell) -> bool {
+    let Some(track) = current_track(shell) else {
+        clear_lyrics(shell);
+        shell.set_lyrics_error("".into());
+        shell.set_lyrics_state(0);
+        return false;
+    };
+    let fetcher = FETCH.with(|slot| slot.borrow().as_ref().map(|wiring| wiring.fetcher.clone()));
+    let Some(fetcher) = fetcher else {
+        return false;
+    };
+    let config =
+        madrigal_lyrics::chain::ChainConfig::from(&madrigal_settings::Settings::load().lyrics);
+    clear_lyrics(shell);
+    shell.set_lyrics_error("".into());
+    shell.set_lyrics_state(1);
+    fetcher.request(track, config);
+    shell.set_lyrics_fetch_count(shell.get_lyrics_fetch_count() + 1);
+    true
+}
+
 pub fn active_lyric_at(lyrics: &madrigal_lyrics::Lyrics, t_ms: i32) -> i32 {
+    if !lyrics.synced {
+        return -1;
+    }
     madrigal_lyrics::karaoke::line_at(lyrics, t_ms as i64).map(|i| i as i32).unwrap_or(-1)
 }
 
 pub fn active_word_at(lyrics: &madrigal_lyrics::Lyrics, t_ms: i32) -> i32 {
+    if !lyrics.synced {
+        return -1;
+    }
     let t = t_ms as i64;
     madrigal_lyrics::karaoke::line_at(lyrics, t)
         .and_then(|index| lyrics.lines.get(index))
@@ -344,6 +507,9 @@ pub fn active_word_at(lyrics: &madrigal_lyrics::Lyrics, t_ms: i32) -> i32 {
 }
 
 pub fn lyric_progress_at(lyrics: &madrigal_lyrics::Lyrics, t_ms: i32) -> f32 {
+    if !lyrics.synced {
+        return 0.0;
+    }
     let t = t_ms as i64;
     match madrigal_lyrics::karaoke::line_at(lyrics, t).and_then(|i| lyrics.lines.get(i)) {
         Some(line) => madrigal_lyrics::karaoke::progress_within(line, t),

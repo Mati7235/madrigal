@@ -73,7 +73,13 @@ export component MainShell inherits Window {
     in-out property<float> lyrics-font-px: 16;
     in-out property<float> lyrics-spacing: 1.5;
     in-out property<int> lyrics-offset-ms: 0;
+    in-out property<int> lyrics-state: 0;
+    in-out property<bool> lyrics-synced: false;
+    in-out property<string> lyrics-error: "";
     in-out property<bool> lyrics-scroll-locked: false;
+    in-out property<string> track-id: "";
+    in-out property<int> track-source: 0;
+    in-out property<int> queue-current-index: -1;
     in-out property<int> queue-tab: 0;
     in-out property<bool> queue-locked: false;
     in-out property<[QueueRow]> queue-all;
@@ -107,6 +113,8 @@ export component MainShell inherits Window {
     in-out property<int> lyrics-share-count: 0;
     in-out property<int> lyrics-offset-count: 0;
     in-out property<int> lyrics-clock-ticks: 0;
+    in-out property<int> lyrics-fetch-count: 0;
+    in-out property<int> lyrics-retry-count: 0;
     in-out property<int> queue-play-count: 0;
     in-out property<int> queue-play-last: -1;
     in-out property<int> queue-remove-count: 0;
@@ -315,6 +323,7 @@ export component MainShell inherits Window {
     callback lyrics-seek-requested(int);
     callback lyrics-share-requested();
     callback lyrics-offset-changed(int);
+    callback lyrics-retry-requested();
     callback queue-play-requested(int);
     callback queue-remove-requested(int);
     callback queue-move-requested(int, int);
@@ -846,6 +855,9 @@ export component MainShell inherits Window {
         lyrics-font-px: root.lyrics-font-px;
         lyrics-spacing: root.lyrics-spacing;
         lyrics-offset-ms: root.lyrics-offset-ms;
+        lyrics-state: root.lyrics-state;
+        lyrics-synced: root.lyrics-synced;
+        lyrics-error: root.lyrics-error;
         close-clicked => { root.full-player-open = false; root.player-dialog = 0; root.full-player-closed(); }
         play-clicked => { root.play-toggle-count += 1; root.play-pause-toggled(); }
         prev-clicked => { root.prev-count += 1; root.prev-requested(); }
@@ -863,6 +875,7 @@ export component MainShell inherits Window {
         lyric-seek(ms) => { root.lyrics-seek-requested(ms); }
         lyric-share => { root.lyrics-share-requested(); }
         lyric-offset(ms) => { root.lyrics-offset-changed(ms); }
+        lyric-retry => { root.lyrics-retry-requested(); }
         lyric-scroll-locked(locked) => { root.lyrics-scroll-locked = locked; }
         line-at(t) => { root.line-at(t) }
         line-progress(t) => { root.line-progress(t) }

@@ -2,6 +2,7 @@ slint::include_modules!();
 
 mod artwork;
 mod lyrics_clock;
+mod lyrics_fetch;
 mod pages_catalog;
 mod pages_library;
 mod pages_settings;
@@ -31,14 +32,19 @@ pub use pages_library::{
 };
 
 pub use player_ui::{
-    active_lyric_at, active_word_at, apply_background_style, apply_lyrics_settings,
-    apply_playback_state, apply_player_settings, background_from_appearance, background_index,
-    clear_lyrics, dialog_index, eq_preset_gains, lyric_progress_at, open_player_dialog,
-    queue_tabs_from_queue, render_share_png, repeat_from_index, repeat_index, set_lyrics,
-    set_queue_models, set_stream_info, show_error, wire_lyrics_clock, wire_player_callbacks,
+    active_lyric_at, active_word_at, apply_background_style, apply_lyrics_event,
+    apply_lyrics_settings, apply_playback_state, apply_player_settings, background_from_appearance,
+    background_index, chain_fetcher, clear_lyrics, dialog_index, eq_preset_gains,
+    lyric_progress_at, lyrics_delivery, open_player_dialog, queue_tabs_from_queue,
+    render_share_png, repeat_from_index, repeat_index, set_lyrics, set_queue_models,
+    set_stream_info, show_error, wire_lyrics_clock, wire_lyrics_fetch, wire_player_callbacks,
     PlaybackUiState, PlayerBackgroundStyle, PlayerDialog, QueueRowData, QueueTabData,
 };
 pub use lyrics_clock::{LyricsClock, MAX_OFFSET_MS};
+pub use lyrics_fetch::{
+    CachedLyrics, ChainSource, DbLyricsCache, FetchTask, Generation, LyricsCache, LyricsEvent,
+    LyricsFetcher, LyricsSource,
+};
 
 pub use pages_settings::{
     all_groups, apply_to_file, apply_value, detect_po_provider, field_count, group_from_index,
