@@ -1,4 +1,4 @@
-use madrigal_i18n::{DEFAULT_LANG, LANGS, Lang, contains, keys, len, tr, try_tr};
+use madrigal_i18n::{DEFAULT_LANG, LANGS, Lang, contains, format, keys, len, tr, trf, try_tr};
 use std::collections::HashSet;
 
 #[test]
@@ -39,6 +39,38 @@ fn tr_devuelve_no_vacio_en_ambos_idiomas() {
             assert!(!tr(*lang, key).is_empty(), "{key} vacia en {lang:?}");
         }
     }
+}
+
+#[test]
+fn formato_sustituye_argumentos_en_orden() {
+    assert_eq!(format("Tono: %1 semitonos", &["2"]), "Tono: 2 semitonos");
+    assert_eq!(format("Velocidad: %1x", &["1.25"]), "Velocidad: 1.25x");
+    assert_eq!(format("%1 y %2", &["a", "b"]), "a y b");
+    assert_eq!(format("100% %1", &["ok"]), "100% ok");
+    assert_eq!(format("%1 %2", &["solo"]), "solo %2");
+    assert_eq!(format("%0 %10", &["x"]), "%0 %10");
+    assert_eq!(format("sin argumentos", &[]), "sin argumentos");
+}
+
+#[test]
+fn claves_con_marcadores_se_formatean_sin_dejarlos() {
+    for lang in LANGS {
+        for key in keys() {
+            let template = tr(*lang, key);
+            if !template.contains('%') {
+                continue;
+            }
+            let filled = format(template, &["1", "2"]);
+            if template.contains("%1") || template.contains("%2") {
+                assert!(!filled.contains("%1") && !filled.contains("%2"), "{key} sin formatear");
+            }
+        }
+    }
+    assert_eq!(
+        trf(Lang::Es, "audio.speed", &["1.5"]),
+        "Velocidad: 1.5×"
+    );
+    assert_eq!(trf(Lang::En, "audio.pitch", &["-2"]), "Pitch: -2 semitones");
 }
 
 #[test]

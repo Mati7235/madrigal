@@ -851,3 +851,37 @@ pub fn try_tr(lang: Lang, key: &str) -> Result<&'static str, UnknownKey<'_>> {
 pub fn tr(lang: Lang, key: &str) -> &str {
     try_tr(lang, key).unwrap_or(key)
 }
+
+pub fn format(template: &str, args: &[&str]) -> String {
+    let mut out = String::with_capacity(template.len());
+    let mut rest = template;
+    while let Some(at) = rest.find('%') {
+        out.push_str(&rest[..at]);
+        let after = &rest[at + 1..];
+        let digits: String = after
+            .chars()
+            .take_while(|ch| ch.is_ascii_digit())
+            .collect();
+        let arg = digits
+            .parse::<usize>()
+            .ok()
+            .filter(|index| *index > 0)
+            .and_then(|index| args.get(index - 1));
+        match arg {
+            Some(arg) => {
+                out.push_str(arg);
+                rest = &after[digits.len()..];
+            }
+            None => {
+                out.push('%');
+                rest = after;
+            }
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+pub fn trf(lang: Lang, key: &str, args: &[&str]) -> String {
+    format(try_tr(lang, key).unwrap_or(key), args)
+}

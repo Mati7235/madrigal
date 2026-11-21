@@ -35,9 +35,11 @@ has no GPU scale primitive, so press feedback is morph + state layer.
 
 i18n: global `I18n.trl(lang, key)` (pure callback) wired from Rust to
 `madrigal-i18n`, default Es. Gallery labels call `trl`; runtime `set_lang`
-refreshes every binding through the `lang` property. The global lives in
-`ui/i18n.slint` so gallery and shell share one type; `ui/app.slint`
-re-exports `DemoGallery`, `MainShell` and `I18n` as the single compile root.
+refreshes every binding through the `lang` property. Keys with `%1`..`%9`
+use `I18n.trf(lang, key, args)`, which substitutes the arguments in Rust.
+The global lives in `ui/i18n.slint` so gallery and shell share one type;
+`ui/app.slint` re-exports `DemoGallery`, `MainShell` and `I18n` as the single
+compile root.
 
 Shell (`ui/shell/`, presenter `src/shell.rs`): `MainShell` window, preferred
 1280×800 with a 640×480 minimum, whose sidebar and page host fill y=0 down to

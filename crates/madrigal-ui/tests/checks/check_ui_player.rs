@@ -176,12 +176,48 @@ fn word_lyrics_fixture() -> madrigal_lyrics::Lyrics {
 
 fn fixture_queue() -> madrigal_player::queue::Queue {
     use madrigal_core::TrackIdentity;
+    use madrigal_player::queue::{QueueEntry, TrackMeta};
     let mut queue = madrigal_player::queue::Queue::new();
     for id in ["song-a1", "song-a2", "song-b1", "song-b2"] {
         assert!(queue.push(TrackIdentity::youtube(id)));
     }
+    assert!(queue.push_entry(QueueEntry::with_meta(
+        TrackIdentity::youtube("2ttGjtfQ7EA"),
+        TrackMeta {
+            title: "Canción A".to_owned(),
+            artist: "Artista A".to_owned(),
+            album: "Álbum A".to_owned(),
+            duration_secs: Some(245),
+            thumbnail: Some("https://example.test/a.webp".to_owned()),
+        },
+    )));
     queue.play_at(0);
     queue
+}
+
+#[test]
+fn ui_i18n_formats_args() {
+    let tmp = tempfile::tempdir().unwrap();
+    std::env::set_var("XDG_DATA_HOME", tmp.path().join("data"));
+    std::env::set_var("XDG_CONFIG_HOME", tmp.path().join("config"));
+    std::env::set_var("XDG_CACHE_HOME", tmp.path().join("cache"));
+    std::env::set_var("XDG_STATE_HOME", tmp.path().join("state"));
+    kit::init_headless();
+    let shell = MainShell::new().unwrap();
+    wire_shell_i18n(&shell, madrigal_i18n::Lang::Es);
+    let args = slint::ModelRc::new(slint::VecModel::from(vec![
+        slint::SharedString::from("2.5"),
+    ]));
+    let filled: slint::SharedString = shell
+        .global::<madrigal_ui::I18n>()
+        .invoke_trf("es".into(), "audio.speed".into(), args);
+    assert_eq!(filled.as_str(), "Velocidad: 2.5×");
+    let pitch: slint::SharedString = shell.global::<madrigal_ui::I18n>().invoke_trf(
+        "en".into(),
+        "audio.pitch".into(),
+        slint::ModelRc::new(slint::VecModel::from(vec![slint::SharedString::from("-2")])),
+    );
+    assert_eq!(pitch.as_str(), "Pitch: -2 semitones");
 }
 
 fn drag_to(shell: &MainShell, id: &str, index: usize, frac: f32) {

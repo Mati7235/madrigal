@@ -70,6 +70,11 @@ pub fn wire_shell_i18n(
     shell.global::<I18n>().on_trl(|lang, key| {
         madrigal_i18n::tr(lang_from_code(lang.as_str()), key.as_str()).into()
     });
+    shell.global::<I18n>().on_trf(|lang, key, args| {
+        let owned: Vec<String> = args.iter().map(|arg| arg.to_string()).collect();
+        let args: Vec<&str> = owned.iter().map(String::as_str).collect();
+        madrigal_i18n::trf(lang_from_code(lang.as_str()), key.as_str(), &args).into()
+    });
     let slot = Rc::new(Cell::new(initial));
     set_shell_lang(shell, &slot, initial);
     slot

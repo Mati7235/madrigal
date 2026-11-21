@@ -161,7 +161,7 @@ export component TempoPitchDialog inherits Rectangle {
                         font-family: Type.title-large.family;
                     }
                     tempo-semi-label := Text {
-                        text: I18n.trl(I18n.lang, "audio.pitch");
+                        text: I18n.trf(I18n.lang, "audio.pitch", [root.semitones.to-string-unlocalized()]);
                         color: root.palette.on-surface-variant;
                         font-size: Type.body-medium.size;
                         font-family: Type.body-medium.family;
@@ -178,7 +178,7 @@ export component TempoPitchDialog inherits Rectangle {
                         }
                     }
                     tempo-mult-label := Text {
-                        text: I18n.trl(I18n.lang, "audio.speed");
+                        text: I18n.trf(I18n.lang, "audio.speed", [root.mult.to-string-unlocalized()]);
                         color: root.palette.on-surface-variant;
                         font-size: Type.body-medium.size;
                         font-family: Type.body-medium.family;
