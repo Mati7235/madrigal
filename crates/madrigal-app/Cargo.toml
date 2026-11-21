@@ -19,6 +19,7 @@ path = "src/main.rs"
 madrigal-core = { path = "../madrigal-core" }
 madrigal-db = { path = "../madrigal-db" }
 madrigal-i18n = { path = "../madrigal-i18n" }
+madrigal-innertube = { path = "../madrigal-innertube" }
 madrigal-localmedia = { path = "../madrigal-localmedia" }
 madrigal-lyrics = { path = "../madrigal-lyrics" }
 madrigal-paths = { path = "../madrigal-paths" }
@@ -27,6 +28,7 @@ madrigal-settings = { path = "../madrigal-settings" }
 madrigal-ui = { path = "../madrigal-ui" }
 rusqlite = "0.41"
 slint = "=1.19.0"
+tokio = { version = "1", features = ["rt"] }
 
 [dev-dependencies]
 madrigal-testkit = { path = "../madrigal-testkit" }
@@ -39,6 +41,10 @@ path = "tests/checks/check_app_startup.rs"
 [[test]]
 name = "check_app_shell"
 path = "tests/checks/check_app_shell.rs"
+
+[[test]]
+name = "check_app_catalog"
+path = "tests/checks/check_app_catalog.rs"
 
 [[test]]
 name = "check_app_cli"

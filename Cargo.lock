@@ -3530,6 +3530,7 @@ dependencies = [
  "madrigal-core",
  "madrigal-db",
  "madrigal-i18n",
+ "madrigal-innertube",
  "madrigal-localmedia",
  "madrigal-lyrics",
  "madrigal-paths",
@@ -3540,6 +3541,7 @@ dependencies = [
  "rusqlite",
  "slint",
  "tempfile",
+ "tokio",
 ]
 
 [[package]]

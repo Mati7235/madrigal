@@ -285,6 +285,10 @@ name = "app_shell"
 group = "offline"
 
 [[check]]
+name = "app_catalog"
+group = "offline"
+
+[[check]]
 name = "app_cli"
 group = "offline"
 

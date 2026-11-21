@@ -115,6 +115,7 @@ Without `cargo` available the check is FAIL.
 | `ui_settings` | offline | Settings screens: 11 groups with field parity, apply/toggle/dropdown/drag/mask/test, onboarding, diagnostics |
 | `app_startup` | offline | `boot_headless` under isolated XDG (settings+db+queue, no event loop): wall < 2000 ms and VmHWM delta < 150 MB |
 | `app_cli` | offline | CLI file arguments, tag/album/artist/duration mapping and title fallback over a real clip |
+| `app_catalog` | offline | Catalog wiring over innertube fixtures: boot home/explore dispatch, search+suggestions, filter and chip routing, stale-response drop, local source keeps network off |
 | `app_playback` | native | app playback over libmpv ao=null: enqueue, position, pause, seek, volume, repeat, shell snapshot and lyrics clock; SKIP without ffmpeg/libmpv |
 | `app_lyrics` | offline | app lyrics wiring: embedded USLT/SYLT first, db cache fallback, chain on track change, searching/found/none/error, retry and stale drop |
 

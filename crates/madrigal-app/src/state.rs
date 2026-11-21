@@ -10,6 +10,7 @@ use madrigal_ui::{
 };
 use slint::ComponentHandle;
 
+use crate::catalog::{self, Wiring};
 use crate::playback::{engine_config, Playback, PlaybackService, Snapshot, POLL_INTERVAL};
 use crate::store::Store;
 use crate::ui::{boot_ui, Ui};
@@ -19,6 +20,7 @@ pub struct AppState {
     pub ui: Ui,
     playback: Rc<RefCell<PlaybackService>>,
     _poll: slint::Timer,
+    _catalog: Wiring,
 }
 
 fn lock(core: &Arc<Mutex<Playback>>) -> MutexGuard<'_, Playback> {
@@ -55,12 +57,14 @@ impl AppState {
         wire_playback(&ui.shell, &core);
         crate::lyrics::wire(&ui.shell);
         let poll = start_poll(&ui.shell, Rc::clone(&service));
+        let catalog = catalog::wire_catalog(&ui.shell, &settings.content)?;
 
         Ok(Self {
             store,
             ui,
             playback: service,
             _poll: poll,
+            _catalog: catalog,
         })
     }
 
