@@ -121,8 +121,8 @@ fn session_keeper_saves_changed_state() {
     let mut keeper = SessionKeeper::new(path.clone());
     let fixture_path = fixture();
     let state = session::SessionState {
-        tracks: vec![madrigal_core::TrackIdentity::local(
-            fixture_path.to_string_lossy().into_owned(),
+        tracks: vec![madrigal_player::queue::QueueEntry::new(
+            madrigal_core::TrackIdentity::local(fixture_path.to_string_lossy().into_owned()),
         )],
         position: Some(0),
         paused: true,

@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver};
@@ -9,36 +8,16 @@ use std::time::{Duration, Instant};
 use madrigal_core::{Track, TrackIdentity, TrackSource};
 use madrigal_player::engine::{Engine, EngineConfig};
 use madrigal_player::player::Player;
+use madrigal_player::queue::{QueueEntry, TrackMeta};
 use madrigal_player::session::SessionState;
 use madrigal_player::source::{ResolvedStream, StreamSource};
 use madrigal_player::stream_info::{StreamInfo, StreamMeta, StreamOrigin};
 use madrigal_settings::Player as PlayerConfig;
 use madrigal_settings::{RepeatMode, TransitionMode};
 use madrigal_streams::Orchestrator;
-use madrigal_ui::QueueTabData;
+use madrigal_ui::{queue_tabs_from_queue, QueueTabData};
 
 pub const POLL_INTERVAL: Duration = Duration::from_millis(100);
-
-#[derive(Debug, Default, Clone)]
-pub struct TrackMeta {
-    pub title: String,
-    pub artist: String,
-    pub album: String,
-    pub duration_secs: Option<u32>,
-    pub thumbnail: Option<String>,
-}
-
-impl From<&Track> for TrackMeta {
-    fn from(track: &Track) -> Self {
-        Self {
-            title: track.title.clone(),
-            artist: track.artist_text(),
-            album: track.album.clone().unwrap_or_default(),
-            duration_secs: track.duration_secs,
-            thumbnail: track.thumbnail.clone(),
-        }
-    }
-}
 
 #[derive(Debug, Clone, Default)]
 pub struct Snapshot {
@@ -157,7 +136,6 @@ pub fn track_from_file(path: &Path) -> Result<(TrackIdentity, TrackMeta), String
 
 pub struct Playback {
     player: Player<AppSource>,
-    meta: HashMap<String, TrackMeta>,
     settings: PlayerConfig,
     revision: u64,
     error: Option<String>,
@@ -176,7 +154,6 @@ impl Playback {
             .map_err(|err| err.to_string())?;
         Ok(Self {
             player,
-            meta: HashMap::new(),
             settings: settings.clone(),
             revision: 0,
             error: None,
@@ -198,9 +175,7 @@ impl Playback {
         for path in paths {
             match track_from_file(path) {
                 Ok((identity, meta)) => {
-                    let id = identity.id.clone();
-                    if self.player.queue_mut().push(identity) {
-                        self.meta.insert(id, meta);
+                    if self.player.queue_mut().push_entry(QueueEntry::with_meta(identity, meta)) {
                         added += 1;
                     } else {
                         errors.push(format!(
@@ -225,11 +200,10 @@ impl Playback {
 
     pub fn enqueue_track(&mut self, track: &Track) -> Result<(), String> {
         let start = self.player.queue().len();
-        if !self.player.queue_mut().push(track.identity.clone()) {
+        let entry = QueueEntry::with_meta(track.identity.clone(), TrackMeta::from_track(track));
+        if !self.player.queue_mut().push_entry(entry) {
             return Err("queue is locked".to_owned());
         }
-        self.meta
-            .insert(track.identity.id.clone(), TrackMeta::from(track));
         self.revision = self.revision.wrapping_add(1);
         self.play_index(start)
     }
@@ -243,11 +217,10 @@ impl Playback {
                 .unwrap_or_else(|| queue.len())
         };
         let empty = self.player.queue().current().is_none();
-        if !self.player.queue_mut().insert(at, track.identity.clone()) {
+        let entry = QueueEntry::with_meta(track.identity.clone(), TrackMeta::from_track(track));
+        if !self.player.queue_mut().insert_entry(at, entry) {
             return Err("queue is locked".to_owned());
         }
-        self.meta
-            .insert(track.identity.id.clone(), TrackMeta::from(track));
         self.revision = self.revision.wrapping_add(1);
         if empty {
             self.play_index(at)?;
@@ -256,11 +229,10 @@ impl Playback {
     }
 
     pub fn enqueue_track_end(&mut self, track: &Track) -> Result<(), String> {
-        if !self.player.queue_mut().push(track.identity.clone()) {
+        let entry = QueueEntry::with_meta(track.identity.clone(), TrackMeta::from_track(track));
+        if !self.player.queue_mut().push_entry(entry) {
             return Err("queue is locked".to_owned());
         }
-        self.meta
-            .insert(track.identity.id.clone(), TrackMeta::from(track));
         self.revision = self.revision.wrapping_add(1);
         Ok(())
     }
@@ -292,17 +264,18 @@ impl Playback {
     }
 
     pub fn restore_session(&mut self, state: &SessionState) -> bool {
-        if !self.player.restore(state).unwrap_or(false) {
-            return false;
-        }
-        for identity in state
+        let mut enriched = state.clone();
+        for entry in enriched
             .tracks
-            .iter()
-            .filter(|identity| identity.source == TrackSource::Local)
+            .iter_mut()
+            .filter(|entry| entry.identity.source == TrackSource::Local && entry.meta.title.is_empty())
         {
-            if let Ok((_, meta)) = track_from_file(Path::new(&identity.id)) {
-                self.meta.insert(identity.id.clone(), meta);
+            if let Ok((_, meta)) = track_from_file(Path::new(&entry.identity.id)) {
+                entry.meta = meta;
             }
+        }
+        if !self.player.restore(&enriched).unwrap_or(false) {
+            return false;
         }
         self.revision = self.revision.wrapping_add(1);
         true
@@ -317,33 +290,30 @@ impl Playback {
     }
 
     pub fn current_track(&self) -> Option<Track> {
-        let identity = self.player.queue().current()?.clone();
-        let meta = self.meta.get(&identity.id);
-        let title = meta
-            .map(|meta| meta.title.clone())
-            .filter(|title| !title.trim().is_empty())
-            .unwrap_or_else(|| identity.id.clone());
+        let entry = self.player.queue().current_entry()?;
+        let identity = entry.identity.clone();
+        let meta = &entry.meta;
+        let title = if meta.title.trim().is_empty() {
+            identity.id.clone()
+        } else {
+            meta.title.clone()
+        };
         let artists = meta
-            .map(|meta| {
-                meta.artist
-                    .split(", ")
-                    .map(str::trim)
-                    .filter(|artist| !artist.is_empty())
-                    .map(str::to_owned)
-                    .collect()
-            })
-            .unwrap_or_default();
-        let album = meta
-            .map(|meta| meta.album.clone())
-            .filter(|album| !album.trim().is_empty());
+            .artist
+            .split(", ")
+            .map(str::trim)
+            .filter(|artist| !artist.is_empty())
+            .map(str::to_owned)
+            .collect();
+        let album = Some(meta.album.clone()).filter(|album| !album.trim().is_empty());
         let local_path = (identity.source == TrackSource::Local).then(|| identity.id.clone());
         Some(Track {
             identity,
             title,
             artists,
             album,
-            duration_secs: meta.and_then(|meta| meta.duration_secs),
-            thumbnail: meta.and_then(|meta| meta.thumbnail.clone()),
+            duration_secs: meta.duration_secs,
+            thumbnail: meta.thumbnail.clone(),
             track_number: None,
             local_path,
             set_video_id: None,
@@ -492,28 +462,14 @@ impl Playback {
 
     pub fn snapshot(&self) -> Snapshot {
         let queue = self.player.queue();
-        let current = queue.current();
-        let track_id = current.map(|track| track.id.clone()).unwrap_or_default();
+        let current = queue.current_entry();
+        let track_id = current
+            .map(|entry| entry.identity.id.clone())
+            .unwrap_or_default();
         let track_source = current
-            .map(|track| track.source)
+            .map(|entry| entry.identity.source)
             .unwrap_or(TrackSource::Local);
-        let queue_meta: HashMap<String, madrigal_ui::QueueMeta> = queue
-            .items()
-            .iter()
-            .filter_map(|identity| {
-                let meta = self.meta.get(&identity.id)?;
-                Some((
-                    identity.to_storage_string(),
-                    madrigal_ui::QueueMeta {
-                        title: meta.title.clone(),
-                        artist: meta.artist.clone(),
-                        album: meta.album.clone(),
-                        thumbnail: meta.thumbnail.clone(),
-                    },
-                ))
-            })
-            .collect();
-        let meta = self.meta.get(&track_id);
+        let meta = current.map(|entry| &entry.meta);
         let meta_duration = meta.and_then(|meta| meta.duration_secs);
         let duration_ms = self
             .player
@@ -523,8 +479,9 @@ impl Playback {
             .map(|secs| (secs * 1000.0).round().clamp(0.0, f64::from(i32::MAX)) as i32)
             .or_else(|| meta_duration.map(|secs| (secs as i32).saturating_mul(1000)))
             .unwrap_or(0);
-        let tabs = madrigal_ui::queue_tabs_annotated(queue, "", &queue_meta);
-        let stream = current.and_then(|identity| {
+        let tabs = queue_tabs_from_queue(queue, "");
+        let stream = current.and_then(|entry| {
+            let identity = &entry.identity;
             let origin = if identity.source == TrackSource::Local {
                 StreamOrigin::Local
             } else {

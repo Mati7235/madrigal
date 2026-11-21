@@ -345,11 +345,19 @@ fn part_playback(streams: Orchestrator, track: &Track, log: &Path, server: &Medi
     );
 
     let session = playback.session_state().expect("session state");
-    assert_eq!(session.tracks, vec![track.identity.clone()]);
+    assert_eq!(
+        session
+            .tracks
+            .iter()
+            .map(|entry| &entry.identity)
+            .collect::<Vec<_>>(),
+        vec![&track.identity]
+    );
+    assert_eq!(session.tracks[0].meta.title, track.title);
     assert!(
-        session.tracks.iter().all(
-            |identity| !identity.id.contains("googlevideo") && !identity.id.starts_with("http")
-        ),
+        session.tracks.iter().all(|entry| {
+            !entry.identity.id.contains("googlevideo") && !entry.identity.id.starts_with("http")
+        }),
         "session persisted a stream url"
     );
     drop(playback);

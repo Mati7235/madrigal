@@ -1,5 +1,59 @@
-use madrigal_core::TrackIdentity;
+use madrigal_core::{Track, TrackIdentity};
 use madrigal_settings::RepeatMode;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TrackMeta {
+    #[serde(default)]
+    pub title: String,
+    #[serde(default)]
+    pub artist: String,
+    #[serde(default)]
+    pub album: String,
+    #[serde(default)]
+    pub duration_secs: Option<u32>,
+    #[serde(default)]
+    pub thumbnail: Option<String>,
+}
+
+impl TrackMeta {
+    pub fn from_track(track: &Track) -> Self {
+        Self {
+            title: track.title.clone(),
+            artist: track.artist_text(),
+            album: track.album.clone().unwrap_or_default(),
+            duration_secs: track.duration_secs,
+            thumbnail: track.thumbnail.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct QueueEntry {
+    #[serde(flatten)]
+    pub identity: TrackIdentity,
+    #[serde(flatten, default)]
+    pub meta: TrackMeta,
+}
+
+impl QueueEntry {
+    pub fn new(identity: TrackIdentity) -> Self {
+        Self {
+            identity,
+            meta: TrackMeta::default(),
+        }
+    }
+
+    pub fn with_meta(identity: TrackIdentity, meta: TrackMeta) -> Self {
+        Self { identity, meta }
+    }
+}
+
+impl From<TrackIdentity> for QueueEntry {
+    fn from(identity: TrackIdentity) -> Self {
+        Self::new(identity)
+    }
+}
 
 fn splitmix64(state: &mut u64) -> u64 {
     *state = state.wrapping_add(0x9E3779B97F4A7C15);
@@ -11,7 +65,7 @@ fn splitmix64(state: &mut u64) -> u64 {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Queue {
-    items: Vec<TrackIdentity>,
+    items: Vec<QueueEntry>,
     order: Vec<usize>,
     cursor: Option<usize>,
     repeat: RepeatMode,
@@ -95,10 +149,14 @@ impl Queue {
     }
 
     pub fn replace(&mut self, tracks: Vec<TrackIdentity>, start: usize) -> bool {
+        self.replace_entries(tracks.into_iter().map(QueueEntry::new).collect(), start)
+    }
+
+    pub fn replace_entries(&mut self, entries: Vec<QueueEntry>, start: usize) -> bool {
         if self.locked {
             return false;
         }
-        self.items = tracks;
+        self.items = entries;
         if self.items.is_empty() {
             self.order.clear();
             self.cursor = None;
@@ -121,11 +179,19 @@ impl Queue {
     }
 
     pub fn insert(&mut self, at: usize, track: TrackIdentity) -> bool {
+        self.insert_entry(at, QueueEntry::new(track))
+    }
+
+    pub fn push_entry(&mut self, entry: QueueEntry) -> bool {
+        self.insert_entry(self.items.len(), entry)
+    }
+
+    pub fn insert_entry(&mut self, at: usize, entry: QueueEntry) -> bool {
         if self.locked {
             return false;
         }
         let at = at.min(self.items.len());
-        self.items.insert(at, track);
+        self.items.insert(at, entry);
         for slot in self.order.iter_mut() {
             if *slot >= at {
                 *slot += 1;
@@ -207,15 +273,19 @@ impl Queue {
         true
     }
 
-    pub fn current(&self) -> Option<&TrackIdentity> {
+    pub fn current_entry(&self) -> Option<&QueueEntry> {
         self.current_index().and_then(|i| self.items.get(i))
+    }
+
+    pub fn current(&self) -> Option<&TrackIdentity> {
+        self.current_entry().map(|entry| &entry.identity)
     }
 
     pub fn current_index(&self) -> Option<usize> {
         self.cursor.and_then(|c| self.order.get(c).copied())
     }
 
-    pub fn items(&self) -> &[TrackIdentity] {
+    pub fn items(&self) -> &[QueueEntry] {
         &self.items
     }
 
@@ -223,7 +293,7 @@ impl Queue {
         &self.order
     }
 
-    pub fn ordered(&self) -> Vec<&TrackIdentity> {
+    pub fn ordered(&self) -> Vec<&QueueEntry> {
         self.order.iter().filter_map(|&i| self.items.get(i)).collect()
     }
 
@@ -260,6 +330,7 @@ impl Queue {
         self.step_index(self.cursor)
             .and_then(|n| self.order.get(n))
             .and_then(|&i| self.items.get(i))
+            .map(|entry| &entry.identity)
     }
 
     fn step_index(&self, from: Option<usize>) -> Option<usize> {

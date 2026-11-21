@@ -72,8 +72,9 @@ pub struct QueueRowData {
     pub title: String,
     pub artist: String,
     pub album: String,
+    pub duration_secs: Option<u32>,
     pub current: bool,
-    pub thumbnail: String,
+    pub thumbnail: Option<String>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -106,27 +107,46 @@ pub fn queue_tabs_annotated(
         .items()
         .iter()
         .enumerate()
-        .map(|(index, item)| {
-            let key = item.to_storage_string();
+        .map(|(index, entry)| {
+            let key = entry.identity.to_storage_string();
             let info = meta.get(&key);
             QueueRowData {
-                title: info
-                    .map(|info| info.title.clone())
-                    .filter(|title| !title.is_empty())
-                    .unwrap_or_else(|| item.id.clone()),
-                artist: info.map(|info| info.artist.clone()).unwrap_or_default(),
-                album: info.map(|info| info.album.clone()).unwrap_or_default(),
+                title: if entry.meta.title.trim().is_empty() {
+                    info.map(|info| info.title.clone())
+                        .filter(|title| !title.is_empty())
+                        .unwrap_or_else(|| entry.identity.id.clone())
+                } else {
+                    entry.meta.title.clone()
+                },
+                artist: if entry.meta.artist.is_empty() {
+                    info.map(|info| info.artist.clone()).unwrap_or_default()
+                } else {
+                    entry.meta.artist.clone()
+                },
+                album: if entry.meta.album.is_empty() {
+                    info.map(|info| info.album.clone()).unwrap_or_default()
+                } else {
+                    entry.meta.album.clone()
+                },
+                duration_secs: entry.meta.duration_secs,
+                thumbnail: entry
+                    .meta
+                    .thumbnail
+                    .clone()
+                    .or_else(|| info.and_then(|info| info.thumbnail.clone())),
                 key,
                 current: Some(index) == current,
-                thumbnail: info
-                    .and_then(|info| info.thumbnail.clone())
-                    .unwrap_or_default(),
             }
         })
         .collect();
+    let lowered = query.to_lowercase();
     let searched = all
         .iter()
-        .filter(|row| row.title.contains(query))
+        .filter(|row| {
+            row.title.to_lowercase().contains(&lowered)
+                || row.artist.to_lowercase().contains(&lowered)
+                || row.album.to_lowercase().contains(&lowered)
+        })
         .cloned()
         .collect();
     let cont = match current {
@@ -142,8 +162,9 @@ fn to_model(rows: &[QueueRowData]) -> ModelRc<QueueRow> {
         title: row.title.clone().into(),
         artist: row.artist.clone().into(),
         album: row.album.clone().into(),
+        duration: madrigal_core::format_duration(row.duration_secs).into(),
         current: row.current,
-        thumbnail: row.thumbnail.clone().into(),
+        thumbnail: row.thumbnail.clone().unwrap_or_default().into(),
         cover: Default::default(),
     }).collect::<Vec<_>>().as_slice())))
 }

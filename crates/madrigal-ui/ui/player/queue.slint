@@ -182,6 +182,15 @@ export component QueueDrawer inherits Rectangle {
                                 }
                             }
 
+                            row-duration := Text {
+                                text: page-rows[idx].duration;
+                                color: root.palette.on-surface-variant;
+                                font-size: Type.body-medium.size;
+                                font-family: Type.body-medium.family;
+                                vertical-alignment: center;
+                                visible: page-rows[idx].duration != "";
+                            }
+
                             row-remove := M3IconButton {
                                 icon: Icons.minus;
                                 icon-color: root.palette.on-surface-variant;

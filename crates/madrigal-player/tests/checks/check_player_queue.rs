@@ -7,7 +7,7 @@ fn track(name: &str) -> TrackIdentity {
 }
 
 fn names(queue: &Queue) -> Vec<String> {
-    queue.items().iter().map(|t| t.id.clone()).collect()
+    queue.items().iter().map(|t| t.identity.id.clone()).collect()
 }
 
 #[test]

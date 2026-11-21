@@ -9,8 +9,40 @@ use std::time::{Duration, Instant};
 use madrigal_core::{TrackIdentity, TrackSource};
 use madrigal_player::engine::{EndReason, Engine, EngineConfig, EngineEvent};
 use madrigal_player::player::Player;
-use madrigal_player::session;
+use madrigal_player::queue::{QueueEntry, TrackMeta};
+use madrigal_player::session::{self, SessionState};
 use madrigal_player::source::{ResolvedStream, StreamSource};
+
+#[test]
+fn session_keeps_track_metadata() {
+    let root = tempfile::tempdir().expect("tempdir");
+    let path = root.path().join("session.json");
+    let meta = TrackMeta {
+        title: "Canción".to_owned(),
+        artist: "Artista".to_owned(),
+        album: "Álbum".to_owned(),
+        duration_secs: Some(245),
+        thumbnail: Some("https://example.test/cover.webp".to_owned()),
+    };
+    let state = SessionState {
+        tracks: vec![QueueEntry::with_meta(
+            TrackIdentity::youtube("2ttGjtfQ7EA"),
+            meta.clone(),
+        )],
+        position: Some(0),
+        paused: true,
+    };
+    session::save_to(&state, &path).expect("save");
+    let back = session::load_from(&path).expect("load").expect("state");
+    assert_eq!(back.tracks[0].meta, meta);
+    assert_eq!(back.tracks[0].identity.id, "2ttGjtfQ7EA");
+
+    let legacy = r#"{"tracks":[{"source":"youtube","id":"abc123"}],"position":0,"paused":true}"#;
+    std::fs::write(&path, legacy).expect("legacy");
+    let old = session::load_from(&path).expect("load legacy").expect("state");
+    assert_eq!(old.tracks[0].identity.id, "abc123");
+    assert_eq!(old.tracks[0].meta, TrackMeta::default());
+}
 
 struct MapSource {
     dir: PathBuf,
@@ -119,7 +151,10 @@ fn session_roundtrip_restores_paused_and_defers_resolve() {
         assert!(player.queue_mut().replace(vec![a.clone(), b.clone()], 1));
         player.engine().set_paused(true).expect("pause");
         let state = player.snapshot().expect("snapshot");
-        assert_eq!(state.tracks, vec![a.clone(), b.clone()]);
+        assert_eq!(
+            state.tracks.iter().map(|entry| &entry.identity).collect::<Vec<_>>(),
+            vec![&a, &b]
+        );
         assert_eq!(state.position, Some(1));
         assert!(state.paused);
         let path = session::save(&state).expect("save");
@@ -134,7 +169,10 @@ fn session_roundtrip_restores_paused_and_defers_resolve() {
     };
     let mut player = Player::new(engine, source);
     let state = session::load().expect("load").expect("session file");
-    assert_eq!(state.tracks, vec![a.clone(), b.clone()]);
+    assert_eq!(
+        state.tracks.iter().map(|entry| &entry.identity).collect::<Vec<_>>(),
+        vec![&a, &b]
+    );
     assert_eq!(state.position, Some(1));
     assert!(player.restore(&state).expect("restore"));
     assert_eq!(player.queue().current(), Some(&b));
@@ -142,7 +180,8 @@ fn session_roundtrip_restores_paused_and_defers_resolve() {
         player
             .queue()
             .current_index()
-            .and_then(|i| player.queue().items().get(i)),
+            .and_then(|i| player.queue().items().get(i))
+            .map(|entry| &entry.identity),
         Some(&b)
     );
     assert!(player.engine().paused().expect("paused restored"));

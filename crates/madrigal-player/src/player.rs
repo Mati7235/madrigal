@@ -199,7 +199,7 @@ impl<S: StreamSource> Player<S> {
     pub fn restore(&mut self, state: &SessionState) -> Result<bool, Error> {
         if !self
             .queue
-            .replace(state.tracks.clone(), state.position.unwrap_or(0))
+            .replace_entries(state.tracks.clone(), state.position.unwrap_or(0))
         {
             return Ok(false);
         }

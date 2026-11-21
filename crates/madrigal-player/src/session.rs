@@ -1,12 +1,12 @@
 use std::io;
 use std::path::{Path, PathBuf};
 
-use madrigal_core::TrackIdentity;
+use crate::queue::QueueEntry;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SessionState {
-    pub tracks: Vec<TrackIdentity>,
+    pub tracks: Vec<QueueEntry>,
     pub position: Option<usize>,
     pub paused: bool,
 }

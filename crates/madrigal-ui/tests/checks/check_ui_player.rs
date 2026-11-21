@@ -304,11 +304,20 @@ fn ui_player() {
 
     let queue = fixture_queue();
     let tabs = queue_tabs_from_queue(&queue, "song-a");
-    assert_eq!(tabs.all.len(), 4);
+    assert_eq!(tabs.all.len(), 5);
     assert_eq!(tabs.searched.len(), 2);
-    assert_eq!(tabs.cont.len(), 3);
+    assert_eq!(tabs.cont.len(), 4);
     assert!(tabs.auto.is_empty());
     assert!(tabs.all[0].current);
+    assert_eq!(tabs.all[4].title, "Canción A");
+    assert_eq!(tabs.all[4].artist, "Artista A");
+    assert_eq!(tabs.all[4].album, "Álbum A");
+    assert_eq!(tabs.all[4].duration_secs, Some(245));
+    assert!(tabs.all[4].thumbnail.is_some());
+    let by_title = queue_tabs_from_queue(&queue, "canción");
+    assert_eq!(by_title.searched.len(), 1);
+    let by_artist = queue_tabs_from_queue(&queue, "artista a");
+    assert_eq!(by_artist.searched.len(), 1);
 
     let state = PlaybackUiState {
         title: "Titulo".to_owned(),
@@ -564,7 +573,7 @@ fn ui_player() {
     let tab_handles: Vec<_> =
         kit::ElementHandle::find_by_element_id(&shell, "QueueDrawer::tab-touch").collect();
     assert_eq!(tab_handles.len(), 4);
-    for (tab, rows) in [(1, 2), (2, 3), (3, 0), (0, 4)] {
+    for (tab, rows) in [(1, 2), (2, 4), (3, 0), (0, 5)] {
         kit::click(&tab_handles[tab]);
         assert_eq!(shell.get_queue_tab(), tab as i32);
         let visible: Vec<_> =
@@ -574,19 +583,19 @@ fn ui_player() {
 
     let row_handles: Vec<_> =
         kit::ElementHandle::find_by_element_id(&shell, "QueueDrawer::row-touch").collect();
-    assert_eq!(row_handles.len(), 4);
+    assert_eq!(row_handles.len(), 5);
 
     kit::click(&row_handles[0]);
     assert_eq!(shell.get_queue_play_count(), 1);
     assert_eq!(shell.get_queue_play_last(), 0);
     let remove_handles: Vec<_> =
         kit::ElementHandle::find_by_element_id(&shell, "QueueDrawer::row-remove").collect();
-    assert_eq!(remove_handles.len(), 4);
+    assert_eq!(remove_handles.len(), 5);
     kit::click(&remove_handles[0]);
     assert_eq!(shell.get_queue_remove_count(), 1);
     let row_handles: Vec<_> =
         kit::ElementHandle::find_by_element_id(&shell, "QueueDrawer::row-touch").collect();
-    assert_eq!(row_handles.len(), 3);
+    assert_eq!(row_handles.len(), 4);
 
     let first_title = shell.get_queue_all().row_data(0).unwrap().title.to_string();
     let pos = row_handles[0].absolute_position();

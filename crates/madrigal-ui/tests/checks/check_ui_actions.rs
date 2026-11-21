@@ -290,6 +290,7 @@ fn ui_actions() {
         title: "Come Together".into(),
         artist: "The Beatles".into(),
         album: "Abbey Road".into(),
+        duration: "".into(),
         current: true,
         thumbnail: "".into(),
         cover: Default::default(),
