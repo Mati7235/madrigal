@@ -22,7 +22,7 @@ pub struct AppState {
     pub ui: Ui,
     playback: Rc<RefCell<PlaybackService>>,
     _library: crate::library::LibraryService,
-    _downloads: Downloads,
+    _downloads: Rc<Downloads>,
     _poll: slint::Timer,
     _catalog: Arc<catalog::Wiring>,
     _account_timer: slint::Timer,
@@ -68,7 +68,17 @@ impl AppState {
         wire_playback(&ui.shell, &core);
         crate::lyrics::wire(&ui.shell);
         let library = crate::library::wire_library(&ui.shell, &store);
-        let downloads = crate::downloads::register(&ui.shell, settings, streams);
+        let downloads = Rc::new(crate::downloads::register(&ui.shell, settings, streams));
+        let action_conn = madrigal_db::open_default().map_err(|err| format!("db: {err}"))?;
+        crate::actions::wire_track_actions(
+            &ui.shell,
+            crate::actions::TrackActions {
+                conn: Rc::new(RefCell::new(action_conn)),
+                settings: settings.clone(),
+                downloads: Rc::clone(&downloads),
+                core: Some(Arc::clone(&core)),
+            },
+        );
         let desktop = Desktop::start(&ui.shell, Arc::clone(&core), settings);
         let poll = start_poll(&ui.shell, Rc::clone(&service));
         let catalog = Arc::new(catalog::wire_catalog(&ui.shell, settings)?);

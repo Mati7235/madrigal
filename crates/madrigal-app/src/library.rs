@@ -327,6 +327,7 @@ impl Worker {
             }
             "tag-created" => self.playlist_tag(arg, true),
             "tag-removed" => self.playlist_tag(arg, false),
+            "menu-refresh" => true,
             "history-cleared" => {
                 if let Err(err) = self.library().clear_listen_history() {
                     eprintln!("library: clear history: {err}");

@@ -13,7 +13,7 @@ use madrigal_downloads::{
 };
 use madrigal_settings::Settings;
 use madrigal_streams::Orchestrator;
-use madrigal_ui::{download_models, DownloadItem, MainShell};
+use madrigal_ui::{download_models, download_state_index, DownloadItem, MainShell};
 use reqwest::header::{CONTENT_RANGE, RANGE, USER_AGENT};
 use reqwest::StatusCode;
 use slint::{ComponentHandle, ModelRc, VecModel};
@@ -214,18 +214,21 @@ pub struct Downloads {
 }
 
 pub fn register(shell: &MainShell, settings: &Settings, streams: Orchestrator) -> Downloads {
-    let dir = settings.storage.downloads_dir.trim();
-    let downloads_dir = if dir.is_empty() {
-        default_downloads_dir()
-    } else {
-        PathBuf::from(dir)
-    };
     let config = ManagerConfig::with_storage(
-        downloads_dir,
+        downloads_dir_for(settings),
         madrigal_paths::db_path(),
         &settings.storage,
     );
     register_with(shell, Arc::new(StreamResolver::new(streams)), config)
+}
+
+pub fn downloads_dir_for(settings: &Settings) -> PathBuf {
+    let dir = settings.storage.downloads_dir.trim();
+    if dir.is_empty() {
+        default_downloads_dir()
+    } else {
+        PathBuf::from(dir)
+    }
 }
 
 pub fn register_with(
@@ -361,6 +364,10 @@ impl Downloads {
         with_manager(&self.inner, |manager| manager.output_of(identity)).flatten()
     }
 
+    pub fn menu_state(&self, identity: &TrackIdentity) -> (i32, f32) {
+        menu_state(&self.inner, identity)
+    }
+
     pub fn refresh(&self, shell: &MainShell) {
         apply(&self.inner, shell);
     }
@@ -434,8 +441,34 @@ fn items(inner: &Inner) -> Vec<DownloadItem> {
         .collect()
 }
 
+fn menu_state(inner: &Inner, identity: &TrackIdentity) -> (i32, f32) {
+    let guard = inner.manager.borrow();
+    let Some(manager) = guard.as_ref() else {
+        return (-1, 0.0);
+    };
+    let Some(state) = manager.state(identity) else {
+        return (-1, 0.0);
+    };
+    let progress = manager
+        .progress_of(identity)
+        .map(|(downloaded, total, _)| match total {
+            Some(total) if total > 0 => downloaded as f32 / total as f32,
+            _ if state == DownloadState::Completed => 1.0,
+            _ => 0.0,
+        })
+        .unwrap_or(0.0);
+    (download_state_index(state), progress.clamp(0.0, 1.0))
+}
+
 fn apply(inner: &Rc<Inner>, shell: &MainShell) {
     let (active, failed) = download_models(&items(inner));
     shell.set_dl_rows(ModelRc::new(VecModel::from(active)));
     shell.set_dl_failed(ModelRc::new(VecModel::from(failed)));
+    if shell.get_track_menu_open() {
+        let request = shell.get_track_menu_track();
+        let identity = TrackIdentity::parse_prefixed(request.id.as_str());
+        let (state, progress) = menu_state(inner, &identity);
+        shell.set_track_menu_download_state(state);
+        shell.set_track_menu_download_progress(progress);
+    }
 }

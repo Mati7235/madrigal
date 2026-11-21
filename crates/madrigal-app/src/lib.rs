@@ -4,6 +4,7 @@ pub mod lyrics;
 pub mod library;
 pub mod downloads;
 pub mod desktop;
+pub mod actions;
 pub mod playback;
 pub mod state;
 pub mod store;
