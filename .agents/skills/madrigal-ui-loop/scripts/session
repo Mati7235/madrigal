@@ -1,0 +1,68 @@
+#!/bin/sh
+set -eu
+here=$(cd "$(dirname "$0")/.." && pwd)
+repo=$(cd "$here/../../.." && pwd)
+dir=${MADRIGAL_UI_LOOP_DIR:-${CARGO_TARGET_DIR:-$repo/target}/ui-loop}
+bin=${MADRIGAL_BIN:-${CARGO_TARGET_DIR:-$repo/target}/release/madrigal}
+port=${SLINT_MCP_PORT:-8590}
+size=${MADRIGAL_UI_LOOP_SIZE:-1366x768}
+mkdir -p "$dir"
+
+alive() { [ -f "$dir/env" ] && . "$dir/env" && [ -S "${SWAYSOCK:-/nonexistent}" ] && swaymsg -t get_version >/dev/null 2>&1; }
+
+start_sway() {
+  rm -f "$dir/env"
+  cat > "$dir/sway.conf" <<EOF
+output HEADLESS-1 resolution $size position 0 0
+default_border pixel 2
+focus_follows_mouse no
+seat * hide_cursor 0
+exec env > $dir/sway-env
+EOF
+  rm -f "$dir/sway-env"
+  env -u DISPLAY -u WAYLAND_DISPLAY WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 WLR_RENDERER=pixman \
+    XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/$(id -u)} setsid sway -c "$dir/sway.conf" > "$dir/sway.log" 2>&1 &
+  i=0; while ! grep -q '^SWAYSOCK=' "$dir/sway-env" 2>/dev/null && [ $i -lt 50 ]; do sleep 0.1; i=$((i + 1)); done
+  grep -q '^SWAYSOCK=' "$dir/sway-env" 2>/dev/null || { echo "sway did not start; see $dir/sway.log" >&2; exit 1; }
+  { grep -E '^(XDG_RUNTIME_DIR|WAYLAND_DISPLAY|SWAYSOCK)=' "$dir/sway-env" | sed 's/^/export /'; echo 'unset DISPLAY'; } > "$dir/env"
+}
+
+start_vptr() {
+  vbin="$dir/vptr-target/release/vptr"
+  [ -x "$vbin" ] || cargo build -q --release --manifest-path "$here/vptr/Cargo.toml" --target-dir "$dir/vptr-target"
+  pkill -f "$vbin" 2>/dev/null || true
+  rm -f "$dir/ptr.fifo"; mkfifo "$dir/ptr.fifo"
+  w=${size%x*}; h=${size#*x}
+  out=$(swaymsg -t get_outputs | jq -r '.[0].current_mode | "\(.width) \(.height)"' 2>/dev/null || true)
+  [ -n "$out" ] && { w=${out% *}; h=${out#* }; }
+  setsid "$vbin" "$w" "$h" "$dir/ptr.fifo" > "$dir/vptr.log" 2>&1 &
+}
+
+start_app() {
+  stop_app
+  mkdir -p "$dir/profile"
+  SLINT_MCP_PORT=$port MADRIGAL_PROFILE_ROOT=${MADRIGAL_PROFILE_ROOT:-$dir/profile} setsid "$bin" > "$dir/app.log" 2>&1 &
+  echo $! > "$dir/app.pid"
+  i=0; while ! grep -q "MCP server listening" "$dir/app.log" 2>/dev/null && [ $i -lt 100 ]; do sleep 0.1; i=$((i + 1)); done
+  i=0; while ! swaymsg -t get_tree | grep -q '"app_id": "madrigal"' && [ $i -lt 50 ]; do sleep 0.1; i=$((i + 1)); done
+  kill -0 "$(cat "$dir/app.pid")" 2>/dev/null || { echo "app exited; see $dir/app.log" >&2; tail -5 "$dir/app.log" >&2; exit 1; }
+  echo "app pid $(cat "$dir/app.pid"), mcp http://127.0.0.1:$port/mcp, log $dir/app.log"
+}
+
+stop_app() {
+  [ -f "$dir/app.pid" ] || return 0
+  pid=$(cat "$dir/app.pid"); kill "$pid" 2>/dev/null || true
+  i=0; while kill -0 "$pid" 2>/dev/null && [ $i -lt 30 ]; do sleep 0.1; i=$((i + 1)); done
+  kill -9 "$pid" 2>/dev/null || true; rm -f "$dir/app.pid"
+}
+
+case "${1:-}" in
+  start) alive || start_sway; . "$dir/env"; start_vptr; echo "sway on $WAYLAND_DISPLAY, env $dir/env" ;;
+  app) alive || { echo "no session; run: session start" >&2; exit 1; }; . "$dir/env"; start_app ;;
+  output) alive; . "$dir/env"; swaymsg output HEADLESS-1 resolution "$2" >/dev/null; size=$2; start_vptr; echo "output $2" ;;
+  stop) stop_app; pkill -f "$dir/vptr-target/release/vptr" 2>/dev/null || true
+        alive && swaymsg exit >/dev/null 2>&1 || true; rm -f "$dir/env" ;;
+  status) if alive; then . "$dir/env"; echo "sway $WAYLAND_DISPLAY"; pgrep -af "$dir/vptr-target" >/dev/null && echo vptr; [ -f "$dir/app.pid" ] && kill -0 "$(cat "$dir/app.pid")" 2>/dev/null && echo "app port $port"; else echo down; fi ;;
+  dir) echo "$dir" ;;
+  *) echo "usage: session start|app|output WxH|status|stop|dir" >&2; exit 2 ;;
+esac

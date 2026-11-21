@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+dir=$("$(dirname "$0")/session" dir)
+. "$dir/env"
+fifo=$dir/ptr.fifo
+case "${1:-}" in
+  click) printf 'move %s %s\nclick %s\n' "$2" "$3" "${4:-left}" > "$fifo"; sleep 0.3 ;;
+  move) printf 'move %s %s\n' "$2" "$3" > "$fifo" ;;
+  scroll) printf 'scroll %s\n' "$2" > "$fifo"; sleep 0.2 ;;
+  type) wtype "$2"; sleep 0.2 ;;
+  key) wtype -k "$2"; sleep 0.2 ;;
+  shot) grim "${2:-$dir/screen.png}"; echo "${2:-$dir/screen.png}" ;;
+  window) pid=$(cat "$dir/app.pid" 2>/dev/null || echo 0)
+          swaymsg -t get_tree | jq -c --argjson p "$pid" '.. | objects | select(.pid? == $p) | {app_id, title: .name, floating: (.type == "floating_con"), rect, geometry: .window_rect}' ;;
+  sway) shift; swaymsg "$@" ;;
+  *) echo "usage: ui click X Y [right] | move X Y | scroll DY | type TEXT | key NAME | shot [FILE] | window | sway CMD" >&2; exit 2 ;;
+esac

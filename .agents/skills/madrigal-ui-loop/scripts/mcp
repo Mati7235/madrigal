@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+url=http://127.0.0.1:${SLINT_MCP_PORT:-8590}/mcp
+dir=$("$(dirname "$0")/session" dir)
+tool=${1:?usage: mcp TOOL [JSON_ARGS] [PNG_OUT]}
+args=${2:-\{\}}
+rpc() { curl -sf -H Content-Type:application/json -d "$1" "$url"; }
+wants=$(rpc '{"jsonrpc":"2.0","id":0,"method":"tools/list"}' \
+  | jq -r --arg t "$tool" '.result.tools[] | select(.name == $t) | .inputSchema.properties | has("windowHandle")')
+[ -n "$wants" ] || { echo "ERROR: unknown tool $tool" >&2; exit 2; }
+if [ "$wants" = true ]; then
+  win=$(rpc '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_windows","arguments":{}}}' \
+    | jq -c '.result.content[0].text | fromjson | .windowHandles[0]')
+  args=$(printf '%s' "$args" | jq -c --argjson w "$win" 'if has("windowHandle") then . else . + {windowHandle: $w} end')
+fi
+body=$(jq -nc --arg t "$tool" --argjson a "$args" '{jsonrpc:"2.0",id:2,method:"tools/call",params:{name:$t,arguments:$a}}')
+res=$(curl -sf -H Content-Type:application/json -d "$body" "$url")
+if printf '%s' "$res" | jq -e '.result.content[]? | select(.type == "image")' >/dev/null; then
+  out=${3:-$dir/mcp-shot.png}
+  printf '%s' "$res" | jq -r '.result.content[] | select(.type == "image") | .data' | base64 -d > "$out"
+  echo "$out"
+else
+  printf '%s' "$res" | jq -r 'if .error then "ERROR: \(.error.message)" else (.result.content[]? | .text // empty) end'
+fi
