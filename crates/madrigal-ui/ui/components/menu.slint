@@ -136,6 +136,10 @@ export component TrackMenu inherits Rectangle {
             if (root.key-command(event.text)) {
                 return EventResult.accept;
             }
+            if (event.text == Key.Tab) {
+                root.closed();
+                return EventResult.accept;
+            }
             return EventResult.reject;
         }
     }
