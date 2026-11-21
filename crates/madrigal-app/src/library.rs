@@ -48,6 +48,11 @@ pub struct Observed {
     pub track_artist: String,
     pub position_ms: i32,
     pub duration_ms: i32,
+    pub search_submit_count: i32,
+    pub search_submit: String,
+    pub search_remove_count: i32,
+    pub search_remove: String,
+    pub search_clear_count: i32,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -94,6 +99,12 @@ fn track_identity(source: i32, id: &str) -> Option<TrackIdentity> {
 pub fn build_models(conn: &Connection, settings: &Settings, view: &LibraryView) -> LibraryModels {
     let lib = Library::new(conn, settings.clone());
     let chips = chip_order(settings);
+    let recent_searches: Vec<String> = lib
+        .search_history(10)
+        .unwrap_or_default()
+        .into_iter()
+        .map(|item| item.query)
+        .collect();
     let tab = usize::try_from(view.tab)
         .ok()
         .and_then(|index| chips.get(index).cloned())
@@ -107,6 +118,7 @@ pub fn build_models(conn: &Connection, settings: &Settings, view: &LibraryView) 
         sort: view.sort,
         tags: lib.all_tags().unwrap_or_default(),
         selected_count: selected.len() as i32,
+        recent_searches,
         ..LibraryModels::default()
     };
 
@@ -231,11 +243,26 @@ impl Worker {
         if obs.action_count != self.seen.action_count {
             dirty |= self.action(&obs.last_action, &obs.last_arg, obs.multiselect);
         }
+        if obs.search_submit_count != self.seen.search_submit_count {
+            let lib = self.library();
+            if let Err(err) = lib.record_search(&obs.search_submit) {
+                eprintln!("library: record search: {err}");
             }
+            dirty = true;
         }
+        if obs.search_remove_count != self.seen.search_remove_count {
+            let lib = self.library();
+            if let Err(err) = lib.remove_search(&obs.search_remove) {
+                eprintln!("library: remove search: {err}");
             }
+            dirty = true;
         }
+        if obs.search_clear_count != self.seen.search_clear_count {
+            let lib = self.library();
+            if let Err(err) = lib.clear_search_history() {
+                eprintln!("library: clear searches: {err}");
             }
+            dirty = true;
         }
         if obs.track_id != self.seen.track_id || obs.track_source != self.seen.track_source {
             self.finish_current();
@@ -417,6 +444,11 @@ fn observe(shell: &MainShell) -> Observed {
         track_artist: shell.get_track_artist().to_string(),
         position_ms: shell.get_position_ms(),
         duration_ms: shell.get_duration_ms(),
+        search_submit_count: shell.get_search_submit_count(),
+        search_submit: shell.get_search_last_submitted().to_string(),
+        search_remove_count: shell.get_search_remove_count(),
+        search_remove: shell.get_search_last_removed().to_string(),
+        search_clear_count: shell.get_search_clear_count(),
     }
 }
 

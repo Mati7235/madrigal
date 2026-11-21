@@ -346,6 +346,7 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("search.hint", "Buscar canciones, álbumes, artistas…", "Search songs, albums, artists…"),
     ("search.history", "Búsquedas recientes", "Recent searches"),
     ("search.history.clear", "Borrar historial", "Clear history"),
+    ("search.history.remove", "Quitar", "Remove"),
     ("search.more", "Ver todo", "See all"),
     ("search.musicHint", "Buscar música", "Search music"),
     ("search.provider", "Proveedor de búsqueda", "Search provider"),

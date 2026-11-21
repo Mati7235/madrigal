@@ -87,7 +87,7 @@ impl<'a> Library<'a> {
 
     pub fn search_history(&self, limit: usize) -> Result<Vec<SearchHistoryItem>> {
         let mut stmt = self.conn.prepare(
-            "SELECT query, searched_at FROM search_history WHERE searched_at >= ?1 ORDER BY searched_at DESC LIMIT ?2",
+            "SELECT query, searched_at FROM search_history WHERE searched_at >= ?1 ORDER BY searched_at DESC, rowid DESC LIMIT ?2",
         )?;
         let items = stmt
             .query_map(params![self.history_cutoff(), limit as i64], |row| {
@@ -98,6 +98,14 @@ impl<'a> Library<'a> {
             })?
             .collect::<rusqlite::Result<Vec<_>>>()?;
         Ok(items)
+    }
+
+    pub fn remove_search(&self, query: &str) -> Result<()> {
+        self.conn.execute(
+            "DELETE FROM search_history WHERE query = ?1",
+            params![query],
+        )?;
+        Ok(())
     }
 
     pub fn clear_search_history(&self) -> Result<()> {

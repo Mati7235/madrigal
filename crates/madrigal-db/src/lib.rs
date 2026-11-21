@@ -683,9 +683,16 @@ pub fn fetch_lyrics(conn: &Connection, identity: &TrackIdentity) -> Result<Optio
 
 pub fn record_search(conn: &Connection, item: &SearchHistoryItem) -> Result<()> {
     conn.execute(
-        "INSERT INTO search_history (query, searched_at) VALUES (?1, ?2)
-         ON CONFLICT(query) DO UPDATE SET searched_at = excluded.searched_at",
+        "DELETE FROM search_history WHERE query = ?1",
+        params![item.query],
+    )?;
+    conn.execute(
+        "INSERT INTO search_history (query, searched_at) VALUES (?1, ?2)",
         params![item.query, item.searched_at],
+    )?;
+    conn.execute(
+        "DELETE FROM search_history WHERE query NOT IN (SELECT query FROM search_history ORDER BY searched_at DESC, rowid DESC LIMIT 10)",
+        [],
     )?;
     Ok(())
 }

@@ -659,6 +659,7 @@ pub struct LibraryModels {
     pub failed_downloads: Vec<DownloadRow>,
     pub selected_count: i32,
     pub liked: Option<bool>,
+    pub recent_searches: Vec<String>,
 }
 
 fn string_model(values: &[String]) -> ModelRc<slint::SharedString> {
@@ -697,6 +698,7 @@ pub fn apply_library(shell: &MainShell, models: &LibraryModels) {
     shell.set_lib_selected_count(models.selected_count);
     shell.set_dl_rows(row_model(&models.downloads));
     shell.set_dl_failed(row_model(&models.failed_downloads));
+    shell.set_search_recent(string_model(&models.recent_searches));
     if let Some(liked) = models.liked {
         shell.set_liked(liked);
     }

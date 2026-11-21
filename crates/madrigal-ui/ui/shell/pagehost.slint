@@ -83,6 +83,7 @@ export component PageHost inherits Rectangle {
     in-out property<int> search-suggestion-index: -1;
     in-out property<int> search-filter-tab: 0;
     in property<[CatalogItem]> search-results;
+    in property<[string]> search-recent;
     in-out property<int> search-source: 1;
 
     in property<[MoodEntry]> explore-moods-left;
@@ -105,6 +106,9 @@ export component PageHost inherits Rectangle {
     callback suggestion-accepted(string);
     callback filter-selected(int);
     callback source-selected(int);
+    callback recent-accepted(string);
+    callback recent-removed(string);
+    callback recent-cleared();
     callback detail-requested(DetailRef);
     callback play-requested(CatalogItem);
     callback detail-closed();
@@ -180,10 +184,14 @@ export component PageHost inherits Rectangle {
         suggestion-index <=> root.search-suggestion-index;
         filter-tab <=> root.search-filter-tab;
         results: root.search-results;
+        recent-searches: root.search-recent;
         source <=> root.search-source;
         suggestion-accepted(text) => { root.suggestion-accepted(text); }
         filter-selected(i) => { root.filter-selected(i); }
         source-selected(i) => { root.source-selected(i); }
+        recent-accepted(text) => { root.recent-accepted(text); }
+        recent-removed(text) => { root.recent-removed(text); }
+        recent-cleared() => { root.recent-cleared(); }
         detail-requested(ref) => { root.detail-requested(ref); }
         play-requested(item) => { root.play-requested(item); }
     }

@@ -163,7 +163,14 @@ export component MainShell inherits Window {
     in-out property<int> search-suggestion-index: -1;
     in-out property<int> search-filter-tab: 0;
     in property<[CatalogItem]> search-results;
+    in property<[string]> search-recent;
     in-out property<int> search-source: 1;
+    in-out property<int> search-submit-count: 0;
+    in-out property<string> search-last-submitted: "";
+    in-out property<int> search-remove-count: 0;
+    in-out property<string> search-last-removed: "";
+    in-out property<int> search-clear-count: 0;
+    out property<bool> search-input-focused: top-bar.input-focused;
 
     in property<[MoodEntry]> explore-moods-left;
     in property<[MoodEntry]> explore-moods-right;
@@ -319,6 +326,17 @@ export component MainShell inherits Window {
     dl-cancel(id) => { root.dl-record("dl-cancel"); }
     dl-retry(id) => { root.dl-record("dl-retry"); }
     dl-retry-all() => { root.dl-record("dl-retry-all"); }
+    recent-accepted(t) => {
+        root.search-query = t;
+        root.query-changed(t);
+        root.search-submit-count += 1;
+        root.search-last-submitted = t;
+    }
+    recent-removed(t) => {
+        root.search-remove-count += 1;
+        root.search-last-removed = t;
+    }
+    recent-cleared() => { root.search-clear-count += 1; }
     callback like-toggled();
     callback queue-opened();
     callback queue-closed();
@@ -355,6 +373,9 @@ export component MainShell inherits Window {
     callback suggestion-accepted(string);
     callback filter-selected(int);
     callback source-selected(int);
+    callback recent-accepted(string);
+    callback recent-removed(string);
+    callback recent-cleared();
     callback detail-requested(DetailRef);
     callback detail-opened(DetailRef);
     callback play-requested(CatalogItem);
@@ -625,6 +646,8 @@ export component MainShell inherits Window {
                             root.search-query = text;
                             root.query-changed(text);
                         }
+                        root.search-submit-count += 1;
+                        root.search-last-submitted = root.search-query;
                         root.page = 1;
                     }
                     nav-key(text) => {
@@ -737,6 +760,7 @@ export component MainShell inherits Window {
                 search-suggestion-index <=> root.search-suggestion-index;
                 search-filter-tab <=> root.search-filter-tab;
                 search-results: root.search-results;
+                search-recent: root.search-recent;
                 search-source <=> root.search-source;
                 explore-moods-left: root.explore-moods-left;
                 explore-moods-right: root.explore-moods-right;
@@ -756,6 +780,9 @@ export component MainShell inherits Window {
                 suggestion-accepted(text) => { root.suggestion-accepted(text); }
                 filter-selected(i) => { root.filter-selected(i); }
                 source-selected(i) => { root.source-selected(i); }
+                recent-accepted(text) => { root.recent-accepted(text); }
+                recent-removed(text) => { root.recent-removed(text); }
+                recent-cleared() => { root.recent-cleared(); }
                 detail-requested(ref) => { root.detail-requested(ref); }
                 play-requested(item) => { root.play-requested(item); }
                 detail-closed() => { root.detail-closed(); }

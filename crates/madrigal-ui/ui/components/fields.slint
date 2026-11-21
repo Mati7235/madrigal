@@ -90,6 +90,7 @@ export component M3SearchBar inherits Rectangle {
     in property<color> hint-color;
     in property<color> state-on-surface;
     in property<bool> ring: false;
+    out property<bool> input-focused: search-input.has-focus;
     callback accepted(string);
     callback nav-key(string) -> bool;
 
@@ -177,7 +178,7 @@ export component M3SearchBar inherits Rectangle {
                 visible: root.value != "";
                 VerticalLayout {
                     alignment: center;
-                    trail := M3IconButton {
+                    search-clear := M3IconButton {
                         accessible-label: root.clear-label;
                         icon: Icons.x;
                         icon-size: 18px;
@@ -185,7 +186,10 @@ export component M3SearchBar inherits Rectangle {
                         enabled: root.enabled;
                         content: root.content;
                         state-on-surface: root.state-on-surface;
-                        clicked => { root.value = ""; }
+                        clicked => {
+                            root.value = "";
+                            search-input.focus();
+                        }
                     }
                 }
             }
