@@ -1252,6 +1252,7 @@ export component MainShell inherits Window {
         download-state: root.track-menu-download-state;
         download-progress: root.track-menu-download-progress;
         playlists: root.track-menu-playlists;
+        bottom-inset: 96px;
         view <=> root.track-menu-view;
         selected <=> root.track-menu-index;
         activated(action, arg) => { root.menu-command(action, arg); }

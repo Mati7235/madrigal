@@ -169,13 +169,16 @@ reading order (Chill, Christmas, Commute, Energize ...) on a 4-column grid.
 One shared `TrackMenu` (`ui/components/menu.slint`) serves every song surface:
 search results, home rows and shelves, the queue, library songs and the full
 player. It opens from the row "More actions" button or a right click on the row,
-anchored at the pointer: 304px card, 6px inset, 48px icon rows,
+anchored at the pointer: 304px card, 6px inset, 48px rows with a 24px leading
+icon, a 12px gap and a left-aligned label,
 `surface-container-high`, elevation 2. Actions are play next, add to queue,
 like or unlike, download with its live state (queued, progress, downloaded,
 error), add to playlist (a second view lists the library playlists plus "New
 playlist"), and go to artist or album when known. Up/Down move the selection and
 skip unavailable rows, Enter activates, Escape and a click outside close, Left
-returns from the playlist view. The invisible scrim covers the shell; rows use a
+returns from the playlist view. The card flips above the anchor when there is no
+room below and never covers the 96px player bar; the action list scrolls when
+the page area is shorter than the card. The invisible scrim covers the shell; rows use a
 40px icon button with a focus ring and `action.more` as the accessible label.
 
 ## Files by task

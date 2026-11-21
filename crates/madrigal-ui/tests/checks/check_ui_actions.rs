@@ -106,6 +106,103 @@ fn ui_actions() {
     }
     assert_eq!(shell.get_track_menu_action_count(), 6);
 
+    shell.invoke_track_menu_requested(request(300.0, 200.0));
+    kit::mock_advance(std::time::Duration::from_millis(100));
+    let icons: Vec<kit::ElementHandle> =
+        kit::ElementHandle::find_by_element_id(&shell, "MenuRow::menu-icon").collect();
+    let labels: Vec<kit::ElementHandle> =
+        kit::ElementHandle::find_by_element_id(&shell, "MenuRow::menu-label").collect();
+    assert_eq!(icons.len(), 7, "menu icon count");
+    assert_eq!(labels.len(), 7, "menu label count");
+    let icon_x = icons[0].absolute_position().x;
+    let label_x = labels[0].absolute_position().x;
+    assert_eq!(icons[0].size().width, 24.0, "leading icon size");
+    assert_eq!(icons[0].size().height, 24.0, "leading icon size");
+    for (index, (icon, label)) in icons.iter().zip(labels.iter()).enumerate() {
+        let gap = label.absolute_position().x - icon.absolute_position().x - icon.size().width;
+        assert!(
+            (icon.absolute_position().x - icon_x).abs() < 0.5,
+            "icon x drifts on row {index}"
+        );
+        assert!(
+            (label.absolute_position().x - label_x).abs() < 0.5,
+            "label x drifts on row {index}"
+        );
+        assert!((gap - 12.0).abs() < 0.5, "icon gap {gap} on row {index}");
+    }
+    let menu_row = kit::find_by_id(&shell, "TrackMenu::menu-next").unwrap();
+    assert_eq!(menu_row.size().height, 48.0, "menu row height");
+    kit::click_by_id(&shell, "TrackMenu::menu-scrim").unwrap();
+
+    shell.set_track_menu_liked(true);
+    shell.invoke_track_menu_requested(request(300.0, 200.0));
+    kit::mock_advance(std::time::Duration::from_millis(100));
+    let liked_labels: Vec<kit::ElementHandle> =
+        kit::ElementHandle::find_by_element_id(&shell, "MenuRow::menu-label").collect();
+    for (index, label) in liked_labels.iter().enumerate() {
+        assert!(
+            (label.absolute_position().x - label_x).abs() < 0.5,
+            "label x drifts on liked row {index}"
+        );
+    }
+    shell.set_track_menu_liked(false);
+    kit::click_by_id(&shell, "TrackMenu::menu-scrim").unwrap();
+
+    kit::resize(&shell, 1280.0, 800.0);
+    shell.invoke_track_menu_requested(request(900.0, 690.0));
+    kit::mock_advance(std::time::Duration::from_millis(100));
+    let card = kit::find_by_id(&shell, "TrackMenu::menu-card").unwrap();
+    let pos = card.absolute_position();
+    let size = card.size();
+    assert!(
+        pos.y + size.height <= 690.0,
+        "menu did not flip above the anchor: {pos:?} {size:?}"
+    );
+    assert!(
+        pos.y + size.height <= 800.0 - 96.0,
+        "menu overlaps the player bar: {pos:?} {size:?}"
+    );
+    assert!(pos.y >= 0.0, "menu above the window: {pos:?}");
+    let flipped_shot = snapshot_dir.join("track-menu-flipped.png");
+    kit::snapshot_to(shell.window(), &flipped_shot).unwrap();
+    kit::click_by_id(&shell, "TrackMenu::menu-scrim").unwrap();
+
+    shell.invoke_track_menu_requested(request(900.0, 120.0));
+    kit::mock_advance(std::time::Duration::from_millis(100));
+    let card = kit::find_by_id(&shell, "TrackMenu::menu-card").unwrap();
+    let pos = card.absolute_position();
+    let size = card.size();
+    assert!(pos.y >= 120.0, "menu did not open below the anchor: {pos:?}");
+    assert!(
+        pos.y + size.height <= 800.0 - 96.0,
+        "menu overlaps the player bar: {pos:?} {size:?}"
+    );
+    kit::click_by_id(&shell, "TrackMenu::menu-scrim").unwrap();
+
+    for (width, height) in kit::WINDOW_SIZES {
+        kit::resize(&shell, width, height);
+        shell.invoke_track_menu_requested(request(width * 0.5, height - 110.0));
+        kit::mock_advance(std::time::Duration::from_millis(50));
+        let card = kit::find_by_id(&shell, "TrackMenu::menu-card").unwrap();
+        let pos = card.absolute_position();
+        let size = card.size();
+        assert!(
+            pos.y + size.height <= height - 96.0 + 0.5,
+            "menu overlaps the player bar at {width}x{height}: {pos:?} {size:?}"
+        );
+        assert!(
+            pos.y >= 0.0 && pos.x >= 0.0 && pos.x + size.width <= width + 0.5,
+            "menu leaves the window at {width}x{height}: {pos:?} {size:?}"
+        );
+        let violations = kit::lint_layout_of(&card, (width, height));
+        assert!(
+            violations.is_empty(),
+            "track menu at {width}x{height}: {violations:#?}"
+        );
+        kit::click_by_id(&shell, "TrackMenu::menu-scrim").unwrap();
+    }
+    kit::resize(&shell, 1280.0, 800.0);
+
     shell.set_track_menu_playlists(ModelRc::new(VecModel::from_slice(&[
         TrackMenuEntry {
             id: "local:1".into(),
