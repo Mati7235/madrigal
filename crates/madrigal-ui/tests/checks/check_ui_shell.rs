@@ -188,10 +188,17 @@ fn ui_shell() {
     kit::mock_advance(Duration::from_millis(600));
 
     shell.show().unwrap();
-    assert_eq!(shell.get_nowbar_width(), 1920.0);
-    assert_eq!(shell.get_nowbar_bottom(), 1080.0);
-    let violations = kit::lint_layout(&shell, (1920.0, 1080.0));
-    assert!(violations.is_empty(), "layout violations: {violations:#?}");
+    for (width, height) in kit::WINDOW_SIZES {
+        kit::resize(&shell, width, height);
+        assert_eq!(shell.get_nowbar_width(), width);
+        assert_eq!(shell.get_nowbar_bottom(), height);
+        let violations = kit::lint_layout(&shell, (width, height));
+        assert!(
+            violations.is_empty(),
+            "layout violations at {width}x{height}: {violations:#?}"
+        );
+    }
+    kit::resize(&shell, 1920.0, 1080.0);
     let shot = kit::snapshot_dir(tmp.path()).join("shell.png");
     kit::snapshot_to(shell.window(), &shot).unwrap();
     let bytes = std::fs::read(&shot).unwrap();

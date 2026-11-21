@@ -564,9 +564,15 @@ export component MainShell inherits Window {
     }
 
     title: "madrigal-shell";
-    width: 1920px;
-    height: 1080px;
+    preferred-width: 1280px;
+    preferred-height: 800px;
+    min-width: 640px;
+    min-height: 480px;
     background: root.palette.surface;
+
+    property<bool> nav-expanded: root.width >= 1100px;
+    property<bool> nowbar-compact: root.width < 840px;
+    property<length> queue-width: root.width < 800px ? root.width : 380px;
 
     out property<length> nowbar-width: nowbar.width;
     out property<length> nowbar-bottom: nowbar.y + nowbar.height;
@@ -577,7 +583,8 @@ export component MainShell inherits Window {
         height: root.height - 96px;
         spacing: 0px;
         nav := SideNav {
-            width: 244px;
+            width: root.nav-expanded ? 244px : 80px;
+            expanded: root.nav-expanded;
             palette: root.palette;
             page: root.page;
             focused: root.sidebar-focused;
@@ -788,6 +795,7 @@ export component MainShell inherits Window {
         y: root.height - 96px;
         width: 100%;
         height: 96px;
+        compact: root.nowbar-compact;
         palette: root.palette;
         title: root.track-title;
         artist: root.track-artist;
@@ -883,10 +891,10 @@ export component MainShell inherits Window {
     }
 
     queue-layer := QueueDrawer {
-        x: parent.width - 380px;
+        x: parent.width - root.queue-width;
         y: 0px;
-        width: 380px;
-        height: 100%;
+        width: root.queue-width;
+        height: root.height - 96px;
         visible: root.queue-open;
         palette: root.palette;
         tab: root.queue-tab;

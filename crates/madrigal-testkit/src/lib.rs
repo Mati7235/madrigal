@@ -198,8 +198,12 @@ fn subtree_len(handle: &ElementHandle) -> usize {
 }
 
 fn build_tree(root: &impl ElementRoot) -> Vec<Node> {
+    build_tree_from(&root.root_element())
+}
+
+fn build_tree_from(handle: &ElementHandle) -> Vec<Node> {
     let mut nodes = Vec::new();
-    root.root_element().visit_descendants(|handle| {
+    handle.visit_descendants(|handle| {
         nodes.push(Node::from_handle(handle));
         ControlFlow::<()>::Continue(())
     });
@@ -223,6 +227,15 @@ fn build_tree(root: &impl ElementRoot) -> Vec<Node> {
     nodes
 }
 
+pub fn lint_layout_of(handle: &ElementHandle, window_size: (f32, f32)) -> Vec<Violation> {
+    let nodes = build_tree_from(handle);
+    let mut violations = Vec::new();
+    lint_window_bounds(&nodes, window_size, &mut violations);
+    lint_text_pairs(&nodes, PairScope::Siblings, &mut violations);
+    lint_text_pairs(&nodes, PairScope::DistinctParents, &mut violations);
+    violations
+}
+
 pub fn lint_layout(root: &impl ElementRoot, window_size: (f32, f32)) -> Vec<Violation> {
     let nodes = build_tree(root);
     let mut violations = Vec::new();
@@ -230,6 +243,35 @@ pub fn lint_layout(root: &impl ElementRoot, window_size: (f32, f32)) -> Vec<Viol
     lint_text_pairs(&nodes, PairScope::Siblings, &mut violations);
     lint_text_pairs(&nodes, PairScope::DistinctParents, &mut violations);
     violations
+}
+
+pub const WINDOW_SIZES: [(f32, f32); 5] = [
+    (1920.0, 1080.0),
+    (1366.0, 743.0),
+    (1280.0, 720.0),
+    (683.0, 768.0),
+    (640.0, 480.0),
+];
+
+pub fn resize(shell: &impl slint::ComponentHandle, width: f32, height: f32) {
+    shell
+        .window()
+        .set_size(slint::WindowSize::Logical(slint::LogicalSize::new(width, height)));
+}
+
+pub fn lint_layout_at_sizes(shell: &impl slint::ComponentHandle, label: &str) {
+    let restore = shell.window().size();
+    for (width, height) in WINDOW_SIZES {
+        resize(shell, width, height);
+        let violations = lint_layout(shell, (width, height));
+        assert!(
+            violations.is_empty(),
+            "{label} at {width}x{height}: {violations:#?}"
+        );
+    }
+    shell
+        .window()
+        .set_size(slint::WindowSize::Physical(restore));
 }
 
 fn clipped(nodes: &[Node], index: usize) -> bool {
@@ -270,22 +312,42 @@ enum PairScope {
     DistinctParents,
 }
 
+fn visible_rect(nodes: &[Node], index: usize) -> Option<Rect> {
+    let mut rect = nodes[index].rect;
+    let mut current = nodes[index].parent;
+    while let Some(parent) = current {
+        if nodes[parent].scroll {
+            let x = rect.x.max(nodes[parent].rect.x);
+            let y = rect.y.max(nodes[parent].rect.y);
+            let right = rect.right().min(nodes[parent].rect.right());
+            let bottom = rect.bottom().min(nodes[parent].rect.bottom());
+            if right - x <= 0.0 || bottom - y <= 0.0 {
+                return None;
+            }
+            rect = Rect { x, y, width: right - x, height: bottom - y };
+        }
+        current = nodes[parent].parent;
+    }
+    Some(rect)
+}
+
 fn lint_text_pairs(nodes: &[Node], scope: PairScope, out: &mut Vec<Violation>) {
-    let texts: Vec<usize> = (0..nodes.len())
+    let texts: Vec<(usize, Rect)> = (0..nodes.len())
         .filter(|index| nodes[*index].text && !nodes[*index].rect.is_empty())
+        .filter_map(|index| visible_rect(nodes, index).map(|rect| (index, rect)))
         .collect();
     let tolerance = 2.0;
     for left in 0..texts.len() {
         for right in (left + 1)..texts.len() {
-            let same_parent = nodes[texts[left]].parent == nodes[texts[right]].parent;
+            let same_parent = nodes[texts[left].0].parent == nodes[texts[right].0].parent;
             if same_parent != (scope == PairScope::Siblings) {
                 continue;
             }
-            if nodes[texts[left]].rect.overlap_exceeds(&nodes[texts[right]].rect, tolerance) {
+            if texts[left].1.overlap_exceeds(&texts[right].1, tolerance) {
                 out.push(Violation {
-                    id: nodes[texts[right]].label.clone(),
-                    kind: ViolationKind::Overlap(nodes[texts[left]].label.clone()),
-                    rect: nodes[texts[right]].rect,
+                    id: nodes[texts[right].0].label.clone(),
+                    kind: ViolationKind::Overlap(nodes[texts[left].0].label.clone()),
+                    rect: texts[right].1,
                 });
             }
         }

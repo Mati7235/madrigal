@@ -58,6 +58,7 @@ export component NowPlayingBar inherits Rectangle {
     in property<image> cover;
     in property<int> queue-count: 0;
     in property<float> volume: 0.7;
+    in property<bool> compact: false;
 
     callback play-clicked();
     callback prev-clicked();
@@ -147,7 +148,7 @@ export component NowPlayingBar inherits Rectangle {
                 }
             }
 
-            bar-pos := Text {
+            if (!root.compact) : bar-pos := Text {
                 text: root.pos-text;
                 color: root.palette.on-surface-variant;
                 font-size: 11px;
@@ -206,7 +207,7 @@ export component NowPlayingBar inherits Rectangle {
                 }
             }
 
-            bar-dur := Text {
+            if (!root.compact) : bar-dur := Text {
                 text: root.dur-text;
                 color: root.palette.on-surface-variant;
                 font-size: 11px;
@@ -214,7 +215,7 @@ export component NowPlayingBar inherits Rectangle {
                 vertical-alignment: center;
             }
 
-            Rectangle {
+            if (!root.compact) : Rectangle {
                 width: 18px;
                 VerticalLayout {
                     alignment: center;
@@ -226,7 +227,7 @@ export component NowPlayingBar inherits Rectangle {
                 }
             }
 
-            bar-vol := Rectangle {
+            if (!root.compact) : bar-vol := Rectangle {
                 width: 88px;
                 height: 48px;
                 background: transparent;
