@@ -19,6 +19,7 @@ madrigal-lyrics = { path = "../madrigal-lyrics" }
 madrigal-paths = { path = "../madrigal-paths" }
 madrigal-player = { path = "../madrigal-player" }
 madrigal-settings = { path = "../madrigal-settings" }
+chrono = "0.4"
 crossbeam-channel = "0.5"
 image = "0.25"
 rusqlite = { version = "0.41", features = ["bundled"] }

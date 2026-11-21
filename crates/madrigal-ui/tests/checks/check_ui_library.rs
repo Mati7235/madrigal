@@ -3,10 +3,12 @@ use std::rc::Rc;
 use std::sync::{Mutex, MutexGuard};
 use std::time::Duration;
 
+use chrono::{TimeZone, Utc};
 use madrigal_testkit as kit;
 use madrigal_ui::{
     album_cards, artist_cards, chip_order, default_chip_order, download_models, event_years,
-    history_rows, load_downloads_fixture, load_library_fixture, move_chip, playlist_rows,
+    history_rows, history_stamp, load_downloads_fixture, load_library_fixture, move_chip,
+    playlist_rows,
     save_chip_order, song_rows, song_sort_for_settings, stats_streaks, stats_totals, top_album_rows,
     top_artist_rows, top_track_rows, year_index, year_model, MainShell,
 };
@@ -26,6 +28,7 @@ fn ui_library() {
     std::env::set_var("XDG_CONFIG_HOME", tmp.path().join("config"));
     std::env::set_var("XDG_CACHE_HOME", tmp.path().join("cache"));
     std::env::set_var("XDG_STATE_HOME", tmp.path().join("state"));
+    std::env::set_var("TZ", "America/Argentina/Buenos_Aires");
 
     let fx = load_library_fixture();
     let lib = fx.library();
@@ -56,6 +59,30 @@ fn ui_library() {
     assert_eq!(trl("en", "library.history.clear"), "Clear history");
     madrigal_ui::set_shell_lang(&shell, &lang, madrigal_i18n::Lang::En);
     madrigal_ui::set_shell_lang(&shell, &lang, madrigal_i18n::Lang::Es);
+
+    let at = |y, m, d, h, min| {
+        Utc.with_ymd_and_hms(y, m, d, h, min, 0)
+            .single()
+            .unwrap()
+            .timestamp()
+    };
+    let now = at(2026, 11, 21, 23, 0);
+    assert_eq!(
+        history_stamp(at(2026, 11, 21, 21, 31), now, madrigal_i18n::Lang::Es),
+        "Hoy 18:31"
+    );
+    assert_eq!(
+        history_stamp(at(2026, 11, 21, 0, 5), now, madrigal_i18n::Lang::Es),
+        "Ayer 21:05"
+    );
+    assert_eq!(
+        history_stamp(at(2026, 11, 20, 0, 5), now, madrigal_i18n::Lang::Es),
+        "19 nov 21:05"
+    );
+    assert_eq!(
+        history_stamp(at(2026, 11, 20, 0, 5), now, madrigal_i18n::Lang::En),
+        "Nov 19, 21:05"
+    );
 
     let order = chip_order(&fx.settings.borrow());
     assert_eq!(order, default_chip_order());
@@ -216,7 +243,7 @@ fn ui_library() {
     assert_eq!(shell.get_lib_year(), before);
     assert_eq!(shell.get_lib_last_action().as_str(), "year-next");
 
-    let history = history_rows(&lib);
+    let history = history_rows(&lib, madrigal_i18n::Lang::Es);
     assert_eq!(history.len(), 12);
     assert_eq!(history[0].title.as_str(), "Charlie");
     shell.set_lib_history(Rc::new(VecModel::from(history)).into());
@@ -227,7 +254,7 @@ fn ui_library() {
     kit::click_by_id(&shell, "LibraryPage::history-clear-touch").unwrap();
     assert_eq!(shell.get_lib_last_action().as_str(), "history-cleared");
     lib.clear_listen_history().unwrap();
-    let history = history_rows(&lib);
+    let history = history_rows(&lib, madrigal_i18n::Lang::Es);
     assert!(history.is_empty());
     shell.set_lib_history(Rc::new(VecModel::from(history)).into());
     assert_eq!(shell.get_lib_history().row_count(), 0);

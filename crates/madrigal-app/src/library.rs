@@ -134,7 +134,10 @@ pub fn build_models(conn: &Connection, settings: &Settings, view: &LibraryView) 
             models.cards = filter_cards(album_cards(&lib), &view.query);
         }
         madrigal_ui::CHIP_HISTORY => {
-            models.history = filter_history(history_rows(&lib), &view.query);
+            models.history = filter_history(
+                history_rows(&lib, lang_from_settings(settings.appearance.language)),
+                &view.query,
+            );
             models.history_paused = settings.privacy.pause_listen_history;
         }
         madrigal_ui::CHIP_STATS => {

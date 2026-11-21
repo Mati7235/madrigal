@@ -191,13 +191,34 @@ pub fn album_cards(lib: &madrigal_library::Library<'_>) -> Vec<LibCardRow> {
     cards
 }
 
-fn day_clock(played_at: i64) -> String {
-    let day = played_at.div_euclid(86_400);
-    let rest = played_at.rem_euclid(86_400);
-    format!("day {day} {:02}:{:02}", rest / 3600, rest % 3600 / 60)
+pub fn history_stamp(played_at: i64, now: i64, lang: madrigal_i18n::Lang) -> String {
+    use chrono::{Datelike, Local};
+    let played = chrono::DateTime::from_timestamp(played_at, 0)
+        .map(|when| when.with_timezone(&Local))
+        .unwrap_or_else(|| Local::now());
+    let now = chrono::DateTime::from_timestamp(now, 0)
+        .map(|when| when.with_timezone(&Local))
+        .unwrap_or_else(|| Local::now());
+    let clock = played.format("%H:%M").to_string();
+    if played.date_naive() == now.date_naive() {
+        return format!("{} {clock}", madrigal_i18n::tr(lang, "detail.today"));
+    }
+    if Some(played.date_naive()) == now.date_naive().pred_opt() {
+        return format!("{} {clock}", madrigal_i18n::tr(lang, "detail.yesterday"));
+    }
+    let month_key = format!("date.month.{:02}", played.month());
+    let month = madrigal_i18n::tr(lang, &month_key);
+    match lang {
+        madrigal_i18n::Lang::Es => format!("{} {month} {clock}", played.day()),
+        madrigal_i18n::Lang::En => format!("{month} {}, {clock}", played.day()),
+    }
 }
 
-pub fn history_rows(lib: &madrigal_library::Library<'_>) -> Vec<HistoryRow> {
+pub fn history_rows(
+    lib: &madrigal_library::Library<'_>,
+    lang: madrigal_i18n::Lang,
+) -> Vec<HistoryRow> {
+    let now = chrono::Local::now().timestamp();
     let titles: HashMap<String, (String, String)> = lib
         .songs(
             madrigal_library::SongScope::Library,
@@ -229,7 +250,11 @@ pub fn history_rows(lib: &madrigal_library::Library<'_>) -> Vec<HistoryRow> {
             HistoryRow {
                 id: key.into(),
                 title: title.into(),
-                subtitle: format!("{artist} · {}", day_clock(entry.event.played_at)).into(),
+                subtitle: format!(
+                    "{artist} · {}",
+                    history_stamp(entry.event.played_at, now, lang)
+                )
+                .into(),
             }
         })
         .collect()

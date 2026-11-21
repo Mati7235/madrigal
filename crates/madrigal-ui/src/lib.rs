@@ -29,7 +29,8 @@ pub use pages_catalog::{
 pub use pages_library::{
     apply_library, album_cards, artist_cards, chip_order, default_chip_order, download_models,
     download_state_index, downloaded_rows, event_years, filter_cards, filter_downloads,
-    filter_history, filter_playlists, filter_songs, history_rows, load_downloads_fixture,
+    filter_history, filter_playlists, filter_songs, history_rows, history_stamp,
+    load_downloads_fixture,
     load_library_fixture, matches_query, move_chip, playlist_rows, save_chip_order, song_rows,
     song_sort_for_settings, stats_streaks, stats_totals, top_album_rows, top_artist_rows,
     top_track_rows, year_index, year_model, DownloadItem, LibraryFixture, LibraryModels,
