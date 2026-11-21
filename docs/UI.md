@@ -224,10 +224,29 @@ icon, "No downloads" and a hint pointing to the song menu > Download.
 
 Settings: group list column 232px (16px padding, 44px items), page title at the
 16px margin in `Type.title-medium`, the section pane fills the rest. Every row
-is 54px: label left, one control right aligned at the 16px inset (switch, dense
-field, slider, choice chips, test/reveal button). Providers are a 54px reorder
-list with 24px around the block; section gaps are 24px and Diagnostics has no
-second title.
+is 56px (Cuenta keeps 54px): label and optional one-line hint on the left, one
+control right aligned at the 16px inset. Providers are a 54px reorder list with
+24px around the block; section gaps are 24px and Diagnostics has no second title.
+
+Settings row patterns (presentation only; keys and stored values unchanged):
+- `blocks()` in `src/pages_settings.rs` places every row of a section under a
+  subheading (`settings.sub.<group>.<name>`). Rows not in a block fall to the
+  advanced block; a test requires each row to appear exactly once.
+- Advanced rows sit in one block per section, collapsed behind
+  "Mostrar opciones avanzadas" (`SectionView::sec-toggle`). Hidden rows are
+  internal state: stored and parity-checked, never drawn.
+- Labels, hints (`settings.hint.<row key>`) and placeholders
+  (`settings.ph.<row key>`) are i18n keys found by row key; a row only gets a
+  hint or placeholder when its key exists.
+- Choices of up to four values are chips; longer lists open an inline picker
+  (`row-picker` then `picker-option`). Option labels are `settings.opt.<field>.<value>`.
+- Sliders show the real value with its unit through `slider_text`: speed and
+  line spacing `×`, pitch in semitones, output gain in dB (stored in mB), `%`,
+  seconds, days, px, and MB/GB for cache limits.
+- The equalizer stores ten dB gains; the screen shows ten named frequency
+  sliders (`settings.eq.band0`..`band9`) mapping to that array, plus a
+  preset choice (`equalizer_selected_profile_id`) whose built-in presets
+  apply their gains and clear back to manual on any band change.
 
 Media cards (`M3Card`): 150x190, no border artifacts, no clipped shadow, hover
 veil only. Rails use 12px spacing and start at the page margin.

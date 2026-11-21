@@ -82,11 +82,16 @@ fn adjacent_swap(before: &[String], after: &[String]) -> Option<usize> {
     }
 }
 
+fn visible_in_everyday(shell: &madrigal_ui::MainShell, index: usize) -> bool {
+    let row = shell.get_settings_rows().row_data(index).unwrap();
+    !row.advanced && !row.hidden
+}
+
 fn toggle_at(shell: &madrigal_ui::MainShell, rows: &[(String, String)], key: &str) {
     let switches: Vec<usize> = rows
         .iter()
         .enumerate()
-        .filter(|(_, (_, kind))| kind == "switch")
+        .filter(|(index, (_, kind))| kind == "switch" && visible_in_everyday(shell, *index))
         .map(|(position, _)| position)
         .collect();
     let nth = rows.iter().position(|(name, _)| name == key).unwrap();
@@ -100,10 +105,13 @@ fn choose_option(shell: &madrigal_ui::MainShell, rows: &[(String, String)], key:
     let shell_rows = shell.get_settings_rows();
     let mut flat: Vec<(String, String)> = Vec::new();
     for (index, (name, kind)) in rows.iter().enumerate() {
-        if kind != "choice" {
+        if kind != "choice" || !visible_in_everyday(shell, index) {
             continue;
         }
         let options = shell_rows.row_data(index).unwrap().options;
+        if options.row_count() > 4 {
+            continue;
+        }
         for position in 0..options.row_count() {
             flat.push((name.clone(), options.row_data(position).unwrap().to_string()));
         }
@@ -115,6 +123,13 @@ fn choose_option(shell: &madrigal_ui::MainShell, rows: &[(String, String)], key:
     let candidates = handles(shell, "SectionView::row-option");
     assert!(order < candidates.len(), "option not visible");
     kit::click(&candidates[order]);
+}
+
+fn expand_advanced(shell: &madrigal_ui::MainShell) {
+    let toggles = handles(shell, "SectionView::sec-toggle");
+    assert!(!toggles.is_empty(), "advanced toggle missing");
+    kit::click(&toggles[0]);
+    kit::mock_advance(Duration::from_millis(50));
 }
 
 fn read_settings(path: &std::path::Path) -> madrigal_settings::Settings {
@@ -186,16 +201,10 @@ fn ui_settings() {
     );
     kit::click_by_id(&shell, "OnboardingOverlay::ob-next").unwrap();
     assert_eq!(shell.get_settings_ob_step(), 1);
-    kit::click_by_id(&shell, "OnboardingOverlay::ob-po-check").unwrap();
-    assert!(state.borrow().po_done);
-    assert!(state.borrow().po_ok);
-    assert_eq!(state.borrow().test_calls, vec!["po".to_owned()]);
-    kit::click_by_id(&shell, "OnboardingOverlay::ob-next").unwrap();
-    assert_eq!(shell.get_settings_ob_step(), 2);
     kit::click_by_id(&shell, "OnboardingOverlay::ob-login-google").unwrap();
     assert_eq!(state.borrow().login_calls, vec!["browser".to_owned()]);
     kit::click_by_id(&shell, "OnboardingOverlay::ob-next").unwrap();
-    assert_eq!(shell.get_settings_ob_step(), 3);
+    assert_eq!(shell.get_settings_ob_step(), 2);
     shell.set_settings_ob_folder(SharedString::from(tmp.path().join("music").to_string_lossy().as_ref()));
     kit::click_by_id(&shell, "OnboardingOverlay::ob-folder-scan").unwrap();
     assert_eq!(state.borrow().scan_calls.len(), 1);
@@ -237,6 +246,10 @@ fn ui_settings() {
             expected.retain(|key| !hidden.contains(&key.as_str()));
         }
         let mut actual: Vec<String> = rows.iter().map(|(key, _)| key.clone()).collect();
+        if *group == SettingsGroup::Player {
+            actual.retain(|key| !key.starts_with("equalizer_band_"));
+            actual.push("equalizer_gains".to_owned());
+        }
         actual.sort();
         expected.sort();
         assert_eq!(actual, expected, "field parity for {group:?}");
@@ -263,7 +276,8 @@ fn ui_settings() {
         match group {
             SettingsGroup::Appearance => {
                 assert!(!handles(&shell, "SectionView::row-toggle").is_empty());
-                assert!(!handles(&shell, "SectionView::row-choice-cycle").is_empty());
+                assert!(!handles(&shell, "SectionView::row-option").is_empty());
+                assert!(!scroll_until_found(&shell, "SectionView::row-picker").is_empty());
             }
             SettingsGroup::Content => {
                 assert!(!handles(&shell, "SectionView::row-toggle").is_empty());
@@ -275,7 +289,8 @@ fn ui_settings() {
                 assert!(!scroll_until_found(&shell, "SectionView::prov-drag").is_empty());
             }
             SettingsGroup::Internet => {
-                assert!(!handles(&shell, "SectionView::row-test").is_empty());
+                expand_advanced(&shell);
+                assert!(!scroll_until_found(&shell, "SectionView::row-test").is_empty());
             }
             SettingsGroup::Storage => {
                 assert!(!handles(&shell, "SectionView::row-field").is_empty());
@@ -359,7 +374,7 @@ fn ui_settings() {
                 assert!(!scroll_until_found(&shell, "SectionView::row-test").is_empty());
             }
             SettingsGroup::Ai => {
-                assert!(!handles(&shell, "SectionView::row-test").is_empty());
+                assert!(!scroll_until_found(&shell, "SectionView::row-test").is_empty());
             }
             SettingsGroup::Updates => {
                 assert!(!handles(&shell, "SectionView::row-toggle").is_empty());
@@ -376,10 +391,17 @@ fn ui_settings() {
     let rows = row_snapshot(&shell);
     choose_option(&shell, &rows, "theme", "dark");
     assert_eq!(read_settings(&settings_path).appearance.theme, madrigal_settings::Theme::Dark);
-    let cycles = handles(&shell, "SectionView::row-choice-cycle");
-    assert!(!cycles.is_empty());
-    kit::click(&cycles[0]);
+    choose_option(&shell, &rows, "theme", "matugen");
     assert_eq!(read_settings(&settings_path).appearance.theme, madrigal_settings::Theme::Matugen);
+
+    let pickers = scroll_until_found(&shell, "SectionView::row-picker");
+    assert!(!pickers.is_empty(), "long choices use a picker");
+    kit::click(&pickers[0]);
+    let choices = scroll_until_found(&shell, "SectionView::picker-option");
+    kit::click(&choices[0]);
+    let picked = serde_json::to_value(read_settings(&settings_path).appearance.player_design_style).unwrap();
+    assert!(picked.as_str().is_some_and(|value| value.starts_with('V')), "picked {picked}");
+    assert!(handles(&shell, "SectionView::picker-option").is_empty(), "picker closes after a choice");
 
     shell
         .invoke_settings_edited("custom_theme_color".into(), "#ff0000".into());
@@ -390,6 +412,12 @@ fn ui_settings() {
     kit::click(&groups[group_index(SettingsGroup::Player) as usize]);
     shell.invoke_settings_stepped("volume".into(), 104.0);
     assert_eq!(read_settings(&settings_path).player.volume, 104);
+    let rows = row_snapshot(&shell);
+    let volume = rows.iter().position(|(key, _)| key == "volume").unwrap();
+    assert_eq!(
+        shell.get_settings_rows().row_data(volume).unwrap().val_label.as_str(),
+        "104 %"
+    );
 
     kit::click(&groups[group_index(SettingsGroup::Lyrics) as usize]);
     let order_before: Vec<String> =
@@ -463,7 +491,8 @@ fn ui_settings() {
     assert_eq!(table.row_data(secret).unwrap().display.as_str(), "k3");
 
     kit::click(&groups[group_index(SettingsGroup::Internet) as usize]);
-    let tests = handles(&shell, "SectionView::row-test");
+    expand_advanced(&shell);
+    let tests = scroll_until_found(&shell, "SectionView::row-test");
     assert!(!tests.is_empty());
     kit::click(&tests[0]);
     assert_eq!(state.borrow().test_calls.last().unwrap(), "po");
@@ -491,7 +520,7 @@ fn ui_settings() {
     let single: SharedString = shell
         .global::<madrigal_ui::I18n>()
         .invoke_trl("en".into(), single_key);
-    assert!(single.as_str().contains("Primary"), "single status: {single}");
+    assert!(single.as_str().contains("main app window"), "single status: {single}");
 
     shell.set_settings_show_diag(false);
     let snapshot_dir = kit::snapshot_dir(tmp.path());
@@ -509,7 +538,8 @@ fn ui_settings() {
         for frame in &frames {
             let pos = frame.absolute_position();
             let size = frame.size();
-            assert_eq!(size.height, 54.0, "row height for {group:?}");
+            let height = if group == SettingsGroup::Account { 54.0 } else { 56.0 };
+            assert_eq!(size.height, height, "row height for {group:?}");
             assert!((pos.x - title.absolute_position().x).abs() < 1.0, "row left inset for {group:?}");
             assert!(
                 (pos.x + size.width - (page_pos.x + page_size.width - 16.0)).abs() < 1.0,

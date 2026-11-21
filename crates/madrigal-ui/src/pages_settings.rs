@@ -134,6 +134,20 @@ pub fn kind_tag(kind: SettingKind) -> &'static str {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Unit {
+    Plain,
+    Ratio,
+    Semitones,
+    Decibels,
+    Db,
+    Percent,
+    Seconds,
+    Days,
+    Pixels,
+    Megabytes,
+}
+
 #[derive(Clone, Debug)]
 pub struct SettingRow {
     pub key: &'static str,
@@ -144,9 +158,16 @@ pub struct SettingRow {
     pub num_val: f64,
     pub num_min: f64,
     pub num_max: f64,
+    pub unit: Unit,
     pub options: Vec<String>,
+    pub option_labels: Vec<String>,
     pub flags: Vec<String>,
     pub test_id: &'static str,
+    pub section: String,
+    pub advanced: bool,
+    pub hidden: bool,
+    pub hint: String,
+    pub placeholder: String,
 }
 
 fn row(
@@ -164,9 +185,136 @@ fn row(
         num_val: 0.0,
         num_min: 0.0,
         num_max: 1.0,
+        unit: Unit::Plain,
         options: Vec::new(),
+        option_labels: Vec::new(),
         flags: Vec::new(),
         test_id,
+        section: String::new(),
+        advanced: false,
+        hidden: false,
+        hint: String::new(),
+        placeholder: String::new(),
+    }
+}
+
+fn option_label_key(field: &str, option: &str) -> String {
+    if option.is_empty() {
+        format!("settings.opt.{field}.auto")
+    } else {
+        format!("settings.opt.{field}.{}", option.to_lowercase())
+    }
+}
+
+pub fn slider_text(unit: Unit, value: f64, lang: madrigal_i18n::Lang) -> String {
+    let es = matches!(lang, madrigal_i18n::Lang::Es);
+    let word = |key: &str| madrigal_i18n::tr(lang, key).to_owned();
+    let number = |value: f64, min: usize, max: usize| {
+        let text = trimmed(value, min, max);
+        if es {
+            text.replace('.', ",")
+        } else {
+            text
+        }
+    };
+    match unit {
+        Unit::Plain => number(value, 0, 2),
+        Unit::Ratio => format!("{}×", number(value, 1, 2)),
+        Unit::Semitones => {
+            let steps = value.round() as i64;
+            let sign = match steps {
+                s if s > 0 => "+",
+                s if s < 0 => "−",
+                _ => "",
+            };
+            let name = if steps.abs() == 1 {
+                word("settings.unit.semitone")
+            } else {
+                word("settings.unit.semitones")
+            };
+            format!("{sign}{} {name}", steps.abs())
+        }
+        Unit::Decibels => {
+            let db = value / 100.0;
+            let sign = match db {
+                d if d > 0.0 => "+",
+                d if d < 0.0 => "−",
+                _ => "",
+            };
+            format!("{sign}{} {}", number(db.abs(), 1, 1), word("settings.unit.db"))
+        }
+        Unit::Db => {
+            let sign = match value {
+                d if d > 0.0 => "+",
+                d if d < 0.0 => "−",
+                _ => "",
+            };
+            format!(
+                "{sign}{} {}",
+                number(value.abs(), 1, 1),
+                word("settings.unit.db")
+            )
+        }
+        Unit::Percent => format!("{} {}", number(value, 0, 0), word("settings.unit.percent")),
+        Unit::Seconds => format!("{} {}", number(value, 0, 1), word("settings.unit.seconds")),
+        Unit::Days => format!("{} {}", number(value, 0, 0), word("settings.unit.days")),
+        Unit::Pixels => format!("{} {}", number(value, 0, 0), word("settings.unit.px")),
+        Unit::Megabytes if value >= 1024.0 => {
+            format!("{} {}", number(value / 1024.0, 1, 1), word("settings.unit.gb"))
+        }
+        Unit::Megabytes => format!("{} {}", number(value, 0, 0), word("settings.unit.mb")),
+    }
+}
+
+fn display_value(row: &SettingRow, lang: madrigal_i18n::Lang) -> String {
+    match row.kind {
+        SettingKind::Slider => slider_text(row.unit, row.num_val, lang),
+        SettingKind::Choice => row
+            .options
+            .iter()
+            .position(|option| *option == row.text_val)
+            .and_then(|index| row.option_labels.get(index).cloned())
+            .unwrap_or_else(|| row.text_val.clone()),
+        _ => String::new(),
+    }
+}
+
+fn trimmed(value: f64, min: usize, max: usize) -> String {
+    let mut text = format!("{value:.max$}");
+    if max > min {
+        while text.ends_with('0') && text.len() - text.find('.').unwrap_or(0) - 1 > min {
+            text.pop();
+        }
+        if text.ends_with('.') {
+            text.pop();
+        }
+    }
+    text
+}
+
+fn slider_unit(key: &str) -> Unit {
+    match key {
+        "playback_speed" | "line_spacing" | "swipe_sensitivity" => Unit::Ratio,
+        "pitch_semitones" => Unit::Semitones,
+        "equalizer_band_0" | "equalizer_band_1" | "equalizer_band_2" | "equalizer_band_3"
+        | "equalizer_band_4" | "equalizer_band_5" | "equalizer_band_6" | "equalizer_band_7"
+        | "equalizer_band_8" | "equalizer_band_9" => Unit::Db,
+        "equalizer_output_gain_mb" => Unit::Decibels,
+        "volume"
+        | "device_mute_recovery_volume"
+        | "equalizer_bass_boost_strength"
+        | "equalizer_virtualizer_strength"
+        | "backdrop_blur_amount"
+        | "scrobble_delay_percent" => Unit::Percent,
+        "crossfade_seconds"
+        | "local_songs_min_duration_secs"
+        | "scrobble_min_song_duration_secs"
+        | "scrobble_delay_secs" => Unit::Seconds,
+        "history_duration_days" | "remind_after" => Unit::Days,
+        "font_size" | "thumbnail_corner_radius" => Unit::Pixels,
+        "max_image_cache_mb" | "max_song_cache_mb" | "max_canvas_cache_mb"
+        | "max_lyrics_cache_mb" => Unit::Megabytes,
+        _ => Unit::Plain,
     }
 }
 
@@ -187,6 +335,7 @@ fn sl(key: &'static str, label: &'static str, value: f64, min: f64, max: f64) ->
     out.num_val = value;
     out.num_min = min;
     out.num_max = max;
+    out.unit = slider_unit(key);
     out
 }
 
@@ -194,6 +343,11 @@ fn ch(key: &'static str, label: &'static str, current: &str, options: &[&str]) -
     let mut out = row(key, label, SettingKind::Choice, "");
     out.text_val = current.to_owned();
     out.options = options.iter().map(|option| option.to_string()).collect();
+    out.option_labels = out
+        .options
+        .iter()
+        .map(|option| option_label_key(key, option))
+        .collect();
     out
 }
 
@@ -234,12 +388,22 @@ fn joined(items: &[String]) -> String {
     items.join(", ")
 }
 
+fn string_model(items: &[String]) -> slint::ModelRc<SharedString> {
+    Rc::new(VecModel::from(
+        items
+            .iter()
+            .map(|item| SharedString::from(item.as_str()))
+            .collect::<Vec<_>>(),
+    ))
+    .into()
+}
+
 pub fn settings_section(
     settings: &madrigal_settings::Settings,
     group: SettingsGroup,
     profiles: &[String],
 ) -> Vec<SettingRow> {
-    match group {
+    let raw = match group {
         SettingsGroup::Appearance => appearance_rows(&settings.appearance),
         SettingsGroup::Content => content_rows(&settings.content),
         SettingsGroup::Player => player_rows(&settings.player),
@@ -251,7 +415,137 @@ pub fn settings_section(
         SettingsGroup::Integrations => integrations_rows(&settings.integrations),
         SettingsGroup::Ai => ai_rows(&settings.ai),
         SettingsGroup::Updates => updates_rows(&settings.updates),
+    };
+    arrange(group, raw)
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Tier {
+    Everyday,
+    Advanced,
+    Hidden,
+}
+
+struct Block {
+    title: &'static str,
+    tier: Tier,
+    keys: &'static [&'static str],
+}
+
+fn blocks(group: SettingsGroup) -> &'static [Block] {
+    match group {
+        SettingsGroup::Appearance => &[
+            Block { title: "settings.sub.appearance.theme", tier: Tier::Everyday, keys: &["theme", "dark_mode", "dynamic_theme", "pure_black"] },
+            Block { title: "settings.sub.appearance.language", tier: Tier::Everyday, keys: &["language", "use_system_language"] },
+            Block { title: "settings.sub.appearance.home", tier: Tier::Everyday, keys: &["default_open_tab", "quick_picks_display", "grid_item_size", "artist_view_type", "album_view_type"] },
+            Block { title: "settings.sub.appearance.player", tier: Tier::Everyday, keys: &["player_design_style", "player_background", "mini_player_style", "show_player_volume_bar", "hide_player_thumbnail", "swipe_thumbnail", "notify_track_change"] },
+            Block { title: "settings.sub.appearance.artwork", tier: Tier::Everyday, keys: &["artwork_shape_enabled", "artwork_shape_style"] },
+            Block { title: "settings.sub.appearance.effects", tier: Tier::Everyday, keys: &["disable_animations", "disable_blur", "backdrop_enabled"] },
+            Block { title: "settings.block.advanced", tier: Tier::Advanced, keys: &["custom_theme_color", "random_theme_on_startup", "use_system_font", "font_preference", "custom_font_name", "slider_style", "lyrics_background", "lyrics_animation", "player_buttons_style", "crop_thumbnail_to_square", "thumbnail_corner_radius", "blur_radius", "backdrop_blur_amount", "canvas_enabled", "canvas_source", "canvas_wifi_only", "swipe_sensitivity"] },
+        ],
+        SettingsGroup::Content => &[
+            Block { title: "settings.sub.content.region", tier: Tier::Everyday, keys: &["content_language", "content_country"] },
+            Block { title: "settings.sub.content.safety", tier: Tier::Everyday, keys: &["hide_explicit", "hide_video"] },
+            Block { title: "settings.sub.content.search", tier: Tier::Everyday, keys: &["search_source", "quick_picks", "top_range", "show_home_category_chips", "auto_load_more"] },
+            Block { title: "settings.sub.content.sort", tier: Tier::Everyday, keys: &["song_sort_type", "song_sort_descending", "album_sort_type", "album_sort_descending", "artist_sort_type", "artist_sort_descending", "playlist_sort_type", "playlist_sort_descending"] },
+            Block { title: "settings.sub.content.library", tier: Tier::Everyday, keys: &["song_filter", "artist_filter", "album_filter", "show_tags_in_library", "prefer_local_on_import", "playlist_edit_lock"] },
+            Block { title: "settings.block.advanced", tier: Tier::Advanced, keys: &["playlist_song_sort_type", "playlist_song_sort_descending", "auto_playlist_song_sort_type", "auto_playlist_song_sort_descending", "artist_song_sort_type", "artist_song_sort_descending", "chip_sort_type", "playlist_tags_filter", "library_chip_order", "playlist_tag_order", "artist_separators", "playlist_suggestion_source", "local_songs_min_duration_secs"] },
+            Block { title: "", tier: Tier::Hidden, keys: &["speed_dial_song_ids"] },
+        ],
+        SettingsGroup::Player => &[
+            Block { title: "settings.sub.player.volume", tier: Tier::Everyday, keys: &["volume", "audio_quality", "normalization"] },
+            Block { title: "settings.sub.player.speed", tier: Tier::Everyday, keys: &["playback_speed", "pitch_semitones"] },
+            Block { title: "settings.sub.player.transitions", tier: Tier::Everyday, keys: &["transition_mode", "crossfade_seconds", "skip_silence"] },
+            Block { title: "settings.sub.player.equalizer", tier: Tier::Everyday, keys: &["equalizer_enabled", "equalizer_selected_profile_id", "equalizer_band_0", "equalizer_band_1", "equalizer_band_2", "equalizer_band_3", "equalizer_band_4", "equalizer_band_5", "equalizer_band_6", "equalizer_band_7", "equalizer_band_8", "equalizer_band_9", "equalizer_bass_boost_enabled", "equalizer_bass_boost_strength", "equalizer_virtualizer_enabled", "equalizer_virtualizer_strength"] },
+            Block { title: "settings.sub.player.resume", tier: Tier::Everyday, keys: &["resume_enabled", "resume_autoplay", "persistent_queue", "permanent_shuffle", "repeat_mode", "queue_edit_lock"] },
+            Block { title: "settings.sub.player.listening", tier: Tier::Everyday, keys: &["auto_download_on_like", "auto_skip_next_on_error", "pause_on_device_mute", "seek_extra_seconds"] },
+            Block { title: "settings.block.advanced", tier: Tier::Advanced, keys: &["equalizer_control_mode", "equalizer_auto_headroom_enabled", "equalizer_output_gain_enabled", "equalizer_output_gain_mb", "preload_next_song", "audio_offload", "device_mute_recovery_volume"] },
+            Block { title: "", tier: Tier::Hidden, keys: &["equalizer_custom_profiles_json"] },
+        ],
+        SettingsGroup::Lyrics => &[
+            Block { title: "settings.sub.lyrics.lookup", tier: Tier::Everyday, keys: &["enabled", "prefer_word_timing", "provider_order"] },
+            Block { title: "settings.sub.lyrics.display", tier: Tier::Everyday, keys: &["show_lyrics", "text_position", "font_size", "line_spacing", "line_blur", "show_player_controls"] },
+            Block { title: "settings.sub.lyrics.interaction", tier: Tier::Everyday, keys: &["click_to_seek", "auto_scroll"] },
+            Block { title: "settings.sub.lyrics.translation", tier: Tier::Everyday, keys: &["translation_enabled", "translation_target"] },
+            Block { title: "settings.block.advanced", tier: Tier::Advanced, keys: &["providers_disabled", "preferred_provider", "youtube_subtitle_enabled", "paxsenix_api_key", "translation_endpoint", "translation_api_key", "translator_contexts", "romanize_japanese", "romanize_korean", "romanize_chinese", "romanize_hindi", "romanize_other", "lyrics_mode", "use_lyrics_v2", "v2_bounce_factor", "v2_glow_factor", "v2_fill_transition_width", "v2_lrc_bounce_enabled"] },
+        ],
+        SettingsGroup::Internet => &[
+            Block { title: "settings.sub.internet.connection", tier: Tier::Everyday, keys: &["offline_mode", "network_metered", "use_login_for_browse"] },
+            Block { title: "settings.block.advanced", tier: Tier::Advanced, keys: &["proxy_enabled", "proxy_type", "proxy_host", "proxy_port", "proxy_username", "proxy_password", "stream_bypass_proxy", "dns_over_https_enabled", "dns_over_https_provider", "pot_server_home", "web_client_po_token_enabled", "use_visitor_data", "po_token_source_url"] },
+        ],
+        SettingsGroup::Storage => &[
+            Block { title: "settings.sub.storage.downloads", tier: Tier::Everyday, keys: &["downloads_dir", "download_concurrency"] },
+            Block { title: "settings.sub.storage.cache", tier: Tier::Everyday, keys: &["max_song_cache_mb", "max_image_cache_mb", "max_lyrics_cache_mb", "max_canvas_cache_mb", "smart_trimmer"] },
+            Block { title: "settings.sub.storage.local", tier: Tier::Everyday, keys: &["local_songs_included_folders", "local_songs_sort_type", "local_songs_sort_descending"] },
+            Block { title: "settings.block.advanced", tier: Tier::Advanced, keys: &["storage_folder_path", "storage_folder_display_name", "local_songs_excluded_folders"] },
+        ],
+        SettingsGroup::Privacy => &[
+            Block { title: "settings.sub.privacy.history", tier: Tier::Everyday, keys: &["pause_listen_history", "pause_search_history", "history_duration_days"] },
+            Block { title: "settings.sub.privacy.security", tier: Tier::Everyday, keys: &["disable_screenshot"] },
+            Block { title: "settings.sub.privacy.filter", tier: Tier::Everyday, keys: &["ai_content_filter_enabled", "ai_content_filter_include_moderate"] },
+            Block { title: "settings.block.advanced", tier: Tier::Advanced, keys: &["ai_content_filter_source_url"] },
+            Block { title: "", tier: Tier::Hidden, keys: &["ai_content_filter_last_updated"] },
+        ],
+        SettingsGroup::Account => &[],
+        SettingsGroup::Integrations => &[
+            Block { title: "settings.sub.integrations.discord", tier: Tier::Everyday, keys: &["discord_rpc_enabled", "discord_show_when_paused", "discord_activity_type", "discord_presence_status"] },
+            Block { title: "settings.sub.integrations.lastfm", tier: Tier::Everyday, keys: &["lastfm_scrobbling_enabled", "lastfm_use_now_playing", "lastfm_username", "lastfm_provider"] },
+            Block { title: "settings.sub.integrations.listenbrainz", tier: Tier::Everyday, keys: &["listenbrainz_enabled", "listenbrainz_token"] },
+            Block { title: "settings.sub.integrations.maloja", tier: Tier::Everyday, keys: &["maloja_enabled", "maloja_server", "maloja_api_key"] },
+            Block { title: "settings.sub.integrations.sponsorblock", tier: Tier::Everyday, keys: &["sponsorblock_enabled"] },
+            Block { title: "settings.sub.integrations.spotify", tier: Tier::Everyday, keys: &["show_spotify_playlists", "cast_enabled"] },
+            Block { title: "settings.block.advanced", tier: Tier::Advanced, keys: &["sponsorblock_categories", "sponsorblock_api_url", "lastfm_custom_endpoint", "scrobble_delay_percent", "scrobble_min_song_duration_secs", "scrobble_delay_secs", "discord_client_id", "discord_username", "discord_display_name", "discord_activity_name", "discord_activity_details", "discord_activity_state", "discord_button1_enabled", "discord_button1_label", "discord_button1_url_source", "discord_button1_custom_url", "discord_button2_enabled", "discord_button2_label", "discord_button2_url_source", "discord_button2_custom_url", "discord_large_image_type", "discord_large_text_source", "discord_large_text_custom", "discord_large_image_custom_url", "discord_small_image_type", "discord_small_image_custom_url", "spotify_account_name", "cast_receiver_app_id"] },
+            Block { title: "", tier: Tier::Hidden, keys: &["discord_avatar_url", "discord_info_dismissed", "spotify_account_avatar_url"] },
+        ],
+        SettingsGroup::Ai => &[
+            Block { title: "settings.sub.ai.provider", tier: Tier::Everyday, keys: &["provider", "api_key", "selected_model"] },
+            Block { title: "settings.block.advanced", tier: Tier::Advanced, keys: &["custom_endpoint", "custom_model", "custom_prompt", "validation_status"] },
+        ],
+        SettingsGroup::Updates => &[
+            Block { title: "settings.sub.updates.updates", tier: Tier::Everyday, keys: &["automatic_update_check", "enable_update_notification", "update_channel", "remind_after"] },
+            Block { title: "settings.block.advanced", tier: Tier::Advanced, keys: &["redownload_on_restore"] },
+            Block { title: "", tier: Tier::Hidden, keys: &["last_update_check", "last_notified_version", "launch_count", "onboarding_completed", "onboarding_done", "has_pressed_star"] },
+        ],
     }
+}
+
+fn arrange(group: SettingsGroup, rows: Vec<SettingRow>) -> Vec<SettingRow> {
+    if group == SettingsGroup::Account {
+        return rows;
+    }
+    let mut rest = rows;
+    let mut out = Vec::with_capacity(rest.len());
+    for block in blocks(group) {
+        let mut first = true;
+        for key in block.keys {
+            let Some(position) = rest.iter().position(|row| row.key == *key) else {
+                continue;
+            };
+            let mut row = rest.remove(position);
+            if first && block.tier != Tier::Hidden {
+                row.section = block.title.to_owned();
+            }
+            first = false;
+            row.advanced = block.tier == Tier::Advanced;
+            row.hidden = block.tier == Tier::Hidden;
+            out.push(row);
+        }
+    }
+    for mut row in rest {
+        row.advanced = true;
+        out.push(row);
+    }
+    for row in &mut out {
+        let hint = format!("settings.hint.{}", row.key);
+        if madrigal_i18n::contains(&hint) {
+            row.hint = hint;
+        }
+        let placeholder = format!("settings.ph.{}", row.key);
+        if madrigal_i18n::contains(&placeholder) {
+            row.placeholder = placeholder;
+        }
+    }
+    out
 }
 
 fn appearance_rows(a: &madrigal_settings::Appearance) -> Vec<SettingRow> {
@@ -342,47 +636,161 @@ fn content_rows(c: &madrigal_settings::Content) -> Vec<SettingRow> {
 }
 
 fn player_rows(p: &madrigal_settings::Player) -> Vec<SettingRow> {
-    let gains = p
-        .equalizer_gains
-        .iter()
-        .map(|gain| format!("{gain:.1}"))
-        .collect::<Vec<_>>()
-        .join(", ");
-    vec![
+    let mut rows = vec![
         sl("volume", "settings.player_volume", p.volume as f64, 0.0, 130.0),
         ch("audio_quality", "settings.quality", &ev(&p.audio_quality), &["best", "medium", "low"]),
         sl("playback_speed", "settings.playback_speed", p.playback_speed as f64, 0.5, 2.0),
         sl("pitch_semitones", "settings.pitch_semitones", p.pitch_semitones as f64, -12.0, 12.0),
         sw("equalizer_enabled", "settings.equalizer_enabled", p.equalizer_enabled),
-        tx("equalizer_gains", "settings.equalizer_gains", &gains),
-        tx("equalizer_control_mode", "settings.equalizer_control_mode", &p.equalizer_control_mode),
-        sw("equalizer_auto_headroom_enabled", "settings.equalizer_auto_headroom_enabled", p.equalizer_auto_headroom_enabled),
-        sw("equalizer_output_gain_enabled", "settings.equalizer_output_gain_enabled", p.equalizer_output_gain_enabled),
-        sl("equalizer_output_gain_mb", "settings.equalizer_output_gain_mb", p.equalizer_output_gain_mb as f64, -1500.0, 1500.0),
-        sw("equalizer_bass_boost_enabled", "settings.equalizer_bass_boost_enabled", p.equalizer_bass_boost_enabled),
-        sl("equalizer_bass_boost_strength", "settings.equalizer_bass_boost_strength", p.equalizer_bass_boost_strength as f64, 0.0, 100.0),
-        sw("equalizer_virtualizer_enabled", "settings.equalizer_virtualizer_enabled", p.equalizer_virtualizer_enabled),
-        sl("equalizer_virtualizer_strength", "settings.equalizer_virtualizer_strength", p.equalizer_virtualizer_strength as f64, 0.0, 100.0),
-        tx("equalizer_selected_profile_id", "settings.equalizer_selected_profile_id", &p.equalizer_selected_profile_id),
-        tx("equalizer_custom_profiles_json", "settings.equalizer_custom_profiles_json", &p.equalizer_custom_profiles_json),
-        ch("normalization", "settings.normalization", &ev(&p.normalization), &["off", "replaygain_track", "replaygain_album", "dynamic"]),
-        ch("transition_mode", "settings.transition_mode", &ev(&p.transition_mode), &["normal", "crossfade", "gapless"]),
-        sl("crossfade_seconds", "settings.crossfade_seconds", p.crossfade_seconds as f64, 0.0, 12.0),
-        sw("resume_enabled", "settings.resume_enabled", p.resume_enabled),
-        sw("resume_autoplay", "settings.resume_autoplay", p.resume_autoplay),
-        sw("persistent_queue", "settings.persistent_queue", p.persistent_queue),
-        sw("preload_next_song", "settings.preload_next_song", p.preload_next_song),
-        sw("permanent_shuffle", "settings.permanent_shuffle", p.permanent_shuffle),
-        sw("skip_silence", "settings.skip_silence", p.skip_silence),
-        sw("audio_offload", "settings.audio_offload", p.audio_offload),
-        sw("auto_download_on_like", "settings.auto_download_on_like", p.auto_download_on_like),
-        sw("auto_skip_next_on_error", "settings.auto_skip_next_on_error", p.auto_skip_next_on_error),
-        sw("pause_on_device_mute", "settings.pause_on_device_mute", p.pause_on_device_mute),
-        sl("device_mute_recovery_volume", "settings.device_mute_recovery_volume", p.device_mute_recovery_volume as f64, 0.0, 130.0),
-        ch("repeat_mode", "settings.repeat_mode", &ev(&p.repeat_mode), &["off", "one", "all"]),
-        sw("queue_edit_lock", "settings.queue_edit_lock", p.queue_edit_lock),
-        sw("seek_extra_seconds", "settings.seek_extra_seconds", p.seek_extra_seconds),
-    ]
+        ch(
+            "equalizer_selected_profile_id",
+            "settings.equalizer_selected_profile_id",
+            &p.equalizer_selected_profile_id,
+            &["", "flat", "bass", "treble", "vocal"],
+        ),
+    ];
+    for (index, key) in EQ_BAND_KEYS.iter().enumerate() {
+        rows.push(sl(
+            key,
+            eq_band_label(index),
+            p.equalizer_gains.get(index).copied().unwrap_or(0.0) as f64,
+            -12.0,
+            12.0,
+        ));
+    }
+    rows.push(ch(
+        "equalizer_control_mode",
+        "settings.equalizer_control_mode",
+        &p.equalizer_control_mode,
+        &["", "simple", "advanced"],
+    ));
+    rows.push(sw(
+        "equalizer_auto_headroom_enabled",
+        "settings.equalizer_auto_headroom_enabled",
+        p.equalizer_auto_headroom_enabled,
+    ));
+    rows.push(sw(
+        "equalizer_output_gain_enabled",
+        "settings.equalizer_output_gain_enabled",
+        p.equalizer_output_gain_enabled,
+    ));
+    rows.push(sl(
+        "equalizer_output_gain_mb",
+        "settings.equalizer_output_gain_mb",
+        p.equalizer_output_gain_mb as f64,
+        -1500.0,
+        1500.0,
+    ));
+    rows.push(sw(
+        "equalizer_bass_boost_enabled",
+        "settings.equalizer_bass_boost_enabled",
+        p.equalizer_bass_boost_enabled,
+    ));
+    rows.push(sl(
+        "equalizer_bass_boost_strength",
+        "settings.equalizer_bass_boost_strength",
+        p.equalizer_bass_boost_strength as f64,
+        0.0,
+        100.0,
+    ));
+    rows.push(sw(
+        "equalizer_virtualizer_enabled",
+        "settings.equalizer_virtualizer_enabled",
+        p.equalizer_virtualizer_enabled,
+    ));
+    rows.push(sl(
+        "equalizer_virtualizer_strength",
+        "settings.equalizer_virtualizer_strength",
+        p.equalizer_virtualizer_strength as f64,
+        0.0,
+        100.0,
+    ));
+    rows.push(tx(
+        "equalizer_custom_profiles_json",
+        "settings.equalizer_custom_profiles_json",
+        &p.equalizer_custom_profiles_json,
+    ));
+    rows.push(ch(
+        "normalization",
+        "settings.normalization",
+        &ev(&p.normalization),
+        &["off", "replaygain_track", "replaygain_album", "dynamic"],
+    ));
+    rows.push(ch(
+        "transition_mode",
+        "settings.transition_mode",
+        &ev(&p.transition_mode),
+        &["normal", "crossfade", "gapless"],
+    ));
+    rows.push(sl(
+        "crossfade_seconds",
+        "settings.crossfade_seconds",
+        p.crossfade_seconds as f64,
+        0.0,
+        12.0,
+    ));
+    rows.push(sw("resume_enabled", "settings.resume_enabled", p.resume_enabled));
+    rows.push(sw("resume_autoplay", "settings.resume_autoplay", p.resume_autoplay));
+    rows.push(sw("persistent_queue", "settings.persistent_queue", p.persistent_queue));
+    rows.push(sw("preload_next_song", "settings.preload_next_song", p.preload_next_song));
+    rows.push(sw("permanent_shuffle", "settings.permanent_shuffle", p.permanent_shuffle));
+    rows.push(sw("skip_silence", "settings.skip_silence", p.skip_silence));
+    rows.push(sw("audio_offload", "settings.audio_offload", p.audio_offload));
+    rows.push(sw(
+        "auto_download_on_like",
+        "settings.auto_download_on_like",
+        p.auto_download_on_like,
+    ));
+    rows.push(sw(
+        "auto_skip_next_on_error",
+        "settings.auto_skip_next_on_error",
+        p.auto_skip_next_on_error,
+    ));
+    rows.push(sw("pause_on_device_mute", "settings.pause_on_device_mute", p.pause_on_device_mute));
+    rows.push(sl(
+        "device_mute_recovery_volume",
+        "settings.device_mute_recovery_volume",
+        p.device_mute_recovery_volume as f64,
+        0.0,
+        130.0,
+    ));
+    rows.push(ch(
+        "repeat_mode",
+        "settings.repeat_mode",
+        &ev(&p.repeat_mode),
+        &["off", "one", "all"],
+    ));
+    rows.push(sw("queue_edit_lock", "settings.queue_edit_lock", p.queue_edit_lock));
+    rows.push(sw("seek_extra_seconds", "settings.seek_extra_seconds", p.seek_extra_seconds));
+    rows
+}
+
+const EQ_BAND_KEYS: [&str; 10] = [
+    "equalizer_band_0",
+    "equalizer_band_1",
+    "equalizer_band_2",
+    "equalizer_band_3",
+    "equalizer_band_4",
+    "equalizer_band_5",
+    "equalizer_band_6",
+    "equalizer_band_7",
+    "equalizer_band_8",
+    "equalizer_band_9",
+];
+
+fn eq_band_label(index: usize) -> &'static str {
+    match index {
+        0 => "settings.eq.band0",
+        1 => "settings.eq.band1",
+        2 => "settings.eq.band2",
+        3 => "settings.eq.band3",
+        4 => "settings.eq.band4",
+        5 => "settings.eq.band5",
+        6 => "settings.eq.band6",
+        7 => "settings.eq.band7",
+        8 => "settings.eq.band8",
+        _ => "settings.eq.band9",
+    }
 }
 
 fn lyrics_rows(l: &madrigal_settings::Lyrics) -> Vec<SettingRow> {
@@ -399,6 +807,16 @@ fn lyrics_rows(l: &madrigal_settings::Lyrics) -> Vec<SettingRow> {
         .into_iter()
         .chain(provider_names(&madrigal_settings::DEFAULT_PROVIDER_ORDER))
         .collect();
+    preferred.option_labels = preferred
+        .options
+        .iter()
+        .map(|option| option_label_key("preferred_provider", option))
+        .collect();
+    for (label, option) in preferred.option_labels.iter_mut().zip(&preferred.options) {
+        if !option.is_empty() {
+            *label = format!("lyrics.provider.{option}");
+        }
+    }
     vec![
         sw("enabled", "settings.lyrics", l.enabled),
         sw("show_lyrics", "settings.show_lyrics", l.show_lyrics),
@@ -660,6 +1078,28 @@ pub fn apply_value(
     field: &str,
     value: &SettingsValue,
 ) -> Result<(), String> {
+    if group == SettingsGroup::Player {
+        if let Some(band) = field.strip_prefix("equalizer_band_") {
+            let index: usize = band
+                .parse()
+                .map_err(|_| format!("unknown field {field}"))?;
+            let SettingsValue::Num(gain) = value else {
+                return Err("equalizer band needs a num value".to_owned());
+            };
+            let gains = &mut settings.player.equalizer_gains;
+            if index < gains.len() {
+                let gain = *gain as f32;
+                gains[index] = if gain.is_finite() {
+                    gain.clamp(-12.0, 12.0)
+                } else {
+                    0.0
+                };
+                settings.player.equalizer_selected_profile_id.clear();
+                return Ok(());
+            }
+            return Err(format!("unknown field {field}"));
+        }
+    }
     if group == SettingsGroup::Lyrics && field == "provider_order" {
         let SettingsValue::Move { from, to } = value else {
             return Err("provider_order needs a move value".to_owned());
@@ -730,6 +1170,18 @@ pub fn apply_value(
     let back: madrigal_settings::Settings =
         serde_json::from_value(doc).map_err(|err| err.to_string())?;
     *settings = back;
+    if group == SettingsGroup::Player && field == "equalizer_selected_profile_id" {
+        if let SettingsValue::Choice(name) = value {
+            if let Some(gains) = crate::eq_preset_gains(name) {
+                settings
+                    .player
+                    .equalizer_gains
+                    .iter_mut()
+                    .zip(gains.iter())
+                    .for_each(|(slot, gain)| *slot = *gain);
+            }
+        }
+    }
     Ok(())
 }
 
@@ -865,14 +1317,14 @@ impl SettingsPresenter {
         settings_section(&self.settings, self.group, &self.profiles)
     }
 
-    pub fn ui_rows(&self) -> Vec<UiSettingsRow> {
+    pub fn ui_rows(&self, lang: madrigal_i18n::Lang) -> Vec<UiSettingsRow> {
         self.rows()
             .iter()
-            .map(|row| self.to_ui(row))
+            .map(|row| self.to_ui(row, lang))
             .collect()
     }
 
-    fn to_ui(&self, row: &SettingRow) -> UiSettingsRow {
+    fn to_ui(&self, row: &SettingRow, lang: madrigal_i18n::Lang) -> UiSettingsRow {
         let shown = row.kind != SettingKind::ApiKey || self.shown_secrets.contains(row.key);
         UiSettingsRow {
             key: row.key.into(),
@@ -888,22 +1340,17 @@ impl SettingsPresenter {
             val_num: row.num_val as f32,
             val_min: row.num_min as f32,
             val_max: row.num_max as f32,
+            val_label: display_value(row, lang).into(),
             secret: shown,
             test: row.test_id.into(),
-            options: Rc::new(VecModel::from(
-                row.options
-                    .iter()
-                    .map(|option| SharedString::from(option.as_str()))
-                    .collect::<Vec<_>>(),
-            ))
-            .into(),
-            flags: Rc::new(VecModel::from(
-                row.flags
-                    .iter()
-                    .map(|flag| SharedString::from(flag.as_str()))
-                    .collect::<Vec<_>>(),
-            ))
-            .into(),
+            options: string_model(&row.options),
+            option_labels: string_model(&row.option_labels),
+            flags: string_model(&row.flags),
+            section: row.section.as_str().into(),
+            advanced: row.advanced,
+            hidden: row.hidden,
+            hint: row.hint.as_str().into(),
+            placeholder: row.placeholder.as_str().into(),
         }
     }
 
@@ -931,9 +1378,9 @@ impl SettingsPresenter {
             _ => true,
         };
         self.test_result = if ok {
-            format!("{id}: ok")
+            "settings.test.ok".to_owned()
         } else {
-            format!("{id}: missing")
+            "settings.test.fail".to_owned()
         };
     }
 
@@ -1031,7 +1478,12 @@ impl SettingsPresenter {
 }
 
 fn set_model_rows(shell: &MainShell, state: &SettingsPresenter) {
-    let items: Vec<UiSettingsRow> = state.ui_rows();
+    let lang = if shell.global::<crate::I18n>().get_lang().as_str() == "en" {
+        madrigal_i18n::Lang::En
+    } else {
+        madrigal_i18n::Lang::Es
+    };
+    let items: Vec<UiSettingsRow> = state.ui_rows(lang);
     shell.set_settings_rows(Rc::new(VecModel::from(items)).into());
 }
 
@@ -1358,4 +1810,155 @@ pub fn latencies_from_marks(total_ms: f64, resolve_ms: f64) -> madrigal_player::
     tracker.resolved_at(1, base + Duration::from_secs_f64(resolve_ms / 1000.0));
     tracker.started_at(1, base + Duration::from_secs_f64(total_ms / 1000.0));
     tracker.stats().expect("one latency sample")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use madrigal_i18n::Lang;
+
+    fn rows_of(group: SettingsGroup) -> Vec<SettingRow> {
+        let settings = madrigal_settings::Settings::default();
+        settings_section(&settings, group, &["fixture".to_owned()])
+    }
+
+    #[test]
+    fn blocks_place_every_row_exactly_once() {
+        for group in all_groups() {
+            if group == SettingsGroup::Account {
+                continue;
+            }
+            let mut declared: Vec<&str> = blocks(group)
+                .iter()
+                .flat_map(|block| block.keys.iter().copied())
+                .collect();
+            let mut actual: Vec<&str> = rows_of(group).iter().map(|row| row.key).collect();
+            declared.sort_unstable();
+            actual.sort_unstable();
+            assert_eq!(declared, actual, "{group:?}");
+        }
+    }
+
+    #[test]
+    fn labels_options_and_sections_resolve() {
+        for group in all_groups() {
+            for row in rows_of(group) {
+                assert!(madrigal_i18n::contains(row.label_key), "{}", row.label_key);
+                if group == SettingsGroup::Account {
+                    continue;
+                }
+                for label in &row.option_labels {
+                    assert!(madrigal_i18n::contains(label), "{label}");
+                }
+                if !row.section.is_empty() {
+                    assert!(madrigal_i18n::contains(&row.section), "{}", row.section);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn choices_are_localized_not_raw_values() {
+        for group in all_groups() {
+            if group == SettingsGroup::Account {
+                continue;
+            }
+            for row in rows_of(group) {
+                for (option, label) in row.options.iter().zip(&row.option_labels) {
+                    assert_ne!(madrigal_i18n::tr(Lang::Es, label), option.as_str(), "{}", row.key);
+                    assert_ne!(madrigal_i18n::tr(Lang::En, label), option.as_str(), "{}", row.key);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn advanced_and_hidden_rows_stay_out_of_everyday_groups() {
+        let player = rows_of(SettingsGroup::Player);
+        let by_key = |key: &str| player.iter().find(|row| row.key == key).unwrap();
+        assert!(!by_key("volume").advanced);
+        assert!(!by_key("equalizer_band_0").advanced);
+        assert!(!by_key("equalizer_selected_profile_id").advanced);
+        assert!(by_key("equalizer_control_mode").advanced);
+        assert!(!by_key("equalizer_control_mode").hidden);
+        assert!(by_key("equalizer_custom_profiles_json").hidden);
+        let updates = rows_of(SettingsGroup::Updates);
+        assert!(updates.iter().find(|row| row.key == "launch_count").unwrap().hidden);
+    }
+
+    #[test]
+    fn slider_text_shows_real_units() {
+        assert_eq!(slider_text(Unit::Ratio, 1.0, Lang::Es), "1,0×");
+        assert_eq!(slider_text(Unit::Ratio, 1.25, Lang::En), "1.25×");
+        assert_eq!(slider_text(Unit::Semitones, 0.0, Lang::Es), "0 semitonos");
+        assert_eq!(slider_text(Unit::Semitones, -1.0, Lang::Es), "−1 semitono");
+        assert_eq!(slider_text(Unit::Semitones, 3.0, Lang::En), "+3 semitones");
+        assert_eq!(slider_text(Unit::Decibels, 150.0, Lang::Es), "+1,5 dB");
+        assert_eq!(slider_text(Unit::Decibels, -1500.0, Lang::En), "−15.0 dB");
+        assert_eq!(slider_text(Unit::Db, 5.0, Lang::Es), "+5,0 dB");
+        assert_eq!(slider_text(Unit::Db, -3.0, Lang::En), "−3.0 dB");
+        assert_eq!(slider_text(Unit::Db, 0.0, Lang::Es), "0,0 dB");
+        assert_eq!(slider_text(Unit::Percent, 130.0, Lang::Es), "130 %");
+        assert_eq!(slider_text(Unit::Megabytes, 4096.0, Lang::Es), "4,0 GB");
+        assert_eq!(slider_text(Unit::Megabytes, 512.0, Lang::En), "512 MB");
+        assert_eq!(slider_text(Unit::Seconds, 3.0, Lang::Es), "3 s");
+        assert_eq!(slider_text(Unit::Seconds, 2.5, Lang::Es), "2,5 s");
+    }
+
+    #[test]
+    fn eq_bands_map_named_rows_to_stored_gains() {
+        let rows = rows_of(SettingsGroup::Player);
+        for (index, key) in EQ_BAND_KEYS.iter().enumerate() {
+            let row = rows.iter().find(|row| row.key == *key).unwrap();
+            assert_eq!(row.num_min, -12.0);
+            assert_eq!(row.num_max, 12.0);
+            assert_eq!(row.unit, Unit::Db);
+            assert!(madrigal_i18n::contains(row.label_key), "{}", row.label_key);
+            let _ = index;
+        }
+        let mut settings = madrigal_settings::Settings::default();
+        apply_value(
+            &mut settings,
+            SettingsGroup::Player,
+            "equalizer_band_3",
+            &SettingsValue::Num(-4.5),
+        )
+        .expect("band writes");
+        assert_eq!(settings.player.equalizer_gains[3], -4.5);
+        assert_eq!(settings.player.equalizer_gains[0], 0.0);
+        apply_value(
+            &mut settings,
+            SettingsGroup::Player,
+            "equalizer_band_3",
+            &SettingsValue::Num(99.0),
+        )
+        .expect("band clamps");
+        assert_eq!(settings.player.equalizer_gains[3], 12.0);
+    }
+
+    #[test]
+    fn eq_preset_choice_applies_stored_gains() {
+        let mut settings = madrigal_settings::Settings::default();
+        apply_value(
+            &mut settings,
+            SettingsGroup::Player,
+            "equalizer_selected_profile_id",
+            &SettingsValue::Choice("bass".to_owned()),
+        )
+        .expect("preset writes");
+        assert_eq!(settings.player.equalizer_selected_profile_id, "bass");
+        assert_eq!(
+            settings.player.equalizer_gains,
+            crate::eq_preset_gains("bass").unwrap().to_vec()
+        );
+        apply_value(
+            &mut settings,
+            SettingsGroup::Player,
+            "equalizer_band_0",
+            &SettingsValue::Num(2.0),
+        )
+        .expect("manual band clears preset");
+        assert!(settings.player.equalizer_selected_profile_id.is_empty());
+        assert_eq!(settings.player.equalizer_gains[0], 2.0);
+    }
 }

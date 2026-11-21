@@ -251,6 +251,7 @@ export component M3Slider inherits Rectangle {
     in property<color> inactive-track;
     in property<color> handle-color;
     in property<color> state-on-surface;
+    in property<bool> show-value: true;
     callback changed(float);
 
     accessible-label: root.label;
@@ -294,6 +295,7 @@ export component M3Slider inherits Rectangle {
 
     if (root.show-value) : value-label := Text {
         text: Math.round(root.value * 100) + "%";
+        visible: root.show-value;
         color: root.enabled ? root.handle-color : root.state-on-surface.with-alpha(0.38);
         font-size: Type.label-large.size;
         font-family: Type.label-large.family;

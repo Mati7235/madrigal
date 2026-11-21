@@ -6,8 +6,6 @@ import { M3TextField } from "../../components/fields.slint";
 export component OnboardingOverlay inherits Rectangle {
     in property<Palette> palette;
     in-out property<int> step;
-    in property<bool> po-done;
-    in property<bool> po-ok;
     in property<bool> account-connected;
     in property<string> account-name;
     in property<string> account-email;
@@ -19,7 +17,6 @@ export component OnboardingOverlay inherits Rectangle {
     callback lang-picked(string);
     callback next();
     callback back();
-    callback po-check();
     callback login-requested(string);
     callback scan-folder();
     callback finished();
@@ -78,44 +75,7 @@ export component OnboardingOverlay inherits Rectangle {
             }
         }
 
-        if (root.step == 1) : ob-step-po := VerticalLayout {
-            spacing: 8px;
-            alignment: center;
-
-            ob-po-label := Text {
-                text: I18n.trl(I18n.lang, "settings.onboarding.po");
-                color: root.palette.on-surface-variant;
-                font-size: Type.body-large.size;
-                font-family: Type.body-large.family;
-                horizontal-alignment: center;
-                width: 100%;
-            }
-
-            HorizontalLayout {
-                spacing: 8px;
-                alignment: center;
-
-                ob-po-check := M3Button {
-                    width: 180px;
-                    text: I18n.trl(I18n.lang, "settings.malojaTest");
-                    fill: root.palette.secondary-container;
-                    content: root.palette.on-secondary-container;
-                    state-on-surface: root.palette.on-surface;
-                    clicked => { root.po-check(); }
-                }
-            }
-
-            if (root.po-done) : ob-po-status := Text {
-                text: root.po-ok ? I18n.trl(I18n.lang, "settings.potOk") : I18n.trl(I18n.lang, "settings.potMissing");
-                color: root.po-ok ? root.palette.primary : root.palette.error;
-                font-size: Type.body-medium.size;
-                font-family: Type.body-medium.family;
-                horizontal-alignment: center;
-                width: 100%;
-            }
-        }
-
-        if (root.step == 2) : ob-step-login := VerticalLayout {
+        if (root.step == 1) : ob-step-login := VerticalLayout {
             spacing: 8px;
             alignment: center;
 
@@ -198,7 +158,7 @@ export component OnboardingOverlay inherits Rectangle {
             }
         }
 
-        if (root.step == 3) : ob-step-folder := VerticalLayout {
+        if (root.step == 2) : ob-step-folder := VerticalLayout {
             spacing: 8px;
             alignment: center;
 
@@ -250,7 +210,7 @@ export component OnboardingOverlay inherits Rectangle {
             spacing: 8px;
             alignment: center;
 
-            if (root.step > 0 && root.step < 3) : ob-back := M3Button {
+            if (root.step > 0 && root.step < 2) : ob-back := M3Button {
                 width: 140px;
                 text: I18n.trl(I18n.lang, "action.back");
                 fill: transparent;
@@ -259,7 +219,7 @@ export component OnboardingOverlay inherits Rectangle {
                 clicked => { root.back(); }
             }
 
-            if (root.step < 3) : ob-next := M3Button {
+            if (root.step < 2) : ob-next := M3Button {
                 width: 140px;
                 text: I18n.trl(I18n.lang, "settings.onboarding.next");
                 fill: root.palette.primary;

@@ -6,6 +6,7 @@ export component M3TextField inherits Rectangle {
     in property<string> label;
     in-out property<string> text;
     in property<string> support;
+    in property<string> placeholder;
     in property<bool> error: false;
     in property<bool> enabled: true;
     in property<bool> dense: false;
@@ -48,6 +49,20 @@ export component M3TextField inherits Rectangle {
             vertical-alignment: center;
             animate font-size { duration: 150ms; easing: ease-in-out; }
             animate color { duration: 100ms; easing: ease-in-out; }
+        }
+
+        placeholder-text := Text {
+            text: root.placeholder;
+            visible: root.dense && root.text == "";
+            color: root.support-color;
+            font-size: Type.body-large.size;
+            font-family: Type.body-large.family;
+            x: 16px;
+            y: 0px;
+            width: parent.width - 32px;
+            height: parent.height;
+            vertical-alignment: center;
+            overflow: elide;
         }
 
         input := TextInput {

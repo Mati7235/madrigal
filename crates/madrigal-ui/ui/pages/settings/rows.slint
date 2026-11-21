@@ -8,10 +8,17 @@ export struct SettingsRow {
     val-num: float,
     val-min: float,
     val-max: float,
+    val-label: string,
     secret: bool,
     test: string,
     options: [string],
+    option-labels: [string],
     flags: [string],
+    section: string,
+    advanced: bool,
+    hidden: bool,
+    hint: string,
+    placeholder: string,
 }
 
 export struct DiagLine {

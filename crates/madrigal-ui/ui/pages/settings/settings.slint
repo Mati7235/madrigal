@@ -428,8 +428,6 @@ export component SettingsPage inherits Rectangle {
         height: 100%;
         palette: root.palette;
         step <=> root.ob-step;
-        po-done: root.po-done;
-        po-ok: root.po-ok;
         account-connected: root.account-connected;
         account-name: root.account-name;
         account-email: root.account-email;
@@ -440,7 +438,6 @@ export component SettingsPage inherits Rectangle {
         lang-picked(l) => { root.lang-picked(l); }
         next() => { root.ob-step += 1; }
         back() => { root.ob-step -= 1; }
-        po-check() => { root.po-check(); }
         login-requested(l) => { root.login-requested(l); }
         scan-folder() => { root.scan-folder(); }
         finished() => { root.onboarding-finished(); }
