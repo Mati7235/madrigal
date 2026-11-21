@@ -164,6 +164,20 @@ alternates entries between the left and right models, so `moods-left` fills
 columns 0 and 2 and `moods-right` fills columns 1 and 3; that keeps row-major
 reading order (Chill, Christmas, Commute, Energize ...) on a 4-column grid.
 
+## Track actions
+
+One shared `TrackMenu` (`ui/components/menu.slint`) serves every song surface:
+search results, home rows and shelves, the queue, library songs and the full
+player. It opens from the row "More actions" button or a right click on the row,
+anchored at the pointer: 304px card, 6px inset, 48px icon rows,
+`surface-container-high`, elevation 2. Actions are play next, add to queue,
+like or unlike, download with its live state (queued, progress, downloaded,
+error), add to playlist (a second view lists the library playlists plus "New
+playlist"), and go to artist or album when known. Up/Down move the selection and
+skip unavailable rows, Enter activates, Escape and a click outside close, Left
+returns from the playlist view. The invisible scrim covers the shell; rows use a
+40px icon button with a focus ring and `action.more` as the accessible label.
+
 ## Files by task
 
 | Area | Task | Files |
@@ -189,13 +203,15 @@ placeholder "search downloaded songs", filters the visible rows while typing.
 as a row above `PageHost` (`top-bar` on pages 0-2 over `search-query`,
 `local-bar` on 3-4 over `local-query`, hidden on Settings).
 
-Library, Lists tab: chips row, tag row and one tool row (sort tonal button,
-select outlined button, 8px gaps), then 54px playlist rows: cover 36px, name,
-"N tracks" subtitle, play icon button on the right. No cards, no blank gap.
+Library, Lists tab: chips row, tag row with a labeled Tags control, one tool row
+(sort tonal button, select outlined button, edit tabs outlined button and the
+primary New playlist button, 8px gaps), then 54px playlist rows: cover 36px,
+name, "N tracks" subtitle, play icon button on the right. No cards, no blank gap.
+The empty state is a list icon, "No playlists yet" and a New playlist button.
 
 Downloads: header row (title, count), 54px rows full width: cover 36px, title,
-subtitle, state or progress on the right, action icon buttons. Empty state is
-an icon and one line, centered in the workspace.
+subtitle, state or progress on the right, action icon buttons. Empty state is a
+download icon, "No downloads" and a hint pointing to the song menu > Download.
 
 Settings: group list column 232px (16px padding, 44px items), page title at the
 16px margin in `Type.title-medium`, the section pane fills the rest. Every row
@@ -208,8 +224,8 @@ Media cards (`M3Card`): 150x190, no border artifacts, no clipped shadow, hover
 veil only. Rails use 12px spacing and start at the page margin.
 
 Full player (`full.slint`): fills the workspace above the 96px bar, 16px side
-margin and a 64px header (collapse chevron, title plus album line, info and
-like at the end). Two columns below it: left 40% of the window (min 520px) with
+margin and a 64px header (collapse chevron, title plus album line, info, more
+actions and like at the end). Two columns below it: left 40% of the window (min 520px) with
 the up-to-420px artwork centered, title/artist, seek row with the times at the
 ends, transport (56px play), volume and the tool row; the right column takes
 the rest. Tabs sit 24px under the header at the column start, the lyrics view
