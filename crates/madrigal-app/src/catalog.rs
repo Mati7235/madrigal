@@ -531,6 +531,8 @@ fn register_callbacks(shell: &MainShell, link: &Link) {
         move |text| {
             if let Some(shell) = weak.upgrade() {
                 shell.set_search_query(text.clone());
+                shell.set_search_submit_count(shell.get_search_submit_count() + 1);
+                shell.set_search_last_submitted(text.clone());
                 link.query(&shell, &text);
             }
         }
