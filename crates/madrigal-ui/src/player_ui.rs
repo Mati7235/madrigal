@@ -574,6 +574,21 @@ pub fn apply_player_settings(shell: &MainShell, settings: &madrigal_settings::Pl
     shell.set_tempo_mult(settings.playback_speed);
     shell.set_eq_on(settings.equalizer_enabled);
     shell.set_eq_gains(eq_gains_model(&settings.equalizer_gains));
+    let labels: Vec<slint::SharedString> = eq_band_labels().into_iter().map(Into::into).collect();
+    shell.set_eq_band_labels(ModelRc::new(Rc::new(VecModel::from_slice(labels.as_slice()))));
+}
+
+pub fn eq_band_labels() -> Vec<String> {
+    madrigal_settings::EQ_BANDS
+        .iter()
+        .map(|hz| {
+            if *hz >= 1000.0 {
+                format!("{:.0} kHz", hz / 1000.0)
+            } else {
+                format!("{:.0} Hz", hz.trunc())
+            }
+        })
+        .collect()
 }
 
 fn eq_gains_model(gains: &[f32]) -> ModelRc<f32> {
@@ -1012,6 +1027,7 @@ pub fn wire_player_callbacks(shell: &MainShell) {
                     shell.set_eq_gains(ModelRc::new(Rc::new(VecModel::from_slice(
                         normalized.as_slice(),
                     ))));
+                    shell.set_eq_on(true);
                     shell.set_eq_preset(name);
                     shell.set_eq_count(shell.get_eq_count() + 1);
                 }

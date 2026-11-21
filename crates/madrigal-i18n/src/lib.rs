@@ -126,6 +126,7 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("common.loading", "Cargando…", "Loading"),
     ("common.retry", "Reintentar", "Retry"),
     ("common.undo", "Deshacer", "Undo"),
+    ("confirm.apply", "Aplicar", "Apply"),
     ("confirm.cancel", "Cancelar", "Cancel"),
     ("confirm.yes", "Sí, borrar", "Yes, delete"),
     ("detail.clear", "Limpiar", "Clear"),

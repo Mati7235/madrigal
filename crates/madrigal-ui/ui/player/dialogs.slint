@@ -213,11 +213,13 @@ export component EqualizerDialog inherits Rectangle {
     in property<Palette> palette;
     in property<bool> eq-on: false;
     in property<[float]> gains;
+    in property<[string]> band-labels;
     in property<string> preset-name;
 
     callback toggled(bool);
     callback band-changed(int, float);
     callback preset-selected(string);
+    callback applied();
     callback dismissed();
 
     accessible-role: AccessibleRole.region;
@@ -229,7 +231,7 @@ export component EqualizerDialog inherits Rectangle {
             alignment: center;
             eq-card := Rectangle {
                 width: 560px;
-                height: 480px;
+                height: 440px;
                 border-radius: 12px;
                 background: root.palette.surface-container-high;
                 VerticalLayout {
@@ -284,20 +286,54 @@ export component EqualizerDialog inherits Rectangle {
                         }
                     }
                     eq-bands := HorizontalLayout {
-                        spacing: 2px;
+                        spacing: 12px;
                         vertical-stretch: 1;
-                        for i in 10: eq-band := M3Slider {
+                        for col in 2: eq-col := VerticalLayout {
                             horizontal-stretch: 1;
-                            value: i < root.gains.length ? root.gains[i] : 0.5;
-                            active-track: root.palette.primary;
-                            inactive-track: root.palette.surface-container-highest;
-                            handle-color: root.palette.primary;
-                            state-on-surface: root.palette.on-surface;
-                            changed(v) => { root.band-changed(i, v); }
+                            spacing: 2px;
+                            for row in 5: eq-band-row := HorizontalLayout {
+                                property<int> band: col * 5 + row;
+                                property<float> band-value: band < root.gains.length ? root.gains[band] : 0.5;
+                                property<int> band-db: Math.round((band-value - 0.5) * 24);
+                                property<string> band-db-text: (band-db > 0 ? "+" : "") + band-db + " dB";
+                                property<string> band-name: band < root.band-labels.length ? root.band-labels[band] : "";
+                                height: 48px;
+                                spacing: 8px;
+                                Text {
+                                    width: 54px;
+                                    text: band-name;
+                                    color: root.palette.on-surface-variant;
+                                    font-size: Type.label-medium.size;
+                                    font-family: Type.label-medium.family;
+                                    vertical-alignment: center;
+                                    overflow: elide;
+                                }
+                                eq-band := M3Slider {
+                                    horizontal-stretch: 1;
+                                    height: 48px;
+                                    value: band-value;
+                                    label: band-name + " · " + band-db-text;
+                                    active-track: root.palette.primary;
+                                    inactive-track: root.palette.surface-container-highest;
+                                    handle-color: root.palette.primary;
+                                    state-on-surface: root.palette.on-surface;
+                                    changed(v) => { root.band-changed(band, v); }
+                                }
+                                Text {
+                                    width: 50px;
+                                    text: band-db-text;
+                                    color: root.palette.on-surface-variant;
+                                    font-size: Type.label-medium.size;
+                                    font-family: Type.label-medium.family;
+                                    horizontal-alignment: right;
+                                    vertical-alignment: center;
+                                }
+                            }
                         }
                     }
                     eq-foot := HorizontalLayout {
                         alignment: end;
+                        spacing: 8px;
                         eq-close := M3Button {
                             width: 110px;
                             text: I18n.trl(I18n.lang, "confirm.cancel");
@@ -305,6 +341,14 @@ export component EqualizerDialog inherits Rectangle {
                             content: root.palette.on-surface;
                             state-on-surface: root.palette.on-surface;
                             clicked => { root.dismissed(); }
+                        }
+                        eq-apply := M3Button {
+                            width: 120px;
+                            text: I18n.trl(I18n.lang, "confirm.apply");
+                            fill: root.palette.primary;
+                            content: root.palette.on-primary;
+                            state-on-surface: root.palette.on-surface;
+                            clicked => { root.applied(); }
                         }
                     }
                 }

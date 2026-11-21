@@ -1,11 +1,11 @@
 use madrigal_testkit as kit;
 use madrigal_ui::{
     apply_background_style, apply_lyrics_settings, apply_playback_state, apply_player_settings,
-    dispatch_key, lyrics_delivery, open_player_dialog, queue_tabs_from_queue, render_share_png,
-    resolution_route, sample_rate_text, set_lyrics, set_stream_info, show_error, wire_lyrics_fetch,
-    wire_player_callbacks,
-    wire_shell_i18n, CachedLyrics, FetchTask, LyricsCache, LyricsFetcher, LyricsSource, MainShell,
-    PlaybackUiState, PlayerBackgroundStyle, PlayerDialog, QueueTabData,
+    dispatch_key, eq_band_labels, lyrics_delivery, open_player_dialog, queue_tabs_from_queue,
+    render_share_png, resolution_route, sample_rate_text, set_lyrics, set_stream_info, show_error,
+    wire_lyrics_fetch, wire_player_callbacks, wire_shell_i18n, CachedLyrics, FetchTask, LyricsCache,
+    LyricsFetcher, LyricsSource, MainShell, PlaybackUiState, PlayerBackgroundStyle, PlayerDialog,
+    QueueTabData,
 };
 use slint::{ComponentHandle, LogicalPosition, Model};
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -244,6 +244,7 @@ fn ui_player() {
         ("queue.tab.continue", "Próximas", "Up next"),
         ("queue.tab.autoplaying", "Recomendadas", "Recommended"),
         ("audio.equalizer", "Ecualizador", "Equalizer"),
+        ("confirm.apply", "Aplicar", "Apply"),
         ("stream.title", "Información del audio", "Audio information"),
         ("stream.empty", "Sin datos todavía", "No data yet"),
         ("stream.unknown", "Sin datos todavía", "No data yet"),
@@ -562,23 +563,35 @@ fn ui_player() {
     shell.invoke_player_dialog_requested(3);
     assert_eq!(shell.get_player_dialog(), 3);
     assert_eq!(shell.get_dialog_count(), 2);
+    let labels = eq_band_labels();
+    assert_eq!(
+        labels,
+        ["31 Hz", "63 Hz", "125 Hz", "250 Hz", "500 Hz", "1 kHz", "2 kHz", "4 kHz", "8 kHz", "16 kHz"]
+    );
+    let labels = shell.get_eq_band_labels();
+    assert_eq!(labels.row_count(), 10);
+    assert_eq!(labels.row_data(0).unwrap().as_str(), "31 Hz");
+    assert_eq!(labels.row_data(9).unwrap().as_str(), "16 kHz");
     let sliders: Vec<_> =
         kit::ElementHandle::find_by_element_id(&shell, "EqualizerDialog::eq-band").collect();
     assert_eq!(sliders.len(), 10);
-    kit::click_by_id(&shell, "EqualizerDialog::eq-enable").unwrap();
-    assert!(shell.get_eq_on());
+    assert_eq!(sliders[0].accessible_label().unwrap().as_str(), "31 Hz · 0 dB");
+    assert!(!shell.get_eq_on());
     let presets: Vec<_> =
         kit::ElementHandle::find_by_element_id(&shell, "EqualizerDialog::eq-preset-touch").collect();
     assert_eq!(presets.len(), 4);
     kit::click(&presets[1]);
+    assert!(shell.get_eq_on(), "preset did not enable the equalizer");
     assert_eq!(shell.get_eq_preset().as_str(), "bass");
     let gains = shell.get_eq_gains();
     assert!((gains.row_data(0).unwrap() - 17.0 / 24.0).abs() < 0.001);
+    kit::mock_advance(Duration::from_millis(50));
+    assert_eq!(sliders[0].accessible_label().unwrap().as_str(), "31 Hz · +5 dB");
     let eq_before = shell.get_eq_count();
     drag_to(&shell, "EqualizerDialog::eq-band", 0, 0.9);
     assert!(shell.get_eq_count() > eq_before);
     assert!((shell.get_eq_gains().row_data(0).unwrap() - 0.9).abs() < 0.05);
-    assert!(dispatch_key(&shell, "Escape"));
+    kit::click_by_id(&shell, "EqualizerDialog::eq-apply").unwrap();
     assert_eq!(shell.get_player_dialog(), 0);
 
     show_error(&shell, "E404", "sin stream");
