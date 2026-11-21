@@ -177,6 +177,114 @@ fn ttml_word_timings_and_markers() {
 }
 
 #[test]
+fn ttml_japanese_text_and_entities_preserved() {
+    let _xdg = isolate_xdg();
+    let lyrics = ttml::parse(&fixture("japanese.ttml")).expect("ttml");
+    assert!(lyrics.synced);
+    assert_eq!(
+        lyrics
+            .lines
+            .iter()
+            .map(|line| line.text.as_str())
+            .collect::<Vec<_>>(),
+        vec![
+            "黄泉より聴こゆ、皇国の燈と焔の少女。 - Imperial Circus Dead Decadence & 柚香",
+            "「彷徨える屍の中 苦しみと悲しみと怒りを懐いて",
+            "痛みと友に行ける同胞に次ぐ」",
+            "「私は再び 此の幕を開けよう」",
+            "【\"大地に爪を立てた怪物 緑元が照らす視界は醜",
+        ]
+    );
+    assert_eq!(
+        lyrics
+            .lines
+            .iter()
+            .map(|line| line.start_ms)
+            .collect::<Vec<_>>(),
+        vec![0, 35530, 41120, 44440, 109220]
+    );
+    assert_eq!(
+        lyrics.plain_text(),
+        "黄泉より聴こゆ、皇国の燈と焔の少女。 - Imperial Circus Dead Decadence & 柚香\n「彷徨える屍の中 苦しみと悲しみと怒りを懐いて\n痛みと友に行ける同胞に次ぐ」\n「私は再び 此の幕を開けよう」\n【\"大地に爪を立てた怪物 緑元が照らす視界は醜"
+    );
+    assert_eq!(
+        lyrics.lines[1]
+            .words
+            .as_ref()
+            .expect("words")
+            .iter()
+            .map(|word| word.text.as_str())
+            .collect::<Vec<_>>(),
+        vec!["「彷", "徨える屍の中", "苦しみと悲しみと怒りを懐いて"]
+    );
+    let roundtrip = lrc_enhanced::parse(&to_lrc(&lyrics)).expect("roundtrip");
+    assert_eq!(roundtrip.lines[0].text, lyrics.lines[0].text);
+}
+
+#[test]
+fn ttml_entities_decode_once_and_invalid_stay_literal() {
+    let _xdg = isolate_xdg();
+    let document = r#"<tt><body><div><p begin="00:01.00">桜 &amp;amp; &#x300C;焔&#x300D; &lt;b&gt; &quot;q&quot; &apos; &unknown; &#xZZ; &#1114112; &amp;</p></div></body></tt>"#;
+    let lyrics = ttml::parse(document).expect("ttml");
+    assert_eq!(
+        lyrics.lines[0].text,
+        "桜 &amp; 「焔」 <b> \"q\" ' &unknown; &#xZZ; &#1114112; &"
+    );
+}
+
+#[test]
+fn lrc_unicode_text_preserved() {
+    let _xdg = isolate_xdg();
+    let lyrics = lrc::parse(
+        "[ar:Imperial Circus Dead Decadence]\n[00:00.00]黄泉より聴こゆ、皇国の燈と焔の少女。 - Imperial Circus Dead Decadence\n[00:36.70]「彷徨える屍の中\n[00:39.44]El niño cantó «á»\n[00:42.34]桜が散るのは 🌸\n",
+    );
+    assert!(lyrics.synced);
+    assert_eq!(
+        lyrics
+            .lines
+            .iter()
+            .map(|line| line.text.as_str())
+            .collect::<Vec<_>>(),
+        vec![
+            "黄泉より聴こゆ、皇国の燈と焔の少女。 - Imperial Circus Dead Decadence",
+            "「彷徨える屍の中",
+            "El niño cantó «á»",
+            "桜が散るのは 🌸",
+        ]
+    );
+    assert_eq!(
+        lyrics
+            .lines
+            .iter()
+            .map(|line| line.start_ms)
+            .collect::<Vec<_>>(),
+        vec![0, 36700, 39440, 42340]
+    );
+    assert_eq!(
+        lyrics.plain_text(),
+        "黄泉より聴こゆ、皇国の燈と焔の少女。 - Imperial Circus Dead Decadence\n「彷徨える屍の中\nEl niño cantó «á»\n桜が散るのは 🌸"
+    );
+    assert_eq!(
+        to_lrc(&lyrics),
+        "[00:00.00]黄泉より聴こゆ、皇国の燈と焔の少女。 - Imperial Circus Dead Decadence\n[00:36.70]「彷徨える屍の中\n[00:39.44]El niño cantó «á»\n[00:42.34]桜が散るのは 🌸"
+    );
+    let enhanced =
+        lrc_enhanced::parse("[00:10.00]<00:10.00>黄泉<00:10.60>の<00:11.20>少女🌸\n")
+            .expect("enhanced");
+    assert_eq!(enhanced.lines[0].text, "黄泉 の 少女🌸");
+    assert_eq!(
+        enhanced.lines[0]
+            .words
+            .as_ref()
+            .expect("words")
+            .iter()
+            .map(|word| word.text.as_str())
+            .collect::<Vec<_>>(),
+        vec!["黄泉", "の", "少女🌸"]
+    );
+}
+
+#[test]
 fn ttml_parse_time_units() {
     let _xdg = isolate_xdg();
     assert_eq!(ttml::parse_time("00:12.340"), Some(12.34));

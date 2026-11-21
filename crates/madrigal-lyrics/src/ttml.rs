@@ -180,35 +180,26 @@ pub fn parse_time(value: &str) -> Option<f64> {
 
 pub(crate) fn unescape(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
-    let bytes = text.as_bytes();
-    let mut index = 0;
-    while index < bytes.len() {
-        if bytes[index] != b'&' {
-            out.push(bytes[index] as char);
-            index += 1;
-            continue;
-        }
-        let rest = &text[index..];
+    let mut rest = text;
+    while let Some(amp) = rest.find('&') {
+        out.push_str(&rest[..amp]);
+        rest = &rest[amp..];
         let Some(semi) = rest.find(';') else {
-            out.push('&');
-            index += 1;
-            continue;
+            break;
         };
         if semi > 32 {
             out.push('&');
-            index += 1;
+            rest = &rest[1..];
             continue;
         }
         let entity = &rest[1..semi];
-        let resolved = if entity.starts_with("#x") || entity.starts_with("#X") {
-            u32::from_str_radix(entity.trim_start_matches(['#', 'x', 'X']), 16)
-                .ok()
-                .and_then(char::from_u32)
+        let resolved = if let Some(hex) = entity
+            .strip_prefix("#x")
+            .or_else(|| entity.strip_prefix("#X"))
+        {
+            u32::from_str_radix(hex, 16).ok().and_then(char::from_u32)
         } else if let Some(digits) = entity.strip_prefix('#') {
-            digits
-                .parse::<u32>()
-                .ok()
-                .and_then(char::from_u32)
+            digits.parse::<u32>().ok().and_then(char::from_u32)
         } else {
             match entity {
                 "amp" => Some('&'),
@@ -222,14 +213,15 @@ pub(crate) fn unescape(text: &str) -> String {
         match resolved {
             Some(ch) => {
                 out.push(ch);
-                index += semi + 1;
+                rest = &rest[semi + 1..];
             }
             None => {
                 out.push('&');
-                index += 1;
+                rest = &rest[1..];
             }
         }
     }
+    out.push_str(rest);
     out
 }
 
