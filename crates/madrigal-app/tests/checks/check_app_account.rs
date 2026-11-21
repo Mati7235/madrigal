@@ -211,6 +211,15 @@ fn app_account() {
     assert!(stored.cookie.contains("__Secure-3PAPISID=sapisid3-test"), "primary sapisid stored");
     assert!(!stored.cookie.contains("google-test"), "google cookie dropped");
     assert_eq!(stored.source_browser, "firefox");
+    let mut unnamed = stored.clone();
+    unnamed.account_name.clear();
+    SessionStore::default()
+        .save(&unnamed, None)
+        .expect("save unnamed");
+    assert!(
+        madrigal_app::account::restore_session(&SessionStore::default()).is_none(),
+        "a session without a name is not shown as connected"
+    );
     madrigal_app::account::sign_out(&SessionStore::default());
     assert!(
         !SessionStore::default().active().catalog_ready(),

@@ -74,9 +74,7 @@ fn identity(session: &Session) -> String {
     }
 }
 
-pub fn run_login_with(
-    validator: &dyn Fn(&str) -> Result<AccountInfo, String>,
-) -> LoginOutcome {
+pub fn run_login_with(validator: &dyn Fn(&str) -> Result<AccountInfo, String>) -> LoginOutcome {
     let mut session = match import_login() {
         Ok(session) => session,
         Err(key) => {
@@ -122,7 +120,7 @@ pub fn sign_out(store: &SessionStore) {
 
 pub fn restore_session(store: &SessionStore) -> Option<Session> {
     let session = store.active();
-    if session.catalog_ready() {
+    if session.catalog_ready() && !session.account_name.is_empty() {
         Some(session)
     } else {
         None
@@ -266,9 +264,7 @@ pub fn wire_account_with(
                 spawn_account(&handler_pending, move || {
                     let outcome = run_login_with(&validator);
                     let session = match &outcome {
-                        LoginOutcome::Connected { .. } => {
-                            Some(SessionStore::default().active())
-                        }
+                        LoginOutcome::Connected { .. } => Some(SessionStore::default().active()),
                         LoginOutcome::Failed { .. } => None,
                     };
                     AccountEvent::Login { outcome, session }
