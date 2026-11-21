@@ -216,6 +216,15 @@ export component LibraryPage inherits Rectangle {
                 spacing: 8px;
                 alignment: start;
 
+                if (root.current == "playlists") : new-playlist := M3Button {
+                    width: 150px;
+                    text: I18n.trl(I18n.lang, "playlists.create");
+                    fill: root.palette.primary;
+                    content: root.palette.on-primary;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.new-playlist(); }
+                }
+
                 sort-touch := M3Button {
                     width: 200px;
                     text: I18n.trl(I18n.lang, "library.sort.title") + " · " + root.sort-label;
@@ -244,15 +253,6 @@ export component LibraryPage inherits Rectangle {
                     line: root.chip-edit ? transparent : root.palette.outline-variant;
                     state-on-surface: root.palette.on-surface;
                     clicked => { root.chip-edit-toggled(); }
-                }
-
-                if (root.current == "playlists") : new-playlist := M3Button {
-                    width: 150px;
-                    text: I18n.trl(I18n.lang, "playlists.create");
-                    fill: root.palette.primary;
-                    content: root.palette.on-primary;
-                    state-on-surface: root.palette.on-surface;
-                    clicked => { root.new-playlist(); }
                 }
             }
         }

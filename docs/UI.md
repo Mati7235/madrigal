@@ -204,9 +204,9 @@ as a row above `PageHost` (`top-bar` on pages 0-2 over `search-query`,
 `local-bar` on 3-4 over `local-query`, hidden on Settings).
 
 Library, Lists tab: chips row, tag row with a labeled Tags control, one tool row
-(sort tonal button, select outlined button, edit tabs outlined button and the
-primary New playlist button, 8px gaps), then 54px playlist rows: cover 36px,
-name, "N tracks" subtitle, play icon button on the right. No cards, no blank gap.
+(primary New playlist button, sort tonal button, select outlined button and edit
+tabs outlined button, 8px gaps), then 54px playlist rows: cover 36px, name,
+"N tracks" subtitle, play icon button on the right. No cards, no blank gap.
 The empty state is a list icon, "No playlists yet" and a New playlist button.
 
 Downloads: header row (title, count), 54px rows full width: cover 36px, title,
