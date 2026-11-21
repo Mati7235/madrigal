@@ -488,22 +488,10 @@ fn privacy_rows(p: &madrigal_settings::Privacy) -> Vec<SettingRow> {
     ]
 }
 
-fn account_rows(a: &madrigal_settings::Account, profiles: &[String]) -> Vec<SettingRow> {
-    let mut active = ch("active_account_id", "settings.accountConnected", &a.active_account_id, &[]);
-    active.options = profiles.to_vec();
+fn account_rows(a: &madrigal_settings::Account, _profiles: &[String]) -> Vec<SettingRow> {
     vec![
-        active,
-        tx("account_name", "settings.account_name", &a.account_name),
-        tx("account_email", "settings.account_email", &a.account_email),
-        tx("account_channel_handle", "settings.account_channel_handle", &a.account_channel_handle),
-        tx("saved_accounts_json", "settings.saved_accounts_json", &a.saved_accounts_json),
         sw("ytm_sync", "settings.ytm_sync", a.ytm_sync),
         sw("force_sync_on_account_switch", "settings.force_sync_on_account_switch", a.force_sync_on_account_switch),
-        tx("last_like_song_sync", "settings.last_like_song_sync", &a.last_like_song_sync.to_string()),
-        tx("last_library_song_sync", "settings.last_library_song_sync", &a.last_library_song_sync.to_string()),
-        tx("last_album_sync", "settings.last_album_sync", &a.last_album_sync.to_string()),
-        tx("last_artist_sync", "settings.last_artist_sync", &a.last_artist_sync.to_string()),
-        tx("last_playlist_sync", "settings.last_playlist_sync", &a.last_playlist_sync.to_string()),
     ]
 }
 
@@ -787,6 +775,11 @@ pub struct SettingsPresenter {
     pub single_primary: bool,
     pub test_result: String,
     pub ob_folder: String,
+    pub account_connected: bool,
+    pub account_name: String,
+    pub account_email: String,
+    pub account_busy: bool,
+    pub account_error: String,
 }
 
 impl SettingsPresenter {
@@ -813,7 +806,39 @@ impl SettingsPresenter {
             single_primary: false,
             test_result: String::new(),
             ob_folder: String::new(),
+            account_connected: false,
+            account_name: String::new(),
+            account_email: String::new(),
+            account_busy: false,
+            account_error: String::new(),
         }
+    }
+
+    pub fn begin_account_work(&mut self) {
+        self.account_busy = true;
+        self.account_error.clear();
+    }
+
+    pub fn finish_account_work(&mut self) {
+        self.account_busy = false;
+    }
+
+    pub fn set_account_error(&mut self, key: &str) {
+        self.account_error = key.to_owned();
+    }
+
+    pub fn set_account_connected(&mut self, name: &str, email: &str) {
+        self.account_connected = true;
+        self.account_name = name.to_owned();
+        self.account_email = email.to_owned();
+        self.account_error.clear();
+    }
+
+    pub fn clear_account(&mut self) {
+        self.account_connected = false;
+        self.account_name.clear();
+        self.account_email.clear();
+        self.account_error.clear();
     }
 
     pub fn refresh(&mut self) {
@@ -1015,6 +1040,11 @@ fn refresh_shell(shell: &MainShell, state: &SettingsPresenter) {
     shell.set_settings_test_result(state.test_result.clone().into());
     shell.set_settings_po_done(state.po_done);
     shell.set_settings_po_ok(state.po_ok);
+    shell.set_settings_account_connected(state.account_connected);
+    shell.set_settings_account_name(state.account_name.clone().into());
+    shell.set_settings_account_email(state.account_email.clone().into());
+    shell.set_settings_account_busy(state.account_busy);
+    shell.set_settings_account_error(state.account_error.clone().into());
     shell.set_settings_diag_level(state.diag_level);
     set_diag_entries(shell, state);
     shell.set_settings_diag_entry_count(shell.get_settings_diag_entries().row_count() as i32);
@@ -1025,6 +1055,10 @@ fn refresh_shell(shell: &MainShell, state: &SettingsPresenter) {
     if shell.get_settings_ob_folder().as_str() != state.ob_folder {
         shell.set_settings_ob_folder(state.ob_folder.clone().into());
     }
+}
+
+pub fn refresh_settings(shell: &MainShell, state: &SettingsPresenter) {
+    refresh_shell(shell, state);
 }
 
 pub fn wire_shell(

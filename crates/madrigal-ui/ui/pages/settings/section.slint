@@ -14,6 +14,11 @@ export component SectionView inherits Rectangle {
     in property<string> test-result;
     in property<bool> po-done;
     in property<bool> po-ok;
+    in property<bool> account-connected;
+    in property<string> account-name;
+    in property<string> account-email;
+    in property<bool> account-busy;
+    in property<string> account-error;
 
     callback setting-toggled(string, bool);
     callback setting-edited(string, string);
@@ -405,27 +410,79 @@ export component SectionView inherits Rectangle {
                 }
             }
 
-            if (root.group == 7) : account-actions := HorizontalLayout {
+            if (root.group == 7) : account-block := VerticalLayout {
                 padding-top: 24px;
                 spacing: 8px;
-                alignment: start;
 
-                acct-signin := M3Button {
-                    width: 180px;
-                    text: I18n.trl(I18n.lang, "settings.signIn");
-                    fill: root.palette.primary;
-                    content: root.palette.on-primary;
-                    state-on-surface: root.palette.on-surface;
-                    clicked => { root.login-requested("google"); }
+                acct-status := Text {
+                    text: root.account-connected ? (root.account-name != "" ? I18n.trl(I18n.lang, "settings.accountConnectedAs") + root.account-name : I18n.trl(I18n.lang, "settings.accountConnected")) : I18n.trl(I18n.lang, "settings.accountDisconnected");
+                    color: root.account-connected ? root.palette.primary : root.palette.on-surface-variant;
+                    font-size: Type.body-medium.size;
+                    font-family: Type.body-medium.family;
+                    font-weight: root.account-connected ? Type.label-large.weight : Type.label-large.weight;
+                    width: 100%;
+                    wrap: word-wrap;
                 }
 
-                acct-signout := M3Button {
-                    width: 180px;
-                    text: I18n.trl(I18n.lang, "settings.signOut");
-                    fill: root.palette.secondary-container;
-                    content: root.palette.on-secondary-container;
-                    state-on-surface: root.palette.on-surface;
-                    clicked => { root.login-requested("signout"); }
+                if (root.account-connected && root.account-email != "") : acct-email := Text {
+                    text: root.account-email;
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.body-small.size;
+                    font-family: Type.body-small.family;
+                    width: 100%;
+                    wrap: word-wrap;
+                }
+
+                acct-help := Text {
+                    text: I18n.trl(I18n.lang, "settings.accountHelp");
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.body-small.size;
+                    font-family: Type.body-small.family;
+                    width: 100%;
+                    wrap: word-wrap;
+                }
+
+                if (root.account-busy) : acct-busy := Text {
+                    text: I18n.trl(I18n.lang, "settings.accountBusy");
+                    color: root.palette.on-surface;
+                    font-size: Type.body-medium.size;
+                    font-family: Type.body-medium.family;
+                    width: 100%;
+                    wrap: word-wrap;
+                }
+
+                if (root.account-error != "") : acct-error := Text {
+                    text: I18n.trl(I18n.lang, root.account-error);
+                    color: root.palette.error;
+                    font-size: Type.body-small.size;
+                    font-family: Type.body-small.family;
+                    width: 100%;
+                    wrap: word-wrap;
+                }
+
+                account-actions := HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+
+                    if (!root.account-connected) : acct-connect := M3Button {
+                        width: 220px;
+                        text: I18n.trl(I18n.lang, "settings.accountConnect");
+                        enabled: !root.account-busy;
+                        fill: root.palette.primary;
+                        content: root.palette.on-primary;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.login-requested("firefox"); }
+                    }
+
+                    if (root.account-connected) : acct-signout := M3Button {
+                        width: 180px;
+                        text: I18n.trl(I18n.lang, "settings.signOut");
+                        enabled: !root.account-busy;
+                        fill: root.palette.secondary-container;
+                        content: root.palette.on-secondary-container;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.login-requested("signout"); }
+                    }
                 }
             }
 
@@ -724,6 +781,11 @@ export component AccountSection inherits Rectangle {
     in property<string> test-result;
     in property<bool> po-done;
     in property<bool> po-ok;
+    in property<bool> account-connected;
+    in property<string> account-name;
+    in property<string> account-email;
+    in property<bool> account-busy;
+    in property<string> account-error;
     callback setting-toggled(string, bool);
     callback setting-edited(string, string);
     callback setting-stepped(string, float);
@@ -744,6 +806,11 @@ export component AccountSection inherits Rectangle {
         test-result: root.test-result;
         po-done: root.po-done;
         po-ok: root.po-ok;
+        account-connected: root.account-connected;
+        account-name: root.account-name;
+        account-email: root.account-email;
+        account-busy: root.account-busy;
+        account-error: root.account-error;
         setting-toggled(k, v) => { root.setting-toggled(k, v); }
         setting-edited(k, v) => { root.setting-edited(k, v); }
         setting-stepped(k, v) => { root.setting-stepped(k, v); }

@@ -8,6 +8,11 @@ export component OnboardingOverlay inherits Rectangle {
     in-out property<int> step;
     in property<bool> po-done;
     in property<bool> po-ok;
+    in property<bool> account-connected;
+    in property<string> account-name;
+    in property<string> account-email;
+    in property<bool> account-busy;
+    in property<string> account-error;
     in-out property<string> folder;
 
     callback lang-picked(string);
@@ -122,17 +127,46 @@ export component OnboardingOverlay inherits Rectangle {
                 width: 100%;
             }
 
+            if (root.account-connected) : ob-login-connected := Text {
+                text: root.account-name != "" ? I18n.trl(I18n.lang, "settings.accountConnectedAs") + root.account-name : I18n.trl(I18n.lang, "settings.accountConnected");
+                color: root.palette.primary;
+                font-size: Type.body-medium.size;
+                font-family: Type.body-medium.family;
+                horizontal-alignment: center;
+                width: 100%;
+            }
+
+            if (root.account-busy) : ob-login-busy := Text {
+                text: I18n.trl(I18n.lang, "settings.accountBusy");
+                color: root.palette.on-surface;
+                font-size: Type.body-medium.size;
+                font-family: Type.body-medium.family;
+                horizontal-alignment: center;
+                width: 100%;
+            }
+
+            if (root.account-error != "") : ob-login-error := Text {
+                text: I18n.trl(I18n.lang, root.account-error);
+                color: root.palette.error;
+                font-size: Type.body-small.size;
+                font-family: Type.body-small.family;
+                horizontal-alignment: center;
+                width: 100%;
+                wrap: word-wrap;
+            }
+
             HorizontalLayout {
                 spacing: 8px;
                 alignment: center;
 
                 ob-login-google := M3Button {
                     width: 220px;
-                    text: I18n.trl(I18n.lang, "settings.onboarding.google");
+                    text: root.account-connected ? I18n.trl(I18n.lang, "settings.signOut") : I18n.trl(I18n.lang, "settings.accountConnect");
+                    enabled: !root.account-busy;
                     fill: root.palette.primary;
                     content: root.palette.on-primary;
                     state-on-surface: root.palette.on-surface;
-                    clicked => { root.login-requested("google"); }
+                    clicked => { root.login-requested(root.account-connected ? "signout" : "firefox"); }
                 }
 
                 ob-login-skip := M3Button {

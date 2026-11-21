@@ -193,6 +193,11 @@ export component MainShell inherits Window {
     in property<string> settings-test-result: "";
     in property<bool> settings-po-done: false;
     in property<bool> settings-po-ok: false;
+    in property<bool> settings-account-connected: false;
+    in property<string> settings-account-name: "";
+    in property<string> settings-account-email: "";
+    in property<bool> settings-account-busy: false;
+    in property<string> settings-account-error: "";
     in-out property<bool> settings-show-onboarding: false;
     in-out property<int> settings-ob-step: 0;
     in-out property<string> settings-ob-folder: "";
@@ -767,6 +772,11 @@ export component MainShell inherits Window {
                 settings-test-result: root.settings-test-result;
                 settings-po-done: root.settings-po-done;
                 settings-po-ok: root.settings-po-ok;
+                settings-account-connected: root.settings-account-connected;
+                settings-account-name: root.settings-account-name;
+                settings-account-email: root.settings-account-email;
+                settings-account-busy: root.settings-account-busy;
+                settings-account-error: root.settings-account-error;
                 settings-show-onboarding <=> root.settings-show-onboarding;
                 settings-ob-step <=> root.settings-ob-step;
                 settings-ob-folder <=> root.settings-ob-folder;

@@ -51,8 +51,8 @@ pub use lyrics_fetch::{
 pub use pages_settings::{
     all_groups, apply_to_file, apply_value, detect_po_provider, field_count, group_from_index,
     group_index, group_key, group_title_key, group_titles, kind_tag, latencies_from_marks,
-    settings_section, wire_shell, SettingsGroup, SettingKind, SettingRow, SettingsPresenter,
-    SettingsValue, DIAG_INDEX, GROUP_COUNT, MASKED_SECRET,
+    refresh_settings, settings_section, wire_shell, SettingsGroup, SettingKind, SettingRow,
+    SettingsPresenter, SettingsValue, DIAG_INDEX, GROUP_COUNT, MASKED_SECRET,
 };
 pub use shell::{
     apply_shell_appearance, apply_shell_theme, close_detail, dispatch_key, is_detail_open,

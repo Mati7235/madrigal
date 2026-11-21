@@ -122,6 +122,11 @@ export component PageHost inherits Rectangle {
     in property<string> settings-test-result;
     in property<bool> settings-po-done;
     in property<bool> settings-po-ok;
+    in property<bool> settings-account-connected;
+    in property<string> settings-account-name;
+    in property<string> settings-account-email;
+    in property<bool> settings-account-busy;
+    in property<string> settings-account-error;
     in-out property<bool> settings-show-onboarding;
     in-out property<int> settings-ob-step;
     in-out property<string> settings-ob-folder;
@@ -283,6 +288,11 @@ export component PageHost inherits Rectangle {
         test-result: root.settings-test-result;
         po-done: root.settings-po-done;
         po-ok: root.settings-po-ok;
+        account-connected: root.settings-account-connected;
+        account-name: root.settings-account-name;
+        account-email: root.settings-account-email;
+        account-busy: root.settings-account-busy;
+        account-error: root.settings-account-error;
         show-onboarding <=> root.settings-show-onboarding;
         ob-step <=> root.settings-ob-step;
         ob-folder <=> root.settings-ob-folder;

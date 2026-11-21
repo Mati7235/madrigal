@@ -192,7 +192,7 @@ fn ui_settings() {
     kit::click_by_id(&shell, "OnboardingOverlay::ob-next").unwrap();
     assert_eq!(shell.get_settings_ob_step(), 2);
     kit::click_by_id(&shell, "OnboardingOverlay::ob-login-google").unwrap();
-    assert_eq!(state.borrow().login_calls, vec!["google".to_owned()]);
+    assert_eq!(state.borrow().login_calls, vec!["firefox".to_owned()]);
     kit::click_by_id(&shell, "OnboardingOverlay::ob-next").unwrap();
     assert_eq!(shell.get_settings_ob_step(), 3);
     shell.set_settings_ob_folder(SharedString::from(tmp.path().join("music").to_string_lossy().as_ref()));
@@ -217,6 +217,24 @@ fn ui_settings() {
 
         let rows = row_snapshot(&shell);
         let mut expected = json_keys(*group);
+        if *group == SettingsGroup::Account {
+            let hidden = [
+                "active_account_id",
+                "account_name",
+                "account_email",
+                "account_channel_handle",
+                "saved_accounts_json",
+                "last_like_song_sync",
+                "last_library_song_sync",
+                "last_album_sync",
+                "last_artist_sync",
+                "last_playlist_sync",
+            ];
+            for key in hidden {
+                assert!(expected.contains(&key.to_owned()), "settings keeps {key}");
+            }
+            expected.retain(|key| !hidden.contains(&key.as_str()));
+        }
         let mut actual: Vec<String> = rows.iter().map(|(key, _)| key.clone()).collect();
         actual.sort();
         expected.sort();
@@ -265,15 +283,29 @@ fn ui_settings() {
                 assert!(!handles(&shell, "SectionView::row-toggle").is_empty());
             }
             SettingsGroup::Account => {
-                assert_eq!(scroll_until_found(&shell, "SectionView::acct-signin").len(), 1);
-                let table = shell.get_settings_rows();
-                let index = rows.iter().position(|(key, _)| key == "active_account_id").unwrap();
-                let options = table.row_data(index).unwrap().options;
-                let mut names = Vec::new();
-                for position in 0..options.row_count() {
-                    names.push(options.row_data(position).unwrap().to_string());
-                }
-                assert!(names.contains(&"fixture".to_owned()), "profiles listed: {names:?}");
+                assert_eq!(scroll_until_found(&shell, "SectionView::acct-connect").len(), 1);
+                assert_eq!(handles(&shell, "SectionView::acct-status").len(), 1);
+                assert!(handles(&shell, "SectionView::acct-help").len() == 1);
+                assert!(!handles(&shell, "SectionView::row-toggle").is_empty());
+                state.borrow_mut().begin_account_work();
+                madrigal_ui::refresh_settings(&shell, &state.borrow());
+                assert!(shell.get_settings_account_busy());
+                state.borrow_mut().finish_account_work();
+                state.borrow_mut().set_account_error("settings.errNoFirefox");
+                madrigal_ui::refresh_settings(&shell, &state.borrow());
+                assert_eq!(
+                    shell.get_settings_account_error().as_str(),
+                    "settings.errNoFirefox"
+                );
+                state.borrow_mut().set_account_connected("Nombre", "nombre@example.com");
+                madrigal_ui::refresh_settings(&shell, &state.borrow());
+                assert!(shell.get_settings_account_connected());
+                assert_eq!(shell.get_settings_account_name().as_str(), "Nombre");
+                assert_eq!(shell.get_settings_account_email().as_str(), "nombre@example.com");
+                assert!(shell.get_settings_account_error().is_empty());
+                state.borrow_mut().clear_account();
+                madrigal_ui::refresh_settings(&shell, &state.borrow());
+                assert!(!shell.get_settings_account_connected());
             }
             SettingsGroup::Integrations => {
                 assert!(!scroll_until_found(&shell, "SectionView::row-test").is_empty());
