@@ -195,10 +195,10 @@ pub fn history_stamp(played_at: i64, now: i64, lang: madrigal_i18n::Lang) -> Str
     use chrono::{Datelike, Local};
     let played = chrono::DateTime::from_timestamp(played_at, 0)
         .map(|when| when.with_timezone(&Local))
-        .unwrap_or_else(|| Local::now());
+        .unwrap_or_else(Local::now);
     let now = chrono::DateTime::from_timestamp(now, 0)
         .map(|when| when.with_timezone(&Local))
-        .unwrap_or_else(|| Local::now());
+        .unwrap_or_else(Local::now);
     let clock = played.format("%H:%M").to_string();
     if played.date_naive() == now.date_naive() {
         return format!("{} {clock}", madrigal_i18n::tr(lang, "detail.today"));
