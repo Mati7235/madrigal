@@ -19,6 +19,9 @@ export component SectionView inherits Rectangle {
     in property<string> account-email;
     in property<bool> account-busy;
     in property<string> account-error;
+    in property<[string]> account-choices;
+    in-out property<bool> advanced-open: false;
+    in-out property<string> manual-cookie: "";
 
     callback setting-toggled(string, bool);
     callback setting-edited(string, string);
@@ -471,7 +474,17 @@ export component SectionView inherits Rectangle {
                         fill: root.palette.primary;
                         content: root.palette.on-primary;
                         state-on-surface: root.palette.on-surface;
-                        clicked => { root.login-requested("firefox"); }
+                        clicked => { root.login-requested("browser"); }
+                    }
+
+                    if (!root.account-connected) : acct-advanced := M3Button {
+                        width: 140px;
+                        text: I18n.trl(I18n.lang, "settings.advanced");
+                        enabled: !root.account-busy;
+                        fill: root.palette.secondary-container;
+                        content: root.palette.on-secondary-container;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.advanced-open = !root.advanced-open; }
                     }
 
                     if (root.account-connected) : acct-signout := M3Button {
@@ -482,6 +495,65 @@ export component SectionView inherits Rectangle {
                         content: root.palette.on-secondary-container;
                         state-on-surface: root.palette.on-surface;
                         clicked => { root.login-requested("signout"); }
+                    }
+                }
+
+                if (!root.account-connected && root.account-choices.length > 0) : acct-choose := VerticalLayout {
+                    spacing: 4px;
+
+                    acct-choose-label := Text {
+                        text: I18n.trl(I18n.lang, "settings.chooseBrowser");
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-small.size;
+                        font-family: Type.body-small.family;
+                        width: 100%;
+                        wrap: word-wrap;
+                    }
+
+                    for choice[i] in root.account-choices : acct-choice := M3Button {
+                        width: 220px;
+                        text: choice;
+                        enabled: !root.account-busy;
+                        fill: root.palette.surface-container;
+                        content: root.palette.on-surface;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => { root.login-requested(choice); }
+                    }
+                }
+
+                if (!root.account-connected && root.advanced-open) : acct-advanced-box := VerticalLayout {
+                    spacing: 8px;
+
+                    acct-advanced-help := Text {
+                        text: I18n.trl(I18n.lang, "settings.manualCookieHelp");
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-small.size;
+                        font-family: Type.body-small.family;
+                        width: 100%;
+                        wrap: word-wrap;
+                    }
+
+                    acct-manual := M3TextField {
+                        width: root.field-width;
+                        label: I18n.trl(I18n.lang, "settings.manualCookie");
+                        text <=> root.manual-cookie;
+                        enabled: !root.account-busy;
+                        field-bg: root.palette.surface-container;
+                        content: root.palette.on-surface;
+                        state-on-surface: root.palette.on-surface;
+                    }
+
+                    acct-manual-apply := M3Button {
+                        width: 180px;
+                        text: I18n.trl(I18n.lang, "settings.manualCookieApply");
+                        enabled: !root.account-busy && root.manual-cookie != "";
+                        fill: root.palette.primary;
+                        content: root.palette.on-primary;
+                        state-on-surface: root.palette.on-surface;
+                        clicked => {
+                            root.login-requested("manual:" + root.manual-cookie);
+                            root.manual-cookie = "";
+                        }
                     }
                 }
             }
@@ -786,6 +858,7 @@ export component AccountSection inherits Rectangle {
     in property<string> account-email;
     in property<bool> account-busy;
     in property<string> account-error;
+    in property<[string]> account-choices;
     callback setting-toggled(string, bool);
     callback setting-edited(string, string);
     callback setting-stepped(string, float);
@@ -811,6 +884,7 @@ export component AccountSection inherits Rectangle {
         account-email: root.account-email;
         account-busy: root.account-busy;
         account-error: root.account-error;
+        account-choices: root.account-choices;
         setting-toggled(k, v) => { root.setting-toggled(k, v); }
         setting-edited(k, v) => { root.setting-edited(k, v); }
         setting-stepped(k, v) => { root.setting-stepped(k, v); }

@@ -13,6 +13,7 @@ export component OnboardingOverlay inherits Rectangle {
     in property<string> account-email;
     in property<bool> account-busy;
     in property<string> account-error;
+    in property<[string]> account-choices;
     in-out property<string> folder;
 
     callback lang-picked(string);
@@ -155,6 +156,20 @@ export component OnboardingOverlay inherits Rectangle {
                 wrap: word-wrap;
             }
 
+            if (!root.account-connected && root.account-choices.length > 0) : ob-login-choose := VerticalLayout {
+                spacing: 4px;
+
+                for choice[i] in root.account-choices : ob-login-choice := M3Button {
+                    width: 220px;
+                    text: choice;
+                    enabled: !root.account-busy;
+                    fill: root.palette.surface-container;
+                    content: root.palette.on-surface;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.login-requested(choice); }
+                }
+            }
+
             HorizontalLayout {
                 spacing: 8px;
                 alignment: center;
@@ -166,7 +181,7 @@ export component OnboardingOverlay inherits Rectangle {
                     fill: root.palette.primary;
                     content: root.palette.on-primary;
                     state-on-surface: root.palette.on-surface;
-                    clicked => { root.login-requested(root.account-connected ? "signout" : "firefox"); }
+                    clicked => { root.login-requested(root.account-connected ? "signout" : "browser"); }
                 }
 
                 ob-login-skip := M3Button {

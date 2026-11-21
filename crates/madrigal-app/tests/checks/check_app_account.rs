@@ -6,7 +6,8 @@ use std::time::{Duration, Instant};
 
 use madrigal_account::store::SessionStore;
 use madrigal_app::account::{
-    run_login_with, wire_account_with, LoginOutcome, ERR_AUTH, ERR_NO_FIREFOX,
+    login_with_cookie, run_login_with, start_login_with, wire_account_with, LoginOutcome,
+    LoginStart, ERR_AUTH, ERR_CHOICE, ERR_MANUAL, ERR_NO_BROWSER,
 };
 use madrigal_app::catalog::{
     wire_catalog_with, CatalogEvent, CatalogSource, ExplorePages,
@@ -177,8 +178,8 @@ fn app_account() {
 
     assert_eq!(
         run_login_with(&validator_ok),
-        LoginOutcome::Failed { error: ERR_NO_FIREFOX.to_owned() },
-        "missing firefox maps to errNoFirefox"
+        LoginOutcome::Failed { error: ERR_NO_BROWSER.to_owned() },
+        "no browser maps to errNoBrowser"
     );
 
     firefox_layout(home.path());
@@ -263,7 +264,7 @@ fn app_account() {
 
     assert!(!shell.get_settings_account_connected());
     let started = Instant::now();
-    shell.invoke_settings_login("firefox".into());
+    shell.invoke_settings_login("browser".into());
     let elapsed = started.elapsed();
     assert!(
         elapsed < Duration::from_millis(500),
@@ -295,14 +296,14 @@ fn app_account() {
 
     let empty = tempfile::tempdir().expect("empty home");
     std::env::set_var("HOME", empty.path());
-    shell.invoke_settings_login("google".into());
+    shell.invoke_settings_login("browser".into());
     assert!(shell.get_settings_account_busy());
     loop_until(|| !shell.get_settings_account_busy());
     assert!(!shell.get_settings_account_connected());
     assert_eq!(
         shell.get_settings_account_error().as_str(),
-        ERR_NO_FIREFOX,
-        "missing firefox sets errNoFirefox state"
+        ERR_NO_BROWSER,
+        "no browser sets errNoBrowser state"
     );
 
     std::env::set_var("HOME", home.path());
@@ -358,5 +359,68 @@ fn app_account() {
     assert_eq!(
         SessionStore::default().active().channel_id,
         "UC00000000000000000000"
+    );
+}
+
+fn chromium_layout(config: &Path) {
+    let root = config.join("chromium");
+    let profile = root.join("Default");
+    std::fs::create_dir_all(&profile).expect("chromium profile");
+    let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../madrigal-account/tests/fixtures/chromium");
+    std::fs::copy(fixture.join("Default/Cookies"), profile.join("Cookies"))
+        .expect("chromium cookies");
+    std::fs::write(
+        root.join("Local State"),
+        r#"{"profile":{"last_used":"Default"}}"#,
+    )
+    .expect("local state");
+}
+
+#[test]
+fn account_manual_and_chooser() {
+    let (_guard, root, home) = isolate();
+
+    assert_eq!(
+        start_login_with(&validator_ok),
+        LoginStart::Done(LoginOutcome::Failed {
+            error: ERR_NO_BROWSER.to_owned()
+        })
+    );
+    assert_eq!(
+        login_with_cookie("PREF=hl=es", "manual", &validator_ok),
+        LoginOutcome::Failed {
+            error: ERR_MANUAL.to_owned()
+        }
+    );
+    assert_eq!(
+        login_with_cookie(
+            "LOGIN_INFO=manual-login; __Secure-3PAPISID=manual-sapisid",
+            "manual",
+            &validator_ok
+        ),
+        LoginOutcome::Connected {
+            name: "Sample User".to_owned(),
+            email: "sample@example.com".to_owned(),
+        }
+    );
+    let stored = SessionStore::default().active();
+    assert_eq!(stored.source_browser, "manual");
+    assert!(stored.cookie.contains("LOGIN_INFO=manual-login"));
+
+    firefox_layout(home.path());
+    chromium_layout(&root.path().join("config"));
+    match start_login_with(&validator_ok) {
+        LoginStart::Choose(candidates) => {
+            let names: Vec<&str> = candidates.iter().map(|candidate| candidate.label()).collect();
+            assert_eq!(names, ["Firefox", "Chromium"]);
+        }
+        other => panic!("expected chooser, got {other:?}"),
+    }
+    assert_eq!(
+        run_login_with(&validator_ok),
+        LoginOutcome::Failed {
+            error: ERR_CHOICE.to_owned()
+        }
     );
 }

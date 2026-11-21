@@ -780,6 +780,7 @@ pub struct SettingsPresenter {
     pub account_email: String,
     pub account_busy: bool,
     pub account_error: String,
+    pub account_choices: Vec<String>,
 }
 
 impl SettingsPresenter {
@@ -811,12 +812,18 @@ impl SettingsPresenter {
             account_email: String::new(),
             account_busy: false,
             account_error: String::new(),
+            account_choices: Vec::new(),
         }
     }
 
     pub fn begin_account_work(&mut self) {
         self.account_busy = true;
         self.account_error.clear();
+        self.account_choices.clear();
+    }
+
+    pub fn set_account_choices(&mut self, choices: Vec<String>) {
+        self.account_choices = choices;
     }
 
     pub fn finish_account_work(&mut self) {
@@ -832,6 +839,7 @@ impl SettingsPresenter {
         self.account_name = name.to_owned();
         self.account_email = email.to_owned();
         self.account_error.clear();
+        self.account_choices.clear();
     }
 
     pub fn clear_account(&mut self) {
@@ -839,6 +847,7 @@ impl SettingsPresenter {
         self.account_name.clear();
         self.account_email.clear();
         self.account_error.clear();
+        self.account_choices.clear();
     }
 
     pub fn refresh(&mut self) {
@@ -1045,6 +1054,16 @@ fn refresh_shell(shell: &MainShell, state: &SettingsPresenter) {
     shell.set_settings_account_email(state.account_email.clone().into());
     shell.set_settings_account_busy(state.account_busy);
     shell.set_settings_account_error(state.account_error.clone().into());
+    shell.set_settings_account_choices(
+        Rc::new(VecModel::from(
+            state
+                .account_choices
+                .iter()
+                .map(|choice| SharedString::from(choice.as_str()))
+                .collect::<Vec<_>>(),
+        ))
+        .into(),
+    );
     shell.set_settings_diag_level(state.diag_level);
     set_diag_entries(shell, state);
     shell.set_settings_diag_entry_count(shell.get_settings_diag_entries().row_count() as i32);

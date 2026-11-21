@@ -135,6 +135,7 @@ export component PageHost inherits Rectangle {
     in property<string> settings-account-email;
     in property<bool> settings-account-busy;
     in property<string> settings-account-error;
+    in property<[string]> settings-account-choices;
     in-out property<bool> settings-show-onboarding;
     in-out property<int> settings-ob-step;
     in-out property<string> settings-ob-folder;
@@ -305,6 +306,7 @@ export component PageHost inherits Rectangle {
         account-email: root.settings-account-email;
         account-busy: root.settings-account-busy;
         account-error: root.settings-account-error;
+        account-choices: root.settings-account-choices;
         show-onboarding <=> root.settings-show-onboarding;
         ob-step <=> root.settings-ob-step;
         ob-folder <=> root.settings-ob-folder;

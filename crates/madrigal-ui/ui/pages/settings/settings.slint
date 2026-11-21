@@ -27,6 +27,7 @@ export component SettingsPage inherits Rectangle {
     in property<string> account-email;
     in property<bool> account-busy;
     in property<string> account-error;
+    in property<[string]> account-choices;
     in-out property<bool> show-onboarding;
     in-out property<int> ob-step;
     in-out property<string> ob-folder;
@@ -331,6 +332,7 @@ export component SettingsPage inherits Rectangle {
                     account-email: root.account-email;
                     account-busy: root.account-busy;
                     account-error: root.account-error;
+                    account-choices: root.account-choices;
                     setting-toggled(k, v) => { root.setting-toggled(k, v); }
                     setting-edited(k, v) => { root.setting-edited(k, v); }
                     setting-stepped(k, v) => { root.setting-stepped(k, v); }
@@ -433,6 +435,7 @@ export component SettingsPage inherits Rectangle {
         account-email: root.account-email;
         account-busy: root.account-busy;
         account-error: root.account-error;
+        account-choices: root.account-choices;
         folder <=> root.ob-folder;
         lang-picked(l) => { root.lang-picked(l); }
         next() => { root.ob-step += 1; }

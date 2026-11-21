@@ -192,7 +192,7 @@ fn ui_settings() {
     kit::click_by_id(&shell, "OnboardingOverlay::ob-next").unwrap();
     assert_eq!(shell.get_settings_ob_step(), 2);
     kit::click_by_id(&shell, "OnboardingOverlay::ob-login-google").unwrap();
-    assert_eq!(state.borrow().login_calls, vec!["firefox".to_owned()]);
+    assert_eq!(state.borrow().login_calls, vec!["browser".to_owned()]);
     kit::click_by_id(&shell, "OnboardingOverlay::ob-next").unwrap();
     assert_eq!(shell.get_settings_ob_step(), 3);
     shell.set_settings_ob_folder(SharedString::from(tmp.path().join("music").to_string_lossy().as_ref()));
@@ -291,12 +291,31 @@ fn ui_settings() {
                 madrigal_ui::refresh_settings(&shell, &state.borrow());
                 assert!(shell.get_settings_account_busy());
                 state.borrow_mut().finish_account_work();
-                state.borrow_mut().set_account_error("settings.errNoFirefox");
+                state.borrow_mut().set_account_error("settings.errNoBrowser");
                 madrigal_ui::refresh_settings(&shell, &state.borrow());
                 assert_eq!(
                     shell.get_settings_account_error().as_str(),
-                    "settings.errNoFirefox"
+                    "settings.errNoBrowser"
                 );
+                state.borrow_mut().set_account_choices(vec![
+                    "Firefox".to_owned(),
+                    "Chromium".to_owned(),
+                ]);
+                madrigal_ui::refresh_settings(&shell, &state.borrow());
+                let choices = scroll_until_found(&shell, "SectionView::acct-choice");
+                assert_eq!(choices.len(), 2);
+                kit::click(&choices[1]);
+                assert_eq!(
+                    state.borrow().login_calls.last().map(String::as_str),
+                    Some("Chromium")
+                );
+                state.borrow_mut().set_account_choices(Vec::new());
+                madrigal_ui::refresh_settings(&shell, &state.borrow());
+                let advanced = scroll_until_found(&shell, "SectionView::acct-advanced");
+                kit::click(&advanced[0]);
+                kit::mock_advance(Duration::from_millis(50));
+                assert_eq!(handles(&shell, "SectionView::acct-manual").len(), 1);
+                assert_eq!(handles(&shell, "SectionView::acct-manual-apply").len(), 1);
                 state.borrow_mut().set_account_connected("Nombre", "nombre@example.com");
                 madrigal_ui::refresh_settings(&shell, &state.borrow());
                 assert!(shell.get_settings_account_connected());
