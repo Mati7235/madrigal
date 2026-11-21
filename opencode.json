@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "openrouter": {
+      "models": {
+        "meta/muse-ember": {
+          "name": "Muse Ember",
+          "attachment": true,
+          "limit": { "context": 1048576, "output": 65536 }
+        }
+      }
+    }
+  },
+  "mcp": {
+    "madrigal-ui": {
+      "type": "remote",
+      "url": "http://127.0.0.1:8590/mcp",
+      "enabled": true
+    }
+  }
+}
