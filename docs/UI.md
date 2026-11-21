@@ -39,8 +39,9 @@ refreshes every binding through the `lang` property. The global lives in
 `ui/i18n.slint` so gallery and shell share one type; `ui/app.slint`
 re-exports `DemoGallery`, `MainShell` and `I18n` as the single compile root.
 
-Shell (`ui/shell/`, presenter `src/shell.rs`): `MainShell` window, 1920×1080
-by default, whose sidebar and page host fill y=0 down to the 96px Now Playing
+Shell (`ui/shell/`, presenter `src/shell.rs`): `MainShell` window, preferred
+1280×800 with a 640×480 minimum, whose sidebar and page host fill y=0 down to
+the 96px Now Playing
 bar, with a
 `SideNav` (Home, Search, Explore, Library, Downloads, Settings; icon + label
 via `trl`), a `page` int property (0..5), a `PageHost` workspace, a
@@ -65,6 +66,29 @@ binds through; page callbacks record `lib-action-count` / `dl-action-count`
 plus `lib-last-action` / `dl-last-action` for the checks. The presenter
 (`src/pages_library.rs`) maps `madrigal-library` / `madrigal-downloads`
 results into the Slint row models.
+
+## Adaptive layout
+
+Breakpoints follow content, not devices; the shell and pages read
+`root.width` / `root.height` and never assume a screen size.
+
+- 1100px wide: below this the 244px sidebar becomes an 80px icon rail; above it
+  stays expanded. This is where the page drops under 860px, the width Settings
+  needs for its 232px group column plus a 420px field.
+- 840px wide: the nowbar switches to compact and drops position, duration and
+  volume; the full bar needs about 840px for its text block.
+- 800px wide: the 380px queue drawer becomes a full-width sheet. The queue
+  always stops above the 96px nowbar, which stays visible.
+- Full player: below 1100px wide, or when the player surface is under 840px
+  tall, it uses one column: tabs, a scrollable console (art, text, seek,
+  transport, volume) and a pinned tool row. The two-column layout needs a 520px
+  left column plus a lyrics column.
+- Settings: below 860px of page width the 232px group list becomes a horizontal
+  chip strip.
+- Search: below 420px of page height the hint and the suggestions title hide
+  and one suggestion row remains.
+- Downloads: below 700px of page width the progress and speed columns hide.
+- Library chip and tag rows scroll horizontally instead of wrapping.
 
 ## Theme
 

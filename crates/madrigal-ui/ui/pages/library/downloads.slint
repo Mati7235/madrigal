@@ -18,6 +18,7 @@ export component DownloadsPage inherits Rectangle {
 
     property<int> total: root.rows.length + root.failed.length;
     property<bool> is-empty: root.total == 0;
+    property<bool> compact: root.width < 700px;
 
     function state-label(state: int) -> string {
         return state == 0 ? I18n.trl(I18n.lang, "detail.state.queued")
@@ -226,7 +227,7 @@ export component DownloadsPage inherits Rectangle {
                                 }
                             }
 
-                            dl-bar-col := Rectangle {
+                            if (!root.compact) : dl-bar-col := Rectangle {
                                 width: 120px;
 
                                 VerticalLayout {
@@ -248,7 +249,7 @@ export component DownloadsPage inherits Rectangle {
                                 }
                             }
 
-                            dl-speed-col := Rectangle {
+                            if (!root.compact) : dl-speed-col := Rectangle {
                                 width: 72px;
 
                                 VerticalLayout {
@@ -412,11 +413,11 @@ export component DownloadsPage inherits Rectangle {
                                 }
                             }
 
-                            dl-failed-bar-col := Rectangle {
+                            if (!root.compact) : dl-failed-bar-col := Rectangle {
                                 width: 120px;
                             }
 
-                            dl-failed-speed-col := Rectangle {
+                            if (!root.compact) : dl-failed-speed-col := Rectangle {
                                 width: 72px;
                             }
 

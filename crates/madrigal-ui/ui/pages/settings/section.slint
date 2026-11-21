@@ -28,8 +28,8 @@ export component SectionView inherits Rectangle {
 
     background: root.palette.surface;
 
-    property<length> field-width: 420px;
-    property<length> secret-width: 320px;
+    property<length> field-width: min(420px, max(220px, self.width - 240px));
+    property<length> secret-width: min(320px, max(160px, self.width - 460px));
 
     rows-flick := Flickable {
         width: 100%;

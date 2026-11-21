@@ -78,16 +78,23 @@ fn wait_for_request(requests: &Receiver<(String, Sender<LyricsReply>)>, id: &str
 }
 
 fn assert_player_layout(shell: &MainShell, label: &str) {
-    let violations: Vec<_> = kit::lint_layout(shell, (1920.0, 1080.0))
-        .into_iter()
-        .filter(|violation| match &violation.kind {
-            kit::ViolationKind::Overlap(other) => {
-                in_player_surface(&violation.id) && in_player_surface(other)
-            }
-            kit::ViolationKind::OutOfWindow => true,
-        })
-        .collect();
-    assert!(violations.is_empty(), "{label} layout violations: {violations:#?}");
+    for (width, height) in kit::WINDOW_SIZES {
+        kit::resize(shell, width, height);
+        let violations: Vec<_> = kit::lint_layout(shell, (width, height))
+            .into_iter()
+            .filter(|violation| match &violation.kind {
+                kit::ViolationKind::Overlap(other) => {
+                    in_player_surface(&violation.id) && in_player_surface(other)
+                }
+                kit::ViolationKind::OutOfWindow => true,
+            })
+            .collect();
+        assert!(
+            violations.is_empty(),
+            "{label} layout violations at {width}x{height}: {violations:#?}"
+        );
+    }
+    kit::resize(shell, 1920.0, 1080.0);
 }
 
 fn fixture_lyrics() -> madrigal_lyrics::Lyrics {
@@ -156,7 +163,7 @@ fn session_lyrics() -> madrigal_lyrics::Lyrics {
 }
 
 fn in_player_surface(id: &str) -> bool {
-    id.starts_with("FullPlayer::") || id.starts_with("LyricsView::")
+    id.starts_with("FullPlayer::") || id.starts_with("PlayerConsole::") || id.starts_with("PlayerTools::") || id.starts_with("LyricsView::")
 }
 
 fn word_lyrics_fixture() -> madrigal_lyrics::Lyrics {
@@ -318,19 +325,19 @@ fn ui_player() {
     assert_eq!(shell.get_repeat_mode(), 0);
 
     shell.set_paused(true);
-    drag_to(&shell, "FullPlayer::seek-touch", 0, 0.5);
+    drag_to(&shell, "PlayerConsole::seek-touch", 0, 0.5);
     assert_eq!(shell.get_position_ms(), 120_000);
     assert_eq!(shell.get_seek_last_ms(), 120_000);
     assert!(shell.get_seek_count() >= 1);
-    drag_to(&shell, "FullPlayer::vol-touch", 0, 0.25);
+    drag_to(&shell, "PlayerConsole::vol-touch", 0, 0.25);
     assert!((shell.get_volume() - 0.25).abs() < 0.05);
     assert!(shell.get_volume_count() >= 1);
 
-    kit::click_by_id(&shell, "FullPlayer::full-repeat").unwrap();
+    kit::click_by_id(&shell, "PlayerConsole::full-repeat").unwrap();
     assert_eq!(shell.get_repeat_mode(), 1);
-    kit::click_by_id(&shell, "FullPlayer::full-repeat").unwrap();
+    kit::click_by_id(&shell, "PlayerConsole::full-repeat").unwrap();
     assert_eq!(shell.get_repeat_mode(), 2);
-    kit::click_by_id(&shell, "FullPlayer::full-shuffle").unwrap();
+    kit::click_by_id(&shell, "PlayerConsole::full-shuffle").unwrap();
     assert!(shell.get_shuffle());
 
     let lyrics = fixture_lyrics();
@@ -343,7 +350,7 @@ fn ui_player() {
     let png = render_share_png(&lyrics, "Titulo", "Artista", Some(1));
     assert_eq!(&png[0..8], &[137, 80, 78, 71, 13, 10, 26, 10]);
 
-    kit::click_by_id(&shell, "FullPlayer::full-lyrics-btn").unwrap();
+    kit::click_by_id(&shell, "PlayerTools::full-lyrics-btn").unwrap();
     assert_eq!(shell.get_player_panel(), 1);
 
     let session = session_lyrics();

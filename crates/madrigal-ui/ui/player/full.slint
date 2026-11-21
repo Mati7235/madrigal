@@ -5,6 +5,423 @@ import { Cover } from "../components/cover.slint";
 import { Icon, Icons } from "../components/icons.slint";
 import { LyricsView } from "lyrics.slint";
 import { LyricLineRow } from "models.slint";
+import { ScrollView } from "std-widgets.slint";
+
+component PlayerTabs inherits HorizontalLayout {
+    in property<Palette> palette;
+    in property<int> panel: 0;
+    callback panel-selected(int);
+
+    spacing: Spacing.s4;
+
+    full-tab-now := Rectangle {
+        width: 120px;
+        height: 36px;
+        border-radius: self.height / 2;
+        background: root.panel == 0 ? root.palette.secondary-container : transparent;
+        accessible-role: AccessibleRole.tab;
+        accessible-label: I18n.trl(I18n.lang, "player.nowPlaying");
+
+        Text {
+            text: I18n.trl(I18n.lang, "player.nowPlaying");
+            color: root.panel == 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+            font-size: Type.label-large.size;
+            font-family: Type.label-large.family;
+            font-weight: Type.label-large.weight;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+            width: 100%;
+            height: 100%;
+            overflow: elide;
+        }
+
+        TouchArea {
+            width: 100%;
+            height: 100%;
+            mouse-cursor: pointer;
+            clicked => { root.panel-selected(0); }
+        }
+    }
+
+    full-tab-lyrics := Rectangle {
+        width: 120px;
+        height: 36px;
+        border-radius: self.height / 2;
+        background: root.panel == 1 ? root.palette.secondary-container : transparent;
+        accessible-role: AccessibleRole.tab;
+        accessible-label: I18n.trl(I18n.lang, "player.tab.lyrics");
+
+        Text {
+            text: I18n.trl(I18n.lang, "player.tab.lyrics");
+            color: root.panel == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+            font-size: Type.label-large.size;
+            font-family: Type.label-large.family;
+            font-weight: Type.label-large.weight;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+            width: 100%;
+            height: 100%;
+            overflow: elide;
+        }
+
+        TouchArea {
+            width: 100%;
+            height: 100%;
+            mouse-cursor: pointer;
+            clicked => { root.panel-selected(1); }
+        }
+    }
+}
+
+component PlayerTools inherits HorizontalLayout {
+    in property<Palette> palette;
+    in property<int> panel: 0;
+    in property<bool> compact: false;
+
+    callback panel-selected(int);
+    callback sleep-clicked();
+    callback tempo-clicked();
+    callback eq-clicked();
+
+    width: 100%;
+    height: root.compact ? 48px : 64px;
+    padding-top: root.compact ? Spacing.s8 : Spacing.s24;
+    spacing: Spacing.s8;
+    alignment: center;
+
+    full-lyrics-btn := M3IconButton {
+        icon: Icons.mic;
+        icon-size: 22px;
+        icon-color: root.panel == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+        selected: root.panel == 1;
+        fill: root.panel == 1 ? root.palette.secondary-container : transparent;
+        content: root.panel == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+        state-on-surface: root.palette.on-surface;
+        accessible-label: I18n.trl(I18n.lang, "player.tab.lyrics");
+        clicked => { root.panel-selected(root.panel == 1 ? 0 : 1); }
+    }
+
+    full-sleep := M3IconButton {
+        icon: Icons.clock;
+        icon-size: 22px;
+        icon-color: root.palette.on-surface-variant;
+        content: root.palette.on-surface-variant;
+        state-on-surface: root.palette.on-surface;
+        accessible-label: I18n.trl(I18n.lang, "player.sleep_timer");
+        clicked => { root.sleep-clicked(); }
+    }
+
+    full-tempo := M3IconButton {
+        icon: Icons.gauge;
+        icon-size: 22px;
+        icon-color: root.palette.on-surface-variant;
+        content: root.palette.on-surface-variant;
+        state-on-surface: root.palette.on-surface;
+        accessible-label: I18n.trl(I18n.lang, "player.tempoPitch");
+        clicked => { root.tempo-clicked(); }
+    }
+
+    full-eq := M3IconButton {
+        icon: Icons.sliders-horizontal;
+        icon-size: 22px;
+        icon-color: root.palette.on-surface-variant;
+        content: root.palette.on-surface-variant;
+        state-on-surface: root.palette.on-surface;
+        accessible-label: I18n.trl(I18n.lang, "audio.equalizer");
+        clicked => { root.eq-clicked(); }
+    }
+}
+
+component PlayerConsole inherits VerticalLayout {
+    in property<Palette> palette;
+    in property<bool> compact: false;
+    in property<bool> show-tools: true;
+    in property<length> art-size: 420px;
+    in property<string> title;
+    in property<string> artist;
+    in property<image> cover;
+    in property<bool> has-track: false;
+    in property<string> pos-text;
+    in property<string> dur-text;
+    in property<float> frac: 0;
+    in property<int> duration-ms: 0;
+    in property<bool> paused: true;
+    in property<int> repeat-mode: 0;
+    in property<bool> shuffle: false;
+    in property<float> volume: 0.7;
+    in property<int> panel: 0;
+    in property<bool> round-art: false;
+
+    callback play-clicked();
+    callback prev-clicked();
+    callback next-clicked();
+    callback shuffle-clicked();
+    callback repeat-clicked();
+    callback volume-changed(float);
+    callback seek-to(int);
+    callback panel-selected(int);
+    callback sleep-clicked();
+    callback tempo-clicked();
+    callback eq-clicked();
+
+    width: 100%;
+    alignment: center;
+    spacing: 0px;
+
+    art-wrap := Rectangle {
+        width: 100%;
+        height: root.art-size;
+
+        full-art := Cover {
+            x: (parent.width - self.width) / 2;
+            size: root.art-size;
+            radius: Shape.extra-large;
+            round: root.round-art;
+            source: root.cover;
+            palette: root.palette;
+        }
+    }
+
+    full-texts := VerticalLayout {
+        width: 100%;
+        padding-top: root.compact ? Spacing.s8 : Spacing.s24;
+        spacing: Spacing.s4;
+
+        full-title := Text {
+            text: root.has-track ? root.title : I18n.trl(I18n.lang, "player.noTrack");
+            color: root.palette.on-surface;
+            font-size: root.compact ? Type.title-large.size : Type.headline-small.size;
+            font-family: root.compact ? Type.title-large.family : Type.headline-small.family;
+            font-weight: root.compact ? Type.title-large-emphasized.weight : Type.headline-small-emphasized.weight;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+            overflow: elide;
+            width: 100%;
+        }
+
+        full-artist := Text {
+            text: root.has-track ? root.artist : "";
+            color: root.palette.on-surface-variant;
+            font-size: Type.title-medium.size;
+            font-family: Type.title-medium.family;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+            overflow: elide;
+            width: 100%;
+        }
+    }
+
+    full-times := HorizontalLayout {
+        width: 100%;
+        height: root.compact ? 40px : 56px;
+        padding-top: root.compact ? Spacing.s8 : Spacing.s24;
+        padding-left: root.compact ? 0px : Spacing.s24;
+        padding-right: root.compact ? 0px : Spacing.s24;
+        spacing: Spacing.s8;
+
+        full-pos := Text {
+            text: root.pos-text;
+            color: root.palette.on-surface-variant;
+            font-size: Type.body-medium.size;
+            font-family: Type.body-medium.family;
+            vertical-alignment: center;
+        }
+
+        seek-bar := Rectangle {
+            horizontal-stretch: 1;
+            height: 32px;
+            background: transparent;
+            accessible-role: AccessibleRole.slider;
+            accessible-label: I18n.trl(I18n.lang, "player.nowPlaying");
+
+            property<length> bar-w: self.width - 32px;
+
+            seek-track := Rectangle {
+                x: 16px;
+                y: (parent.height - 6px) / 2;
+                width: parent.bar-w;
+                height: 6px;
+                border-radius: 3px;
+                background: root.palette.surface-container-highest;
+            }
+
+            seek-fill := Rectangle {
+                x: 16px;
+                y: (parent.height - 6px) / 2;
+                width: parent.bar-w * clamp(root.frac, 0, 1);
+                height: 6px;
+                border-radius: 3px;
+                background: root.palette.primary;
+            }
+
+            seek-touch := TouchArea {
+                width: 100%;
+                height: 100%;
+                mouse-cursor: pointer;
+                clicked => {
+                    root.seek-to(Math.round(clamp((self.mouse-x - 16px) / parent.bar-w, 0, 1) * root.duration-ms));
+                }
+                moved => {
+                    if (self.pressed) {
+                        root.seek-to(Math.round(clamp((self.mouse-x - 16px) / parent.bar-w, 0, 1) * root.duration-ms));
+                    }
+                }
+            }
+        }
+
+        full-dur := Text {
+            text: root.dur-text;
+            color: root.palette.on-surface-variant;
+            font-size: Type.body-medium.size;
+            font-family: Type.body-medium.family;
+            vertical-alignment: center;
+        }
+    }
+
+    full-transport := HorizontalLayout {
+        width: 100%;
+        height: root.compact ? 56px : 80px;
+        padding-top: root.compact ? Spacing.s8 : Spacing.s24;
+        spacing: Spacing.s12;
+        alignment: center;
+
+        full-shuffle := M3IconButton {
+            icon: Icons.shuffle;
+            icon-size: 22px;
+            icon-color: root.shuffle ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+            selected: root.shuffle;
+            fill: root.shuffle ? root.palette.secondary-container : transparent;
+            content: root.shuffle ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+            state-on-surface: root.palette.on-surface;
+            accessible-label: I18n.trl(I18n.lang, "action.shuffle");
+            clicked => { root.shuffle-clicked(); }
+        }
+
+        full-prev := M3IconButton {
+            width: root.compact ? 44px : 48px;
+            height: root.compact ? 44px : 48px;
+            icon: Icons.skip-back;
+            icon-size: 24px;
+            icon-color: root.palette.on-surface;
+            content: root.palette.on-surface;
+            state-on-surface: root.palette.on-surface;
+            accessible-label: I18n.trl(I18n.lang, "action.previousTrack");
+            clicked => { root.prev-clicked(); }
+        }
+
+        full-play := M3IconButton {
+            width: root.compact ? 48px : 56px;
+            height: root.compact ? 48px : 56px;
+            icon: root.paused ? Icons.play : Icons.pause;
+            icon-size: 28px;
+            icon-color: root.palette.on-primary;
+            selected: !root.paused;
+            fill: root.palette.primary;
+            content: root.palette.on-primary;
+            state-on-surface: root.palette.on-surface;
+            accessible-label: I18n.trl(I18n.lang, "action.playPause");
+            clicked => { root.play-clicked(); }
+        }
+
+        full-next := M3IconButton {
+            width: root.compact ? 44px : 48px;
+            height: root.compact ? 44px : 48px;
+            icon: Icons.skip-forward;
+            icon-size: 24px;
+            icon-color: root.palette.on-surface;
+            content: root.palette.on-surface;
+            state-on-surface: root.palette.on-surface;
+            accessible-label: I18n.trl(I18n.lang, "action.nextTrack");
+            clicked => { root.next-clicked(); }
+        }
+
+        full-repeat := M3IconButton {
+            icon: root.repeat-mode == 1 ? Icons.repeat-1 : Icons.repeat;
+            icon-size: 22px;
+            icon-color: root.repeat-mode != 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+            selected: root.repeat-mode != 0;
+            fill: root.repeat-mode != 0 ? root.palette.secondary-container : transparent;
+            content: root.repeat-mode != 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+            state-on-surface: root.palette.on-surface;
+            accessible-label: I18n.trl(I18n.lang, "action.repeat");
+            clicked => { root.repeat-clicked(); }
+        }
+    }
+
+    full-volrow := HorizontalLayout {
+        width: 100%;
+        height: root.compact ? 40px : 56px;
+        padding-top: root.compact ? Spacing.s8 : Spacing.s24;
+        padding-left: root.compact ? 0px : Spacing.s24;
+        padding-right: root.compact ? 0px : Spacing.s24;
+        spacing: Spacing.s8;
+
+        full-vol-glyph := Rectangle {
+            width: 20px;
+            background: transparent;
+
+            Icon {
+                source: Icons.volume-2;
+                colorize: root.palette.on-surface-variant;
+                icon-size: 20px;
+                x: 0px;
+                y: (parent.height - self.height) / 2;
+            }
+        }
+
+        vol-bar := Rectangle {
+            horizontal-stretch: 1;
+            height: 32px;
+            background: transparent;
+            accessible-role: AccessibleRole.slider;
+            accessible-label: I18n.trl(I18n.lang, "action.volume");
+
+            property<length> vbar-w: self.width - 32px;
+
+            vol-track := Rectangle {
+                x: 16px;
+                y: (parent.height - 6px) / 2;
+                width: parent.vbar-w;
+                height: 6px;
+                border-radius: 3px;
+                background: root.palette.surface-container-highest;
+            }
+
+            vol-fill := Rectangle {
+                x: 16px;
+                y: (parent.height - 6px) / 2;
+                width: parent.vbar-w * clamp(root.volume, 0, 1);
+                height: 6px;
+                border-radius: 3px;
+                background: root.palette.primary;
+            }
+
+            vol-touch := TouchArea {
+                width: 100%;
+                height: 100%;
+                mouse-cursor: pointer;
+                clicked => {
+                    root.volume-changed(clamp((self.mouse-x - 16px) / parent.vbar-w, 0, 1));
+                }
+                moved => {
+                    if (self.pressed) {
+                        root.volume-changed(clamp((self.mouse-x - 16px) / parent.vbar-w, 0, 1));
+                    }
+                }
+            }
+        }
+    }
+
+    if (root.show-tools) : console-tools := PlayerTools {
+        palette: root.palette;
+        panel: root.panel;
+        compact: root.compact;
+        panel-selected(p) => { root.panel-selected(p); }
+        sleep-clicked => { root.sleep-clicked(); }
+        tempo-clicked => { root.tempo-clicked(); }
+        eq-clicked => { root.eq-clicked(); }
+    }
+}
 
 export component FullPlayer inherits Rectangle {
     in property<Palette> palette;
@@ -63,11 +480,12 @@ export component FullPlayer inherits Rectangle {
     property<int> dur-s: Math.floor(root.duration-ms / 1000);
     property<string> pos-text: Math.floor(root.pos-s / 60) + ":" + (Math.mod(root.pos-s, 60) < 10 ? "0" : "") + Math.mod(root.pos-s, 60);
     property<string> dur-text: Math.floor(root.dur-s / 60) + ":" + (Math.mod(root.dur-s, 60) < 10 ? "0" : "") + Math.mod(root.dur-s, 60);
-    property<image> repeat-icon: root.repeat-mode == 1 ? Icons.repeat-1 : Icons.repeat;
+    property<bool> compact: root.width < 1100px || root.height < 840px;
+    property<length> head-h: root.compact ? 56px : 64px;
     property<length> left-w: max(520px, root.width * 0.4);
     property<length> art-size: min(420px, root.left-w - Spacing.s48);
+    property<length> compact-art: min(160px, root.height * 0.28);
     property<length> right-x: root.left-w + Spacing.s32;
-    property<length> band-h: 64px;
 
     bg-base := Rectangle {
         width: 100%;
@@ -103,7 +521,7 @@ export component FullPlayer inherits Rectangle {
 
         full-head := HorizontalLayout {
             width: 100%;
-            height: 64px;
+            height: root.head-h;
             spacing: Spacing.s8;
 
             close-box := Rectangle {
@@ -192,318 +610,134 @@ export component FullPlayer inherits Rectangle {
             vertical-stretch: 1;
             clip: true;
 
-            full-left := VerticalLayout {
+            if (root.compact) : compact-col := VerticalLayout {
                 x: 0px;
-                width: root.left-w;
+                width: 100%;
                 height: 100%;
-                alignment: center;
                 spacing: 0px;
 
-                art-wrap := Rectangle {
-                    width: 100%;
-                    height: root.art-size;
+                compact-tabs := PlayerTabs {
+                    height: 36px;
+                    palette: root.palette;
+                    panel: root.panel;
+                    panel-selected(p) => { root.panel-selected(p); }
+                }
 
-                    full-art := Cover {
-                        x: (parent.width - self.width) / 2;
-                        size: root.art-size;
-                        radius: Shape.extra-large;
-                        round: root.bg-style == 2;
-                        source: root.cover;
+                if (root.panel == 0) : console-scroll := ScrollView {
+                    vertical-stretch: 1;
+                    vertical-scrollbar-policy: ScrollBarPolicy.as-needed;
+                    horizontal-scrollbar-policy: ScrollBarPolicy.always-off;
+
+                    compact-console := PlayerConsole {
+                        width: 100%;
+                        height: max(self.preferred-height, console-scroll.height);
+                        compact: true;
+                        show-tools: false;
+                        art-size: root.compact-art;
                         palette: root.palette;
+                        title: root.title;
+                        artist: root.artist;
+                        cover: root.cover;
+                        has-track: root.has-track;
+                        pos-text: root.pos-text;
+                        dur-text: root.dur-text;
+                        frac: root.frac;
+                        duration-ms: root.duration-ms;
+                        paused: root.paused;
+                        repeat-mode: root.repeat-mode;
+                        shuffle: root.shuffle;
+                        volume: root.volume;
+                        panel: root.panel;
+                        round-art: root.bg-style == 2;
+                        play-clicked => { root.play-clicked(); }
+                        prev-clicked => { root.prev-clicked(); }
+                        next-clicked => { root.next-clicked(); }
+                        shuffle-clicked => { root.shuffle-clicked(); }
+                        repeat-clicked => { root.repeat-clicked(); }
+                        volume-changed(v) => { root.volume-changed(v); }
+                        seek-to(ms) => { root.seek-to(ms); }
+                        panel-selected(p) => { root.panel-selected(p); }
+                        sleep-clicked => { root.sleep-clicked(); }
+                        tempo-clicked => { root.tempo-clicked(); }
+                        eq-clicked => { root.eq-clicked(); }
                     }
                 }
 
-                full-texts := VerticalLayout {
-                    width: 100%;
-                    padding-top: Spacing.s24;
-                    spacing: Spacing.s4;
-
-                    full-title := Text {
-                        text: root.has-track ? root.title : I18n.trl(I18n.lang, "player.noTrack");
-                        color: root.palette.on-surface;
-                        font-size: Type.headline-small.size;
-                        font-family: Type.headline-small.family;
-                        font-weight: Type.headline-small-emphasized.weight;
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                        overflow: elide;
-                        width: 100%;
-                    }
-
-                    full-artist := Text {
-                        text: root.has-track ? root.artist : "";
-                        color: root.palette.on-surface-variant;
-                        font-size: Type.title-medium.size;
-                        font-family: Type.title-medium.family;
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                        overflow: elide;
-                        width: 100%;
-                    }
+                if (root.panel == 0) : compact-tools := PlayerTools {
+                    compact: true;
+                    palette: root.palette;
+                    panel: root.panel;
+                    panel-selected(p) => { root.panel-selected(p); }
+                    sleep-clicked => { root.sleep-clicked(); }
+                    tempo-clicked => { root.tempo-clicked(); }
+                    eq-clicked => { root.eq-clicked(); }
                 }
 
-                full-times := HorizontalLayout {
-                    width: 100%;
-                    height: 56px;
-                    padding-top: Spacing.s24;
-                    padding-left: Spacing.s24;
-                    padding-right: Spacing.s24;
-                    spacing: Spacing.s8;
-
-                    full-pos := Text {
-                        text: root.pos-text;
-                        color: root.palette.on-surface-variant;
-                        font-size: Type.body-medium.size;
-                        font-family: Type.body-medium.family;
-                        vertical-alignment: center;
-                    }
-
-                    seek-bar := Rectangle {
-                        horizontal-stretch: 1;
-                        height: 32px;
-                        background: transparent;
-                        accessible-role: AccessibleRole.slider;
-                        accessible-label: I18n.trl(I18n.lang, "player.nowPlaying");
-
-                        property<length> bar-w: self.width - 32px;
-
-                        seek-track := Rectangle {
-                            x: 16px;
-                            y: (parent.height - 6px) / 2;
-                            width: parent.bar-w;
-                            height: 6px;
-                            border-radius: 3px;
-                            background: root.palette.surface-container-highest;
-                        }
-
-                        seek-fill := Rectangle {
-                            x: 16px;
-                            y: (parent.height - 6px) / 2;
-                            width: parent.bar-w * clamp(root.frac, 0, 1);
-                            height: 6px;
-                            border-radius: 3px;
-                            background: root.palette.primary;
-                        }
-
-                        seek-touch := TouchArea {
-                            width: 100%;
-                            height: 100%;
-                            mouse-cursor: pointer;
-                            clicked => {
-                                root.seek-to(Math.round(clamp((self.mouse-x - 16px) / parent.bar-w, 0, 1) * root.duration-ms));
-                            }
-                            moved => {
-                                if (self.pressed) {
-                                    root.seek-to(Math.round(clamp((self.mouse-x - 16px) / parent.bar-w, 0, 1) * root.duration-ms));
-                                }
-                            }
-                        }
-                    }
-
-                    full-dur := Text {
-                        text: root.dur-text;
-                        color: root.palette.on-surface-variant;
-                        font-size: Type.body-medium.size;
-                        font-family: Type.body-medium.family;
-                        vertical-alignment: center;
-                    }
-                }
-
-                full-transport := HorizontalLayout {
-                    width: 100%;
-                    height: 80px;
-                    padding-top: Spacing.s24;
-                    spacing: Spacing.s12;
-                    alignment: center;
-
-                    full-shuffle := M3IconButton {
-                        icon: Icons.shuffle;
-                        icon-size: 22px;
-                        icon-color: root.shuffle ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                        selected: root.shuffle;
-                        fill: root.shuffle ? root.palette.secondary-container : transparent;
-                        content: root.shuffle ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                        state-on-surface: root.palette.on-surface;
-                        accessible-label: I18n.trl(I18n.lang, "action.shuffle");
-                        clicked => { root.shuffle-clicked(); }
-                    }
-
-                    full-prev := M3IconButton {
-                        width: 48px;
-                        height: 48px;
-                        icon: Icons.skip-back;
-                        icon-size: 24px;
-                        icon-color: root.palette.on-surface;
-                        content: root.palette.on-surface;
-                        state-on-surface: root.palette.on-surface;
-                        accessible-label: I18n.trl(I18n.lang, "action.previousTrack");
-                        clicked => { root.prev-clicked(); }
-                    }
-
-                    full-play := M3IconButton {
-                        width: 56px;
-                        height: 56px;
-                        icon: root.paused ? Icons.play : Icons.pause;
-                        icon-size: 28px;
-                        icon-color: root.palette.on-primary;
-                        selected: !root.paused;
-                        fill: root.palette.primary;
-                        content: root.palette.on-primary;
-                        state-on-surface: root.palette.on-surface;
-                        accessible-label: I18n.trl(I18n.lang, "action.playPause");
-                        clicked => { root.play-clicked(); }
-                    }
-
-                    full-next := M3IconButton {
-                        width: 48px;
-                        height: 48px;
-                        icon: Icons.skip-forward;
-                        icon-size: 24px;
-                        icon-color: root.palette.on-surface;
-                        content: root.palette.on-surface;
-                        state-on-surface: root.palette.on-surface;
-                        accessible-label: I18n.trl(I18n.lang, "action.nextTrack");
-                        clicked => { root.next-clicked(); }
-                    }
-
-                    full-repeat := M3IconButton {
-                        icon: root.repeat-icon;
-                        icon-size: 22px;
-                        icon-color: root.repeat-mode != 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                        selected: root.repeat-mode != 0;
-                        fill: root.repeat-mode != 0 ? root.palette.secondary-container : transparent;
-                        content: root.repeat-mode != 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                        state-on-surface: root.palette.on-surface;
-                        accessible-label: I18n.trl(I18n.lang, "action.repeat");
-                        clicked => { root.repeat-clicked(); }
-                    }
-                }
-
-                full-volrow := HorizontalLayout {
-                    width: 100%;
-                    height: 56px;
-                    padding-top: Spacing.s24;
-                    padding-left: Spacing.s24;
-                    padding-right: Spacing.s24;
-                    spacing: Spacing.s8;
-
-                    full-vol-glyph := Rectangle {
-                        width: 20px;
-                        background: transparent;
-
-                        Icon {
-                            source: Icons.volume-2;
-                            colorize: root.palette.on-surface-variant;
-                            icon-size: 20px;
-                            x: 0px;
-                            y: (parent.height - self.height) / 2;
-                        }
-                    }
-
-                    vol-bar := Rectangle {
-                        horizontal-stretch: 1;
-                        height: 32px;
-                        background: transparent;
-                        accessible-role: AccessibleRole.slider;
-                        accessible-label: I18n.trl(I18n.lang, "action.volume");
-
-                        property<length> vbar-w: self.width - 32px;
-
-                        vol-track := Rectangle {
-                            x: 16px;
-                            y: (parent.height - 6px) / 2;
-                            width: parent.vbar-w;
-                            height: 6px;
-                            border-radius: 3px;
-                            background: root.palette.surface-container-highest;
-                        }
-
-                        vol-fill := Rectangle {
-                            x: 16px;
-                            y: (parent.height - 6px) / 2;
-                            width: parent.vbar-w * clamp(root.volume, 0, 1);
-                            height: 6px;
-                            border-radius: 3px;
-                            background: root.palette.primary;
-                        }
-
-                        vol-touch := TouchArea {
-                            width: 100%;
-                            height: 100%;
-                            mouse-cursor: pointer;
-                            clicked => {
-                                root.volume-changed(clamp((self.mouse-x - 16px) / parent.vbar-w, 0, 1));
-                            }
-                            moved => {
-                                if (self.pressed) {
-                                    root.volume-changed(clamp((self.mouse-x - 16px) / parent.vbar-w, 0, 1));
-                                }
-                            }
-                        }
-                    }
-                }
-
-                full-tools := HorizontalLayout {
-                    width: 100%;
-                    height: 64px;
-                    padding-top: Spacing.s24;
-                    spacing: Spacing.s8;
-                    alignment: center;
-
-                    full-lyrics-btn := M3IconButton {
-                        icon: Icons.mic;
-                        icon-size: 22px;
-                        icon-color: root.panel == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                        selected: root.panel == 1;
-                        fill: root.panel == 1 ? root.palette.secondary-container : transparent;
-                        content: root.panel == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                        state-on-surface: root.palette.on-surface;
-                        accessible-label: I18n.trl(I18n.lang, "player.tab.lyrics");
-                        clicked => { root.panel-selected(root.panel == 1 ? 0 : 1); }
-                    }
-
-                    full-sleep := M3IconButton {
-                        icon: Icons.clock;
-                        icon-size: 22px;
-                        icon-color: root.palette.on-surface-variant;
-                        content: root.palette.on-surface-variant;
-                        state-on-surface: root.palette.on-surface;
-                        accessible-label: I18n.trl(I18n.lang, "player.sleep_timer");
-                        clicked => { root.sleep-clicked(); }
-                    }
-
-                    full-tempo := M3IconButton {
-                        icon: Icons.gauge;
-                        icon-size: 22px;
-                        icon-color: root.palette.on-surface-variant;
-                        content: root.palette.on-surface-variant;
-                        state-on-surface: root.palette.on-surface;
-                        accessible-label: I18n.trl(I18n.lang, "player.tempoPitch");
-                        clicked => { root.tempo-clicked(); }
-                    }
-
-                    full-eq := M3IconButton {
-                        icon: Icons.sliders-horizontal;
-                        icon-size: 22px;
-                        icon-color: root.palette.on-surface-variant;
-                        content: root.palette.on-surface-variant;
-                        state-on-surface: root.palette.on-surface;
-                        accessible-label: I18n.trl(I18n.lang, "audio.equalizer");
-                        clicked => { root.eq-clicked(); }
-                    }
+                if (root.panel == 1) : compact-lyrics := LyricsView {
+                    vertical-stretch: 1;
+                    palette: root.palette;
+                    rows: root.lyric-rows;
+                    active-line: root.active-line;
+                    active-word: root.active-word;
+                    word-progress: root.word-progress;
+                    font-px: root.lyrics-font-px;
+                    spacing-mult: root.lyrics-spacing;
+                    offset-ms: root.lyrics-offset-ms;
+                    state: root.lyrics-state;
+                    synced: root.lyrics-synced;
+                    error-text: root.lyrics-error;
+                    line-seek(ms) => { root.lyric-seek(ms); }
+                    share-requested => { root.lyric-share(); }
+                    offset-requested(ms) => { root.lyric-offset(ms); }
+                    retry-requested => { root.lyric-retry(); }
+                    scroll-locked-changed(locked) => { root.lyric-scroll-locked(locked); }
                 }
             }
 
-            full-right := Rectangle {
+            if (!root.compact) : wide-left := PlayerConsole {
+                x: 0px;
+                width: root.left-w;
+                height: 100%;
+                compact: false;
+                art-size: root.art-size;
+                palette: root.palette;
+                title: root.title;
+                artist: root.artist;
+                cover: root.cover;
+                has-track: root.has-track;
+                pos-text: root.pos-text;
+                dur-text: root.dur-text;
+                frac: root.frac;
+                duration-ms: root.duration-ms;
+                paused: root.paused;
+                repeat-mode: root.repeat-mode;
+                shuffle: root.shuffle;
+                volume: root.volume;
+                panel: root.panel;
+                round-art: root.bg-style == 2;
+                play-clicked => { root.play-clicked(); }
+                prev-clicked => { root.prev-clicked(); }
+                next-clicked => { root.next-clicked(); }
+                shuffle-clicked => { root.shuffle-clicked(); }
+                repeat-clicked => { root.repeat-clicked(); }
+                volume-changed(v) => { root.volume-changed(v); }
+                seek-to(ms) => { root.seek-to(ms); }
+                panel-selected(p) => { root.panel-selected(p); }
+                sleep-clicked => { root.sleep-clicked(); }
+                tempo-clicked => { root.tempo-clicked(); }
+                eq-clicked => { root.eq-clicked(); }
+            }
+
+            if (!root.compact) : full-right := Rectangle {
                 x: root.right-x;
                 width: parent.width - root.right-x;
                 height: 100%;
 
                 full-now := Rectangle {
                     x: 0px;
-                    y: root.band-h;
+                    y: 64px;
                     width: 100%;
-                    height: parent.height - root.band-h;
+                    height: parent.height - 64px;
                     background: transparent;
                     visible: root.panel == 0;
 
@@ -567,68 +801,14 @@ export component FullPlayer inherits Rectangle {
                     scroll-locked-changed(locked) => { root.lyric-scroll-locked(locked); }
                 }
 
-                full-panel-tabs := HorizontalLayout {
+                wide-tabs := PlayerTabs {
                     x: 0px;
                     y: Spacing.s24;
                     width: 100%;
                     height: 36px;
-                    spacing: Spacing.s4;
-
-                    full-tab-now := Rectangle {
-                        width: 120px;
-                        height: 36px;
-                        border-radius: self.height / 2;
-                        background: root.panel == 0 ? root.palette.secondary-container : transparent;
-                        accessible-role: AccessibleRole.tab;
-                        accessible-label: I18n.trl(I18n.lang, "player.nowPlaying");
-
-                        Text {
-                            text: I18n.trl(I18n.lang, "player.nowPlaying");
-                            color: root.panel == 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                            font-size: Type.label-large.size;
-                            font-family: Type.label-large.family;
-                            font-weight: Type.label-large.weight;
-                            horizontal-alignment: center;
-                            vertical-alignment: center;
-                            width: 100%;
-                            height: 100%;
-                        }
-
-                        TouchArea {
-                            width: 100%;
-                            height: 100%;
-                            mouse-cursor: pointer;
-                            clicked => { root.panel-selected(0); }
-                        }
-                    }
-
-                    full-tab-lyrics := Rectangle {
-                        width: 120px;
-                        height: 36px;
-                        border-radius: self.height / 2;
-                        background: root.panel == 1 ? root.palette.secondary-container : transparent;
-                        accessible-role: AccessibleRole.tab;
-                        accessible-label: I18n.trl(I18n.lang, "player.tab.lyrics");
-
-                        Text {
-                            text: I18n.trl(I18n.lang, "player.tab.lyrics");
-                            color: root.panel == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
-                            font-size: Type.label-large.size;
-                            font-family: Type.label-large.family;
-                            font-weight: Type.label-large.weight;
-                            horizontal-alignment: center;
-                            vertical-alignment: center;
-                            width: 100%;
-                            height: 100%;
-                        }
-
-                        TouchArea {
-                            width: 100%;
-                            height: 100%;
-                            mouse-cursor: pointer;
-                            clicked => { root.panel-selected(1); }
-                        }
-                    }
+                    palette: root.palette;
+                    panel: root.panel;
+                    panel-selected(p) => { root.panel-selected(p); }
                 }
             }
         }

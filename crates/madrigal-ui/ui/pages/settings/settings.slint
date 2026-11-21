@@ -1,5 +1,6 @@
 import { Palette, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
+import { M3Chip } from "../../components/cards.slint";
 import { SettingsRow, DiagLine } from "rows.slint";
 import { AppearanceSection, ContentSection, PlayerSection, LyricsSection, InternetSection, StorageSection, PrivacySection, AccountSection, IntegrationsSection, AiSection, UpdatesSection } from "section.slint";
 import { DiagnosticsPanel } from "diagnostics.slint";
@@ -44,11 +45,12 @@ export component SettingsPage inherits Rectangle {
     callback diag-export();
 
     background: root.palette.surface;
+    property<bool> compact: root.width < 860px;
 
     HorizontalLayout {
         spacing: 0px;
 
-        nav-col := Rectangle {
+        if (!root.compact) : nav-col := Rectangle {
             width: 232px;
             background: root.palette.surface-container-low;
 
@@ -117,6 +119,41 @@ export component SettingsPage inherits Rectangle {
             horizontal-stretch: 1;
             clip: true;
 
+            if (root.compact) : group-strip := Flickable {
+                x: 0px;
+                y: 0px;
+                width: 100%;
+                height: 56px;
+                content-width: group-strip-row.preferred-width;
+                content-height: self.height;
+
+                group-strip-row := HorizontalLayout {
+                    padding: 12px;
+                    spacing: 8px;
+                    alignment: start;
+
+                    for title[i] in root.group-titles: group-chip := M3Chip {
+                        text: I18n.trl(I18n.lang, title);
+                        selected: !root.show-diag && root.group == i;
+                        selected-fill: root.palette.secondary-container;
+                        selected-content: root.palette.on-secondary-container;
+                        unselected-content: root.palette.on-surface-variant;
+                        unselected-line: root.palette.outline-variant;
+                        clicked => { root.group-selected(i); }
+                    }
+
+                    diag-chip := M3Chip {
+                        text: I18n.trl(I18n.lang, "settings.diagnostics");
+                        selected: root.show-diag;
+                        selected-fill: root.palette.secondary-container;
+                        selected-content: root.palette.on-secondary-container;
+                        unselected-content: root.palette.on-surface-variant;
+                        unselected-line: root.palette.outline-variant;
+                        clicked => { root.group-selected(11); }
+                    }
+                }
+            }
+
             section-title := Text {
                 text: root.show-diag ? I18n.trl(I18n.lang, "settings.diagnostics") : I18n.trl(I18n.lang, root.group-titles[root.group]);
                 color: root.palette.on-surface;
@@ -124,7 +161,7 @@ export component SettingsPage inherits Rectangle {
                 font-family: Type.title-medium.family;
                 font-weight: Type.title-medium.weight;
                 x: 16px;
-                y: 16px;
+                y: root.compact ? 72px : 16px;
                 width: parent.width - 32px;
                 height: 24px;
                 vertical-alignment: center;
@@ -132,9 +169,9 @@ export component SettingsPage inherits Rectangle {
             }
 
             section-host := Rectangle {
-                y: 64px;
+                y: root.compact ? 104px : 64px;
                 width: 100%;
-                height: parent.height - 64px;
+                height: parent.height - self.y;
 
                 if (!root.show-diag && root.group == 0) : appearance-sec := AppearanceSection {
                     width: 100%;
