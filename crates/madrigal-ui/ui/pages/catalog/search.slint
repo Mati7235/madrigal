@@ -4,6 +4,7 @@ import { M3Chip, M3Card } from "../../components/cards.slint";
 import { M3IconButton } from "../../components/buttons.slint";
 import { Icons } from "../../components/icons.slint";
 import { M3ListItem } from "../../components/rows.slint";
+import { TrackMenuRequest } from "../../components/menu.slint";
 import { ScrollView } from "std-widgets.slint";
 import { CatalogItem, DetailRef } from "refs.slint";
 
@@ -29,6 +30,7 @@ export component SearchPage inherits FocusScope {
     callback recent-accepted(string);
     callback recent-removed(string);
     callback recent-cleared();
+    callback track-menu-requested(TrackMenuRequest);
 
     key-dispatched(dir) => {
         if (dir == "down") {
@@ -262,6 +264,7 @@ export component SearchPage inherits FocusScope {
                             subtitle: hit.subtitle;
                             duration: hit.duration;
                             cover: hit.cover;
+                            menu: true;
                             row-bg: root.palette.surface-container-low;
                             active-bg: root.palette.secondary-container;
                             title-color: root.palette.on-surface;
@@ -271,6 +274,17 @@ export component SearchPage inherits FocusScope {
                             progress-fill: root.palette.primary;
                             action => {
                                 root.play-requested(hit);
+                            }
+                            menu-clicked(x, y) => {
+                                root.track-menu-requested({
+                                    id: hit.id,
+                                    title: hit.title,
+                                    artist: hit.artist,
+                                    album: hit.album,
+                                    duration-secs: hit.duration-secs,
+                                    anchor-x: x,
+                                    anchor-y: y,
+                                });
                             }
                         }
                     }

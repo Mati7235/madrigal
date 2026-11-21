@@ -110,6 +110,12 @@ export component PromptOverlay inherits Rectangle {
     accessible-role: text;
     accessible-label: root.title;
 
+    changed visible => {
+        if (self.visible) {
+            prompt-field.focus();
+        }
+    }
+
     prompt-scrim-touch := TouchArea {
         mouse-cursor: pointer;
         clicked => { root.dismissed(); }
@@ -148,6 +154,7 @@ export component PromptOverlay inherits Rectangle {
                             color: root.palette.on-surface;
                             font-size: 16px;
                             font-family: Font.body;
+                            accepted => { root.accepted(root.input); }
                         }
                     }
                     HorizontalLayout {

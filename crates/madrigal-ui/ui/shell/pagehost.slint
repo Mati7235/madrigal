@@ -5,6 +5,7 @@ import { LibraryPage } from "../pages/library/library.slint";
 import { DownloadsPage } from "../pages/library/downloads.slint";
 import { CatalogItem, CatalogSection, DetailRef, MoodEntry } from "../pages/catalog/refs.slint";
 import { DetailKind } from "../pages/catalog/refs.slint";
+import { TrackMenuRequest } from "../components/menu.slint";
 import { HomePage } from "../pages/catalog/home.slint";
 import { SearchPage } from "../pages/catalog/search.slint";
 import { ExplorePage } from "../pages/catalog/explore.slint";
@@ -62,6 +63,8 @@ export component PageHost inherits Rectangle {
     callback lib-history-cleared();
     callback lib-year-prev();
     callback lib-year-next();
+    callback lib-new-playlist();
+    callback track-menu-requested(TrackMenuRequest);
     callback dl-pause(string);
     callback dl-resume(string);
     callback dl-cancel(string);
@@ -177,6 +180,7 @@ export component PageHost inherits Rectangle {
         selected-item <=> root.home-selected-item;
         chip-selected(i) => { root.chip-selected(i); }
         detail-requested(ref) => { root.detail-requested(ref); }
+        track-menu-requested(req) => { root.track-menu-requested(req); }
         play-requested(item) => { root.play-requested(item); }
     }
 
@@ -198,6 +202,7 @@ export component PageHost inherits Rectangle {
         recent-removed(text) => { root.recent-removed(text); }
         recent-cleared() => { root.recent-cleared(); }
         detail-requested(ref) => { root.detail-requested(ref); }
+        track-menu-requested(req) => { root.track-menu-requested(req); }
         play-requested(item) => { root.play-requested(item); }
     }
 
@@ -266,6 +271,8 @@ export component PageHost inherits Rectangle {
         history-cleared() => { root.lib-history-cleared(); }
         year-prev() => { root.lib-year-prev(); }
         year-next() => { root.lib-year-next(); }
+        new-playlist() => { root.lib-new-playlist(); }
+        track-menu-requested(req) => { root.track-menu-requested(req); }
     }
 
     if (root.page == 4) : downloads-host := DownloadsPage {

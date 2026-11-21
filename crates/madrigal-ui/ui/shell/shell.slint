@@ -1,6 +1,7 @@
 import { Palette, Light, Dark, PureBlack, Font, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
 import { M3SearchBar } from "../components/fields.slint";
+import { TrackMenu, TrackMenuEntry, TrackMenuRequest } from "../components/menu.slint";
 import { LibSongRow, LibPlaylistRow, LibCardRow, HistoryRow, StatRow, DownloadRow } from "../pages/library/models.slint";
 import { CatalogItem, CatalogSection, DetailKind, DetailRef, MoodEntry } from "../pages/catalog/refs.slint";
 import { SideNav } from "sidebar.slint";
@@ -151,6 +152,18 @@ export component MainShell inherits Window {
     in-out property<int> search-focus-count: 0;
     in-out property<int> detail-stack: 0;
     in-out property<DetailRef> detail-ref: { kind: DetailKind.album, id: "", title: "" };
+    in-out property<bool> track-menu-open: false;
+    in-out property<TrackMenuRequest> track-menu-track;
+    in-out property<bool> track-menu-liked: false;
+    in-out property<int> track-menu-download-state: -1;
+    in-out property<float> track-menu-download-progress: 0;
+    in-out property<[TrackMenuEntry]> track-menu-playlists;
+    in-out property<int> track-menu-view: 0;
+    in-out property<int> track-menu-index: 0;
+    in-out property<int> track-menu-action-count: 0;
+    in-out property<string> track-menu-last-action: "";
+    in-out property<string> track-menu-last-arg: "";
+    in-out property<string> prompt-purpose: "";
 
     in property<[string]> home-chips;
     in-out property<int> home-current-chip: 0;
@@ -253,11 +266,18 @@ export component MainShell inherits Window {
     callback lib-history-cleared();
     callback lib-year-prev();
     callback lib-year-next();
+    callback lib-new-playlist();
     callback dl-pause(string);
     callback dl-resume(string);
     callback dl-cancel(string);
     callback dl-retry(string);
     callback dl-retry-all();
+    callback track-menu-requested(TrackMenuRequest);
+    callback track-menu-opened(TrackMenuRequest);
+    callback track-menu-action(string, string);
+    callback track-menu-closed();
+    callback lib-new-playlist-requested();
+    callback prompt-confirmed(string);
 
     function lib-record(action: string) {
         root.lib-action-count += 1;
@@ -267,6 +287,114 @@ export component MainShell inherits Window {
     function dl-record(action: string) {
         root.dl-action-count += 1;
         root.dl-last-action = action;
+    }
+
+    function menu-close() {
+        if (root.track-menu-open) {
+            root.track-menu-open = false;
+            root.track-menu-closed();
+        }
+    }
+
+    function menu-command(action: string, arg: string) {
+        if (!root.track-menu-open) {
+            return;
+        }
+        root.menu-close();
+        root.track-menu-action-count += 1;
+        root.track-menu-last-action = action;
+        root.track-menu-last-arg = arg;
+        root.track-menu-action(action, arg);
+    }
+
+    function menu-enabled(i: int) -> bool {
+        if (root.track-menu-view == 1) {
+            return i >= 0 && i < root.track-menu-playlists.length + 1;
+        }
+        if (i == 5) {
+            return root.track-menu-track.artist != "";
+        }
+        if (i == 6) {
+            return root.track-menu-track.album != "";
+        }
+        if (i == 3) {
+            return root.track-menu-download-state < 0 || root.track-menu-download-state == 3 || root.track-menu-download-state == 4 || root.track-menu-download-state == 5;
+        }
+        return i >= 0 && i < 5;
+    }
+
+    function menu-step(dir: int) {
+        if (root.track-menu-view == 1) {
+            let count = root.track-menu-playlists.length + 1;
+            root.track-menu-index = Math.mod(root.track-menu-index + dir + count, count);
+            return;
+        }
+        let first = Math.mod(root.track-menu-index + dir + 7, 7);
+        let second = root.menu-enabled(first) ? first : Math.mod(first + dir + 7, 7);
+        let third = root.menu-enabled(second) ? second : Math.mod(second + dir + 7, 7);
+        root.track-menu-index = root.menu-enabled(third) ? third : Math.mod(third + dir + 7, 7);
+    }
+
+    function menu-activate() {
+        if (root.track-menu-view == 1) {
+            if (root.track-menu-index < root.track-menu-playlists.length) {
+                root.menu-command("playlist", root.track-menu-playlists[root.track-menu-index].id);
+            } else {
+                root.menu-command("playlist-new", "");
+            }
+            return;
+        }
+        if (root.track-menu-index == 0) {
+            root.menu-command("play-next", "");
+        } else if (root.track-menu-index == 1) {
+            root.menu-command("queue", "");
+        } else if (root.track-menu-index == 2) {
+            root.menu-command("like", "");
+        } else if (root.track-menu-index == 3) {
+            root.menu-command("download", "");
+        } else if (root.track-menu-index == 4) {
+            root.track-menu-view = 1;
+            root.track-menu-index = 0;
+        } else if (root.track-menu-index == 5) {
+            if (root.track-menu-track.artist != "") {
+                root.menu-command("artist", "");
+            } else {
+                root.menu-command("album", "");
+            }
+        } else if (root.track-menu-index == 6) {
+            root.menu-command("album", "");
+        }
+    }
+
+    function menu-key(key: string) -> bool {
+        if (key == Key.Escape || key == "Escape") {
+            root.menu-close();
+            return true;
+        }
+        if (key == Key.UpArrow || key == "Up") {
+            root.menu-step(-1);
+            return true;
+        }
+        if (key == Key.DownArrow || key == "Down") {
+            root.menu-step(1);
+            return true;
+        }
+        if (key == Key.Return || key == "\n") {
+            root.menu-activate();
+            return true;
+        }
+        if (key == Key.LeftArrow || key == "Left") {
+            if (root.track-menu-view == 1) {
+                root.track-menu-view = 0;
+                root.track-menu-index = 4;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function track-key() -> string {
+        return root.track-source == 2 ? "local:" + root.track-id : root.track-source == 1 ? "tidal:" + root.track-id : root.track-id;
     }
 
     lib-chip-selected(i) => {
@@ -326,6 +454,20 @@ export component MainShell inherits Window {
         if (root.lib-year < root.lib-years.length - 1) {
             root.lib-year += 1;
         }
+    }
+    track-menu-requested(req) => {
+        root.track-menu-track = req;
+        root.track-menu-liked = false;
+        root.track-menu-download-state = -1;
+        root.track-menu-download-progress = 0;
+        root.track-menu-view = 0;
+        root.track-menu-index = 0;
+        root.track-menu-open = true;
+        root.track-menu-opened(req);
+    }
+    lib-new-playlist() => {
+        root.lib-record("new-playlist");
+        root.lib-new-playlist-requested();
     }
     dl-pause(id) => { root.dl-record("dl-pause"); }
     dl-resume(id) => { root.dl-record("dl-resume"); }
@@ -459,6 +601,7 @@ export component MainShell inherits Window {
     prompt-accepted(text) => {
         root.prompt-result = text;
         root.overlay = 0;
+        root.prompt-confirmed(text);
     }
 
     prompt-dismissed() => {
@@ -479,7 +622,11 @@ export component MainShell inherits Window {
     }
 
     handle-key(key) => {
-        if (key == "Escape") {
+        if (root.track-menu-open) {
+            root.menu-key(key);
+            return true;
+        }
+        if (key == "Escape" || key == Key.Escape) {
             if (root.player-dialog != 0) {
                 root.player-dialog = 0;
                 root.player-dialog-dismissed();
@@ -752,6 +899,8 @@ export component MainShell inherits Window {
                 lib-history-cleared() => { root.lib-history-cleared(); }
                 lib-year-prev() => { root.lib-year-prev(); }
                 lib-year-next() => { root.lib-year-next(); }
+                lib-new-playlist() => { root.lib-new-playlist(); }
+                track-menu-requested(req) => { root.track-menu-requested(req); }
                 dl-pause(id) => { root.dl-pause(id); }
                 dl-resume(id) => { root.dl-resume(id); }
                 dl-cancel(id) => { root.dl-cancel(id); }
@@ -934,6 +1083,19 @@ export component MainShell inherits Window {
         seek-to(ms) => { root.seek-to-requested(ms); }
         panel-selected(p) => { root.player-panel = p; }
         info-clicked => { root.player-dialog = 5; root.player-dialog-requested(5); }
+        menu-clicked(x, y) => {
+            if (root.has-track) {
+                root.track-menu-requested({
+                    id: root.track-key(),
+                    title: root.track-title,
+                    artist: root.track-artist,
+                    album: root.track-album,
+                    duration-secs: Math.floor(root.duration-ms / 1000),
+                    anchor-x: x,
+                    anchor-y: y,
+                });
+            }
+        }
         sleep-clicked => { root.player-dialog = 1; root.player-dialog-requested(1); }
         tempo-clicked => { root.player-dialog = 2; root.player-dialog-requested(2); }
         eq-clicked => { root.player-dialog = 3; root.player-dialog-requested(3); }
@@ -965,6 +1127,17 @@ export component MainShell inherits Window {
         tab-selected(t) => { root.queue-tab-selected(t); }
         row-play(i) => { root.queue-play-requested(i); }
         row-remove(i) => { root.queue-remove-requested(i); }
+        row-menu(row, x, y) => {
+            root.track-menu-requested({
+                id: row.key,
+                title: row.title,
+                artist: row.artist,
+                album: row.album,
+                duration-secs: 0,
+                anchor-x: x,
+                anchor-y: y,
+            });
+        }
         drag-start(i, y) => { root.drag-start(i, y); }
         drag-move(y) => { root.drag-move(y); }
         drag-end => { root.drag-end(); }
@@ -1035,5 +1208,22 @@ export component MainShell inherits Window {
         origin: root.stream-origin;
         resolution: root.stream-resolution;
         dismissed => { root.player-dialog = 0; root.player-dialog-dismissed(); }
+    }
+
+    track-menu := TrackMenu {
+        width: 100%;
+        height: 100%;
+        palette: root.palette;
+        open: root.track-menu-open;
+        track: root.track-menu-track;
+        liked: root.track-menu-liked;
+        download-state: root.track-menu-download-state;
+        download-progress: root.track-menu-download-progress;
+        playlists: root.track-menu-playlists;
+        view <=> root.track-menu-view;
+        selected <=> root.track-menu-index;
+        activated(action, arg) => { root.menu-command(action, arg); }
+        closed => { root.menu-close(); }
+        key-command(key) => { return root.menu-key(key); }
     }
 }

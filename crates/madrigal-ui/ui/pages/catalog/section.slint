@@ -1,6 +1,7 @@
 import { Palette, Type } from "../../tokens.slint";
 import { M3Card } from "../../components/cards.slint";
 import { M3ListItem } from "../../components/rows.slint";
+import { TrackMenuRequest } from "../../components/menu.slint";
 import { CatalogItem, CatalogSection, DetailRef } from "refs.slint";
 
 export component SectionView inherits VerticalLayout {
@@ -9,6 +10,7 @@ export component SectionView inherits VerticalLayout {
     in property<bool> cards: false;
     callback detail-requested(DetailRef);
     callback play-requested(CatalogItem);
+    callback track-menu-requested(TrackMenuRequest);
 
     spacing: 8px;
 
@@ -27,6 +29,7 @@ export component SectionView inherits VerticalLayout {
             subtitle: item.subtitle;
             duration: item.duration;
             cover: item.cover;
+            menu: true;
             row-bg: root.palette.surface-container-low;
             active-bg: root.palette.secondary-container;
             title-color: root.palette.on-surface;
@@ -40,6 +43,17 @@ export component SectionView inherits VerticalLayout {
                 } else {
                     root.detail-requested({ kind: item.kind, id: item.id, title: item.title });
                 }
+            }
+            menu-clicked(x, y) => {
+                root.track-menu-requested({
+                    id: item.id,
+                    title: item.title,
+                    artist: item.artist,
+                    album: item.album,
+                    duration-secs: item.duration-secs,
+                    anchor-x: x,
+                    anchor-y: y,
+                });
             }
         }
     }

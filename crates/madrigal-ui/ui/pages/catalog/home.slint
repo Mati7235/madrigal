@@ -2,6 +2,7 @@ import { Palette, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { M3Chip, M3Card } from "../../components/cards.slint";
 import { M3ListItem } from "../../components/rows.slint";
+import { TrackMenuRequest } from "../../components/menu.slint";
 import { CatalogItem, CatalogSection, DetailRef } from "refs.slint";
 import { SectionView } from "section.slint";
 
@@ -20,6 +21,7 @@ export component HomePage inherits Rectangle {
     callback chip-selected(int);
     callback detail-requested(DetailRef);
     callback play-requested(CatalogItem);
+    callback track-menu-requested(TrackMenuRequest);
 
     background: root.palette.surface;
     accessible-role: text;
@@ -121,6 +123,7 @@ export component HomePage inherits Rectangle {
                         subtitle: pick.subtitle;
                         duration: pick.duration;
                         cover: pick.cover;
+                        menu: true;
                         row-bg: root.palette.surface-container-low;
                         active-bg: root.palette.secondary-container;
                         title-color: root.palette.on-surface;
@@ -131,6 +134,17 @@ export component HomePage inherits Rectangle {
                         action => {
                             root.selected-item = i;
                             root.play-requested(pick);
+                        }
+                        menu-clicked(x, y) => {
+                            root.track-menu-requested({
+                                id: pick.id,
+                                title: pick.title,
+                                artist: pick.artist,
+                                album: pick.album,
+                                duration-secs: pick.duration-secs,
+                                anchor-x: x,
+                                anchor-y: y,
+                            });
                         }
                     }
                 }
@@ -143,6 +157,7 @@ export component HomePage inherits Rectangle {
                     section: sec;
                     cards: sec.items.length > 0 ? !sec.items[0].playable : false;
                     detail-requested(ref) => { root.detail-requested(ref); }
+                    track-menu-requested(req) => { root.track-menu-requested(req); }
                     play-requested(item) => {
                         root.selected-item = 20000 + s;
                         root.play-requested(item);
