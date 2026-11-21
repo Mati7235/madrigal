@@ -312,10 +312,11 @@ component PlayerConsole inherits VerticalLayout {
         full-play := M3IconButton {
             width: root.compact ? 48px : 56px;
             height: root.compact ? 48px : 56px;
-            icon: root.paused ? Icons.play : Icons.pause;
+            icon: root.has-track && !root.paused ? Icons.pause : Icons.play;
             icon-size: 28px;
+            enabled: root.has-track;
             icon-color: root.palette.on-primary;
-            selected: !root.paused;
+            selected: root.has-track && !root.paused;
             fill: root.palette.primary;
             content: root.palette.on-primary;
             state-on-surface: root.palette.on-surface;

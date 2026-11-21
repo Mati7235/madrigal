@@ -298,10 +298,11 @@ export component NowPlayingBar inherits Rectangle {
                 VerticalLayout {
                     alignment: center;
                     bar-play := M3IconButton {
-                        icon: root.paused ? Icons.play : Icons.pause;
+                        icon: root.has-track && !root.paused ? Icons.pause : Icons.play;
                         icon-size: 20px;
+                        enabled: root.has-track;
                         icon-color: root.paused ? root.palette.on-surface-variant : root.palette.on-primary;
-                        selected: !root.paused;
+                        selected: root.has-track && !root.paused;
                         fill: root.palette.primary;
                         content: root.paused ? root.palette.on-surface-variant : root.palette.on-primary;
                         state-on-surface: root.palette.on-surface;
