@@ -258,18 +258,15 @@ fn run_worker(
                         outcome,
                     }),
             ),
-            Request::SearchMixed { id, query } => settle(
-                slot,
-                id,
-                search_mixed(source.as_mut(), &query).map(|(songs, artists, albums)| {
-                    CatalogEvent::SearchMixed {
-                        request_id: id,
-                        songs,
-                        artists,
-                        albums,
-                    }
-                }),
-            ),
+            Request::SearchMixed { id, query } => {
+                let (songs, artists, albums) = search_mixed(source.as_mut(), &query);
+                CatalogEvent::SearchMixed {
+                    request_id: id,
+                    songs,
+                    artists,
+                    albums,
+                }
+            }
             Request::Explore { id, country } => settle(
                 slot,
                 id,
@@ -297,23 +294,20 @@ fn run_worker(
 
 type MixedSearch = (Vec<Track>, Vec<Artist>, Vec<Album>);
 
-fn search_mixed(
-    source: &mut (dyn CatalogSource + Send),
-    query: &str,
-) -> Result<MixedSearch, InnertubeError> {
-    let songs = match source.search(query, SearchFilter::Songs)? {
-        SearchOutcome::Songs(songs) => songs,
+fn search_mixed(source: &mut (dyn CatalogSource + Send), query: &str) -> MixedSearch {
+    let songs = match source.search(query, SearchFilter::Songs) {
+        Ok(SearchOutcome::Songs(songs)) => songs,
         _ => Vec::new(),
     };
-    let artists = match source.search(query, SearchFilter::Artists)? {
-        SearchOutcome::Artists(artists) => artists,
+    let artists = match source.search(query, SearchFilter::Artists) {
+        Ok(SearchOutcome::Artists(artists)) => artists,
         _ => Vec::new(),
     };
-    let albums = match source.search(query, SearchFilter::Albums)? {
-        SearchOutcome::Albums(albums) => albums,
+    let albums = match source.search(query, SearchFilter::Albums) {
+        Ok(SearchOutcome::Albums(albums)) => albums,
         _ => Vec::new(),
     };
-    Ok((songs, artists, albums))
+    (songs, artists, albums)
 }
 
 fn lock(home: &HomeSlot) -> MutexGuard<'_, Option<HomeFeed>> {
