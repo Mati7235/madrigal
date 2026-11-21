@@ -4,8 +4,8 @@ use madrigal_ui::{
     apply_suggestions, begin_detail_load, close_detail, dispatch_key, is_detail_open,
     load_album_fixture, load_artist_fixture, load_browse_fixture, load_explore_fixtures,
     load_home_fixture, load_playlist_fixture, load_search_fixture, load_suggestions_fixture,
-    playlist_item, set_shell_lang, subscriber_label, wire_shell_i18n, DetailKind, DetailRef,
-    MainShell,
+    mixed_results, playlist_item, set_shell_lang, subscriber_label, wire_shell_i18n, DetailKind,
+    DetailRef, MainShell, MIXED_PER_KIND,
 };
 use slint::{ComponentHandle, Model, VecModel};
 use std::cell::RefCell;
@@ -375,6 +375,15 @@ fn ui_catalog() {
     click_nth(&shell, "M3SearchBar::search-clear", 0);
     assert_eq!(shell.get_search_query().as_str(), "");
     assert_eq!(queries.borrow().last().map(String::as_str), Some(""));
+
+    let mixed = mixed_results(
+        &madrigal_innertube::CatalogClient::parse_search_songs(&songs_src).unwrap(),
+        &madrigal_innertube::CatalogClient::parse_search_artists(&artists_src).unwrap(),
+        &madrigal_innertube::CatalogClient::parse_search_albums(&albums_src).unwrap(),
+    );
+    assert_eq!(mixed.len(), MIXED_PER_KIND * 3);
+    assert_eq!(mixed[0].kind, DetailKind::Artist);
+    assert_eq!(mixed[MIXED_PER_KIND].kind, DetailKind::Album);
 
     click_nth(&shell, "SearchPage::source-chip", 0);
     assert_eq!(shell.get_search_source(), 0);

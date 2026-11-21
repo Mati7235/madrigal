@@ -245,6 +245,16 @@ pub fn artist_results(artists: &[Artist]) -> Vec<CatalogItem> {
     artists.iter().map(artist_item).collect()
 }
 
+pub const MIXED_PER_KIND: usize = 8;
+
+pub fn mixed_results(songs: &[Track], artists: &[Artist], albums: &[Album]) -> Vec<CatalogItem> {
+    let mut items = Vec::new();
+    items.extend(artists.iter().take(MIXED_PER_KIND).map(artist_item));
+    items.extend(albums.iter().take(MIXED_PER_KIND).map(album_item));
+    items.extend(songs.iter().take(MIXED_PER_KIND).map(track_item));
+    items
+}
+
 pub fn album_results(albums: &[Album]) -> Vec<CatalogItem> {
     albums.iter().map(album_item).collect()
 }

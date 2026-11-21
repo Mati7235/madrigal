@@ -22,8 +22,8 @@ pub use pages_catalog::{
     apply_search_results, apply_suggestions, artist_results, begin_detail_load, episode_item,
     home_chips, home_sections, load_album_fixture, load_artist_fixture, load_browse_fixture,
     load_explore_fixtures, load_home_fixture, load_playlist_fixture, load_search_fixture,
-    load_suggestions_fixture, playlist_item, quick_pick_items, song_results, subscriber_label,
-    track_item, CatalogResult,
+    load_suggestions_fixture, mixed_results, playlist_item, quick_pick_items, song_results,
+    subscriber_label, track_item, CatalogResult, MIXED_PER_KIND,
 };
 
 pub use pages_library::{

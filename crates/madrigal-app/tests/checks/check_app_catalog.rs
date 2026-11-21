@@ -208,9 +208,17 @@ fn app_catalog() {
     for _ in 0..2 {
         apply(next_event(&rx));
     }
-    assert_eq!(shell.get_search_results().row_count(), 20, "songs");
+    assert_eq!(shell.get_search_results().row_count(), 24, "mixed results");
     assert_eq!(
         shell.get_search_results().row_data(0).unwrap().title.as_str(),
+        "The Beatles"
+    );
+    assert_eq!(
+        shell.get_search_results().row_data(8).unwrap().title.as_str(),
+        "Rubber Soul (Remastered 2009)"
+    );
+    assert_eq!(
+        shell.get_search_results().row_data(16).unwrap().title.as_str(),
         "Tomorrow Never Knows (Mono)"
     );
     assert_eq!(

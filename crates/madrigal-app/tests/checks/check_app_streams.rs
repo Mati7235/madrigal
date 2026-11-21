@@ -395,7 +395,11 @@ fn part_catalog_play(shell: &MainShell, streams: Orchestrator, tracks: &[Track],
     while shell.get_search_results().row_count() == 0 {
         apply(rx.recv_timeout(WAIT).expect("catalog event"));
     }
-    let item = shell.get_search_results().row_data(0).expect("first song");
+    let results = shell.get_search_results();
+    let item = (0..results.row_count())
+        .filter_map(|index| results.row_data(index))
+        .find(|item| item.playable)
+        .expect("first song");
     assert_eq!(item.title.as_str(), TITLE);
     let target = playable_track(&item).expect("song is playable");
     assert_eq!(target.identity, tracks[0].identity);

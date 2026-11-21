@@ -132,6 +132,12 @@ pub enum CatalogEvent {
         request_id: u64,
         outcome: SearchOutcome,
     },
+    SearchMixed {
+        request_id: u64,
+        songs: Vec<Track>,
+        artists: Vec<Artist>,
+        albums: Vec<Album>,
+    },
     Explore {
         request_id: u64,
         pages: ExplorePages,
@@ -161,6 +167,10 @@ enum Request {
         query: String,
         filter: SearchFilter,
     },
+    SearchMixed {
+        id: u64,
+        query: String,
+    },
     Explore {
         id: u64,
         country: String,
@@ -179,7 +189,9 @@ impl Request {
         match self {
             Request::Home { id } => Some((CatalogSlot::Home, *id)),
             Request::Suggestions { id, .. } => Some((CatalogSlot::Suggestions, *id)),
-            Request::Search { id, .. } => Some((CatalogSlot::Search, *id)),
+            Request::Search { id, .. } | Request::SearchMixed { id, .. } => {
+                Some((CatalogSlot::Search, *id))
+            }
             Request::Explore { id, .. } => Some((CatalogSlot::Explore, *id)),
             Request::Detail { id, .. } => Some((CatalogSlot::Detail, *id)),
             Request::SetSession { .. } => None,
@@ -246,6 +258,18 @@ fn run_worker(
                         outcome,
                     }),
             ),
+            Request::SearchMixed { id, query } => settle(
+                slot,
+                id,
+                search_mixed(source.as_mut(), &query).map(|(songs, artists, albums)| {
+                    CatalogEvent::SearchMixed {
+                        request_id: id,
+                        songs,
+                        artists,
+                        albums,
+                    }
+                }),
+            ),
             Request::Explore { id, country } => settle(
                 slot,
                 id,
@@ -269,6 +293,27 @@ fn run_worker(
         };
         delivery(event);
     }
+}
+
+type MixedSearch = (Vec<Track>, Vec<Artist>, Vec<Album>);
+
+fn search_mixed(
+    source: &mut (dyn CatalogSource + Send),
+    query: &str,
+) -> Result<MixedSearch, InnertubeError> {
+    let songs = match source.search(query, SearchFilter::Songs)? {
+        SearchOutcome::Songs(songs) => songs,
+        _ => Vec::new(),
+    };
+    let artists = match source.search(query, SearchFilter::Artists)? {
+        SearchOutcome::Artists(artists) => artists,
+        _ => Vec::new(),
+    };
+    let albums = match source.search(query, SearchFilter::Albums)? {
+        SearchOutcome::Albums(albums) => albums,
+        _ => Vec::new(),
+    };
+    Ok((songs, artists, albums))
 }
 
 fn lock(home: &HomeSlot) -> MutexGuard<'_, Option<HomeFeed>> {
@@ -325,6 +370,19 @@ pub fn apply_catalog_event(
                 SearchOutcome::Albums(albums) => {
                     apply_search_results(shell, album_results(&albums));
                 }
+            }
+        }
+        CatalogEvent::SearchMixed {
+            request_id,
+            songs,
+            artists,
+            albums,
+        } => {
+            if generations.is_current(CatalogSlot::Search, request_id) {
+                apply_search_results(
+                    shell,
+                    madrigal_ui::mixed_results(&songs, &artists, &albums),
+                );
             }
         }
         CatalogEvent::Explore { request_id, pages } => {
@@ -398,8 +456,16 @@ impl Link {
 
     fn filtered_search(&self, shell: &MainShell, tab: i32, query: &str) {
         let id = self.generations.begin(CatalogSlot::Search);
+        let online = !query.is_empty() && shell.get_search_source() == SOURCE_ONLINE;
+        if tab == 0 && online {
+            self.send(Request::SearchMixed {
+                id,
+                query: query.to_owned(),
+            });
+            return;
+        }
         match filter_for_tab(tab) {
-            Some(filter) if !query.is_empty() && shell.get_search_source() == SOURCE_ONLINE => {
+            Some(filter) if online => {
                 self.send(Request::Search {
                     id,
                     query: query.to_owned(),
