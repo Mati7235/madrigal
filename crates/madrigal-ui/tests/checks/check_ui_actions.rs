@@ -199,6 +199,8 @@ fn ui_actions() {
     queue_row.mock_single_click(slint::platform::PointerEventButton::Right);
     assert!(shell.get_track_menu_open());
     assert_eq!(shell.get_track_menu_track().id.as_str(), "beat1");
+    let queue_shot = snapshot_dir.join("queue-actions.png");
+    kit::snapshot_to(shell.window(), &queue_shot).unwrap();
     kit::click_by_id(&shell, "TrackMenu::menu-scrim").unwrap();
     kit::click_by_id(&shell, "QueueDrawer::row-menu-button").unwrap();
     assert!(shell.get_track_menu_open());
