@@ -198,7 +198,7 @@ export component LibraryPage inherits Rectangle {
                         accessible-label: I18n.trl(I18n.lang, "library.tags.title");
                         accessible-role: button;
                         mouse-cursor: pointer;
-                        clicked => { root.tags-opened(); }
+                        clicked => { tags-focus.focus(); root.tags-opened(); }
                     }
                 }
             }
@@ -232,7 +232,7 @@ export component LibraryPage inherits Rectangle {
                     content: root.palette.on-surface;
                     line: root.palette.outline-variant;
                     state-on-surface: root.palette.on-surface;
-                    clicked => { root.sort-opened(); }
+                    clicked => { sort-focus.focus(); root.sort-opened(); }
                 }
 
                 multi-touch := M3Button {
