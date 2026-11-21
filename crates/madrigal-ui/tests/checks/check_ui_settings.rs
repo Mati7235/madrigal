@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::collections::HashSet;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -324,8 +325,26 @@ fn ui_settings() {
                 let advanced = scroll_until_found(&shell, "SectionView::acct-advanced");
                 kit::click(&advanced[0]);
                 kit::mock_advance(Duration::from_millis(50));
-                assert_eq!(handles(&shell, "SectionView::acct-manual").len(), 1);
+                let manual = scroll_until_found(&shell, "SectionView::acct-manual");
+                assert_eq!(manual.len(), 1);
                 assert_eq!(handles(&shell, "SectionView::acct-manual-apply").len(), 1);
+                let shot = kit::snapshot_dir(tmp.path()).join("settings-manual-cookie.png");
+                kit::snapshot_to(shell.window(), &shot).unwrap();
+                let pixels = image::open(&shot).unwrap().to_rgba8();
+                let position = manual[0].absolute_position();
+                let colors: HashSet<[u8; 4]> = (16..216)
+                    .flat_map(|x| (16..44).map(move |y| (x, y)))
+                    .filter_map(|(x, y)| {
+                        let px = (position.x as u32).saturating_add(x);
+                        let py = (position.y as u32).saturating_add(y);
+                        (py < pixels.height() && px < pixels.width())
+                            .then(|| pixels.get_pixel(px, py).0)
+                    })
+                    .collect();
+                assert!(
+                    colors.len() > 2,
+                    "manual cookie field has no visible label: {colors:?}"
+                );
                 state.borrow_mut().set_account_connected("Nombre", "nombre@example.com");
                 madrigal_ui::refresh_settings(&shell, &state.borrow());
                 assert!(shell.get_settings_account_connected());
