@@ -50,6 +50,8 @@ fn main() -> ExitCode {
             return ExitCode::from(1);
         }
     };
+    let _ = slint::BackendSelector::new().select();
+    let _ = slint::set_xdg_app_id("madrigal");
     let app = match AppState::boot() {
         Ok(app) => app,
         Err(err) => {
