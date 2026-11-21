@@ -17,4 +17,7 @@ all = "warn"
 lto = "thin"
 
 [profile.dev]
-debug = 1
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
