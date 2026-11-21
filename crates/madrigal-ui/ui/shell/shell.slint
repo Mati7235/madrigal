@@ -1018,7 +1018,10 @@ export component MainShell inherits Window {
         like-clicked => { root.like-toggled(); }
         queue-clicked => { root.queue-open = true; root.queue-opened(); }
         seek-requested(ms) => { root.seek-to-requested(ms); }
-        volume-changed(v) => { root.volume-changed(v); }
+        volume-changed(v) => {
+            root.volume = clamp(v, 0, 1);
+            root.volume-changed(root.volume);
+        }
         expand-clicked => { root.full-player-opened(); }
     }
 
@@ -1102,7 +1105,10 @@ export component MainShell inherits Window {
         like-clicked => { root.like-toggled(); }
         shuffle-clicked => { root.shuffle-toggled(); }
         repeat-clicked => { root.repeat-toggled(); }
-        volume-changed(v) => { root.volume-changed(v); }
+        volume-changed(v) => {
+            root.volume = clamp(v, 0, 1);
+            root.volume-changed(root.volume);
+        }
         seek-to(ms) => { root.seek-to-requested(ms); }
         panel-selected(p) => { root.player-panel = p; }
         info-clicked => { root.player-dialog = 5; root.player-dialog-requested(5); }

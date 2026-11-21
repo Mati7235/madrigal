@@ -236,7 +236,7 @@ export component NowPlayingBar inherits Rectangle {
 
                 property<length> vbar-w: self.width - 16px;
 
-                Rectangle {
+                bar-vol-track := Rectangle {
                     x: 8px;
                     y: (parent.height - 4px) / 2;
                     width: parent.vbar-w;
@@ -245,7 +245,7 @@ export component NowPlayingBar inherits Rectangle {
                     background: root.palette.surface-container-highest;
                 }
 
-                Rectangle {
+                bar-vol-fill := Rectangle {
                     x: 8px;
                     y: (parent.height - 4px) / 2;
                     width: parent.vbar-w * clamp(root.volume, 0, 1);

@@ -276,4 +276,39 @@ fn ui_shell() {
         text: slint::platform::Key::Return.into(),
     });
     assert_eq!(shell.get_search_source(), 0, "Return activates the focused chip");
+
+    shell.set_page(0);
+    kit::resize(&shell, 1920.0, 1080.0);
+    shell.set_full_player_open(true);
+    kit::mock_advance(Duration::from_millis(50));
+    let bar_track = kit::find_by_id(&shell, "NowPlayingBar::bar-vol-track").unwrap();
+    let bar_fill = kit::find_by_id(&shell, "NowPlayingBar::bar-vol-fill").unwrap();
+    let full_track = kit::find_by_id(&shell, "PlayerConsole::vol-track").unwrap();
+    let full_fill = kit::find_by_id(&shell, "PlayerConsole::vol-fill").unwrap();
+    let bar_touch = kit::find_by_id(&shell, "NowPlayingBar::bar-vol-touch").unwrap();
+    let start = bar_touch.absolute_position();
+    let size = bar_touch.size();
+    bar_touch.mock_drag(
+        slint::LogicalPosition::new(start.x + size.width * 0.3, start.y + size.height / 2.0),
+        slint::platform::PointerEventButton::Left,
+    );
+    let bar_volume = shell.get_volume();
+    assert!((bar_volume - 0.7).abs() > 0.05, "bar volume did not move");
+    assert!((bar_fill.size().width / bar_track.size().width - bar_volume).abs() < 0.02);
+    assert!((full_fill.size().width / full_track.size().width - bar_volume).abs() < 0.02);
+
+    let full_touch = kit::find_by_id(&shell, "PlayerConsole::vol-touch").unwrap();
+    let start = full_touch.absolute_position();
+    let size = full_touch.size();
+    full_touch.mock_drag(
+        slint::LogicalPosition::new(
+            start.x + 16.0 + (size.width - 32.0) * 0.2,
+            start.y + size.height / 2.0,
+        ),
+        slint::platform::PointerEventButton::Left,
+    );
+    let full_volume = shell.get_volume();
+    assert!((full_volume - 0.2).abs() < 0.05, "full player volume did not move");
+    assert!((full_fill.size().width / full_track.size().width - full_volume).abs() < 0.02);
+    assert!((bar_fill.size().width / bar_track.size().width - full_volume).abs() < 0.02);
 }
