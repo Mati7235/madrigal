@@ -68,10 +68,20 @@ pub fn background_from_appearance(appearance: &madrigal_settings::Appearance) ->
 
 #[derive(Clone, Debug, Default)]
 pub struct QueueRowData {
+    pub key: String,
     pub title: String,
     pub artist: String,
+    pub album: String,
     pub current: bool,
     pub thumbnail: String,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct QueueMeta {
+    pub title: String,
+    pub artist: String,
+    pub album: String,
+    pub thumbnail: Option<String>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -83,16 +93,35 @@ pub struct QueueTabData {
 }
 
 pub fn queue_tabs_from_queue(queue: &madrigal_player::queue::Queue, query: &str) -> QueueTabData {
+    queue_tabs_annotated(queue, query, &std::collections::HashMap::new())
+}
+
+pub fn queue_tabs_annotated(
+    queue: &madrigal_player::queue::Queue,
+    query: &str,
+    meta: &std::collections::HashMap<String, QueueMeta>,
+) -> QueueTabData {
     let current = queue.current_index();
     let all: Vec<QueueRowData> = queue
         .items()
         .iter()
         .enumerate()
-        .map(|(index, item)| QueueRowData {
-            title: item.id.clone(),
-            artist: String::new(),
-            current: Some(index) == current,
-            thumbnail: String::new(),
+        .map(|(index, item)| {
+            let key = item.to_storage_string();
+            let info = meta.get(&key);
+            QueueRowData {
+                title: info
+                    .map(|info| info.title.clone())
+                    .filter(|title| !title.is_empty())
+                    .unwrap_or_else(|| item.id.clone()),
+                artist: info.map(|info| info.artist.clone()).unwrap_or_default(),
+                album: info.map(|info| info.album.clone()).unwrap_or_default(),
+                key,
+                current: Some(index) == current,
+                thumbnail: info
+                    .and_then(|info| info.thumbnail.clone())
+                    .unwrap_or_default(),
+            }
         })
         .collect();
     let searched = all
@@ -109,8 +138,10 @@ pub fn queue_tabs_from_queue(queue: &madrigal_player::queue::Queue, query: &str)
 
 fn to_model(rows: &[QueueRowData]) -> ModelRc<QueueRow> {
     ModelRc::new(Rc::new(VecModel::from_slice(rows.iter().map(|row| QueueRow {
+        key: row.key.clone().into(),
         title: row.title.clone().into(),
         artist: row.artist.clone().into(),
+        album: row.album.clone().into(),
         current: row.current,
         thumbnail: row.thumbnail.clone().into(),
         cover: Default::default(),

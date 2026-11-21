@@ -15,7 +15,7 @@ use madrigal_player::stream_info::{StreamInfo, StreamMeta, StreamOrigin};
 use madrigal_settings::Player as PlayerConfig;
 use madrigal_settings::{RepeatMode, TransitionMode};
 use madrigal_streams::Orchestrator;
-use madrigal_ui::{queue_tabs_from_queue, QueueTabData};
+use madrigal_ui::QueueTabData;
 
 pub const POLL_INTERVAL: Duration = Duration::from_millis(100);
 
@@ -232,6 +232,37 @@ impl Playback {
             .insert(track.identity.id.clone(), TrackMeta::from(track));
         self.revision = self.revision.wrapping_add(1);
         self.play_index(start)
+    }
+
+    pub fn enqueue_track_next(&mut self, track: &Track) -> Result<(), String> {
+        let at = {
+            let queue = self.player.queue();
+            queue
+                .current_index()
+                .map(|index| index + 1)
+                .unwrap_or_else(|| queue.len())
+        };
+        let empty = self.player.queue().current().is_none();
+        if !self.player.queue_mut().insert(at, track.identity.clone()) {
+            return Err("queue is locked".to_owned());
+        }
+        self.meta
+            .insert(track.identity.id.clone(), TrackMeta::from(track));
+        self.revision = self.revision.wrapping_add(1);
+        if empty {
+            self.play_index(at)?;
+        }
+        Ok(())
+    }
+
+    pub fn enqueue_track_end(&mut self, track: &Track) -> Result<(), String> {
+        if !self.player.queue_mut().push(track.identity.clone()) {
+            return Err("queue is locked".to_owned());
+        }
+        self.meta
+            .insert(track.identity.id.clone(), TrackMeta::from(track));
+        self.revision = self.revision.wrapping_add(1);
+        Ok(())
     }
 
     pub fn play_index(&mut self, index: usize) -> Result<(), String> {
@@ -462,6 +493,22 @@ impl Playback {
         let track_source = current
             .map(|track| track.source)
             .unwrap_or(TrackSource::Local);
+        let queue_meta: HashMap<String, madrigal_ui::QueueMeta> = queue
+            .items()
+            .iter()
+            .filter_map(|identity| {
+                let meta = self.meta.get(&identity.id)?;
+                Some((
+                    identity.to_storage_string(),
+                    madrigal_ui::QueueMeta {
+                        title: meta.title.clone(),
+                        artist: meta.artist.clone(),
+                        album: meta.album.clone(),
+                        thumbnail: meta.thumbnail.clone(),
+                    },
+                ))
+            })
+            .collect();
         let meta = self.meta.get(&track_id);
         let meta_duration = meta.and_then(|meta| meta.duration_secs);
         let duration_ms = self
@@ -472,20 +519,7 @@ impl Playback {
             .map(|secs| (secs * 1000.0).round().clamp(0.0, f64::from(i32::MAX)) as i32)
             .or_else(|| meta_duration.map(|secs| (secs as i32).saturating_mul(1000)))
             .unwrap_or(0);
-        let mut tabs = queue_tabs_from_queue(queue, "");
-        for row in tabs
-            .all
-            .iter_mut()
-            .chain(tabs.searched.iter_mut())
-            .chain(tabs.cont.iter_mut())
-            .chain(tabs.auto.iter_mut())
-        {
-            row.thumbnail = self
-                .meta
-                .get(row.title.as_str())
-                .and_then(|meta| meta.thumbnail.clone())
-                .unwrap_or_default();
-        }
+        let tabs = madrigal_ui::queue_tabs_annotated(queue, "", &queue_meta);
         let stream = current.and_then(|identity| {
             let origin = if identity.source == TrackSource::Local {
                 StreamOrigin::Local
