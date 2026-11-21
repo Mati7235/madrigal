@@ -632,6 +632,10 @@ fn ui_player() {
         kit::ElementHandle::find_by_element_id(&shell, "EqualizerDialog::eq-band").collect();
     assert_eq!(sliders.len(), 10);
     assert_eq!(sliders[0].accessible_label().unwrap().as_str(), "31 Hz · 0 dB");
+    assert_eq!(
+        kit::ElementHandle::find_by_element_id(&shell, "M3Slider::value-label").count(),
+        0
+    );
     assert!(!shell.get_eq_on());
     let presets: Vec<_> =
         kit::ElementHandle::find_by_element_id(&shell, "EqualizerDialog::eq-preset-touch").collect();

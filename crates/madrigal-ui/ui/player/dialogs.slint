@@ -323,6 +323,7 @@ export component EqualizerDialog inherits Rectangle {
                                 eq-band := M3Slider {
                                     horizontal-stretch: 1;
                                     height: 48px;
+                                    show-value: false;
                                     value: band-value;
                                     label: band-name + " · " + band-db-text;
                                     active-track: root.palette.primary;
