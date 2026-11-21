@@ -160,8 +160,11 @@ impl CatalogClient {
                     .await?
             }
             SearchFilter::Albums => {
-                self.raw_json(SearchQuery::new_filtered(query, AlbumsFilter))
-                    .await?
+                // ytmapi-rs parses the album type label in English only.
+                let mut locale = self.locale.clone();
+                locale.hl = "en".to_owned();
+                let query = SearchQuery::new_filtered(query, AlbumsFilter);
+                localized_json(&self.client, &self.token, &locale, &query).await?
             }
         };
         Self::parse_search(filter, &raw.to_string())
