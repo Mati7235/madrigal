@@ -8,6 +8,24 @@ export component SideNav inherits Rectangle {
     in property<bool> expanded: true;
     callback navigate(int);
 
+    out property<int> tip-item:
+        root.expanded ? -1
+        : nav-home.has-hover || home-focus.has-focus ? 0
+        : nav-search.has-hover || search-focus.has-focus ? 1
+        : nav-explore.has-hover || explore-focus.has-focus ? 2
+        : nav-library.has-hover || library-focus.has-focus ? 3
+        : nav-downloads.has-hover || downloads-focus.has-focus ? 4
+        : nav-settings.has-hover || settings-focus.has-focus ? 5
+        : -1;
+    out property<string> tip-text:
+        root.tip-item == 0 ? I18n.trl(I18n.lang, "nav.home")
+        : root.tip-item == 1 ? I18n.trl(I18n.lang, "explore.search")
+        : root.tip-item == 2 ? I18n.trl(I18n.lang, "nav.explore")
+        : root.tip-item == 3 ? I18n.trl(I18n.lang, "nav.lists")
+        : root.tip-item == 4 ? I18n.trl(I18n.lang, "nav.downloads")
+        : root.tip-item == 5 ? I18n.trl(I18n.lang, "settings.title")
+        : "";
+
     public function focus-current() {
         if (root.page == 0) {
             home-focus.focus();

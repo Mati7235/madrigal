@@ -224,15 +224,41 @@ fn ui_shell() {
         kit::find_by_id(&shell, "SideNav::home-focus-ring").is_ok(),
         "focused nav item has no ring"
     );
+    let tip = kit::find_by_id(&shell, "MainShell::nav-tip-label").unwrap();
+    assert_eq!(tip.accessible_label().unwrap().as_str(), "Inicio");
+    assert!(kit::find_by_id(&shell, "MainShell::nav-tip").is_ok());
+
     shell
         .window()
         .dispatch_event(slint::platform::WindowEvent::KeyPressed { text: "\t".into() });
     assert!(kit::find_by_id(&shell, "SideNav::home-focus-ring").is_err());
     assert!(kit::find_by_id(&shell, "SideNav::search-focus-ring").is_ok());
+    let tip = kit::find_by_id(&shell, "MainShell::nav-tip-label").unwrap();
+    assert_eq!(tip.accessible_label().unwrap().as_str(), "Buscar");
     shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
         text: slint::platform::Key::Return.into(),
     });
     assert_eq!(shell.get_page(), 1);
+
+    let home_touch = kit::find_by_id(&shell, "SideNav::nav-home").unwrap();
+    let home_pos = home_touch.absolute_position();
+    let home_size = home_touch.size();
+    shell
+        .window()
+        .dispatch_event(slint::platform::WindowEvent::PointerMoved {
+            position: slint::LogicalPosition::new(
+                home_pos.x + home_size.width / 2.0,
+                home_pos.y + home_size.height / 2.0,
+            ),
+        });
+    kit::mock_advance(Duration::from_millis(50));
+    let tip = kit::find_by_id(&shell, "MainShell::nav-tip-label").unwrap();
+    assert_eq!(tip.accessible_label().unwrap().as_str(), "Inicio");
+    shell
+        .window()
+        .dispatch_event(slint::platform::WindowEvent::PointerMoved {
+            position: slint::LogicalPosition::new(2.0, 2.0),
+        });
 
     shell.set_search_query("".into());
     let mut chip_focused = false;

@@ -759,6 +759,8 @@ export component MainShell inherits Window {
     property<bool> nav-expanded: root.width >= 1100px;
     property<bool> nowbar-compact: root.width < 840px;
     property<length> queue-width: root.width < 800px ? root.width : 380px;
+    property<bool> nav-tip-shown: !root.nav-expanded && nav.tip-item >= 0 && !root.full-player-open && !root.queue-open && root.overlay == 0 && root.player-dialog == 0;
+    property<length> nav-tip-y: 26px + nav.tip-item * 54px;
 
     out property<length> nowbar-width: nowbar.width;
     out property<length> nowbar-bottom: nowbar.y + nowbar.height;
@@ -1018,6 +1020,27 @@ export component MainShell inherits Window {
         seek-requested(ms) => { root.seek-to-requested(ms); }
         volume-changed(v) => { root.volume-changed(v); }
         expand-clicked => { root.full-player-opened(); }
+    }
+
+    if (root.nav-tip-shown) : nav-tip := Rectangle {
+        x: nav.width + 8px;
+        y: root.nav-tip-y;
+        width: nav-tip-label.preferred-width + 20px;
+        height: 28px;
+        border-radius: 8px;
+        background: root.palette.surface-container-highest;
+        border-width: 1px;
+        border-color: root.palette.outline-variant;
+        nav-tip-label := Text {
+            x: 10px;
+            y: 0px;
+            height: 100%;
+            text: nav.tip-text;
+            color: root.palette.on-surface;
+            font-size: Type.label-medium.size;
+            font-family: Type.label-medium.family;
+            vertical-alignment: center;
+        }
     }
 
     confirm-layer := ConfirmOverlay {
