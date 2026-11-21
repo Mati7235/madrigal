@@ -1,4 +1,4 @@
-import { Palette, Type } from "../../tokens.slint";
+import { Font, Palette, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { M3Button, M3IconButton } from "../../components/buttons.slint";
 import { M3Chip } from "../../components/cards.slint";
@@ -61,6 +61,7 @@ export component SectionView inherits Rectangle {
                             text: I18n.trl(I18n.lang, row.label);
                             color: root.palette.on-surface;
                             font-size: Type.body-medium.size;
+                            font-family: Font.title;
                             font-weight: Type.label-large.weight;
                         }
 
@@ -131,6 +132,7 @@ export component SectionView inherits Rectangle {
                                         text: I18n.trl(I18n.lang, "lyrics.provider." + prov);
                                         color: root.palette.on-surface;
                                         font-size: Type.body-medium.size;
+                                        font-family: Type.body-medium.family;
                                         height: 100%;
                                         horizontal-stretch: 1;
                                         vertical-alignment: center;
@@ -191,6 +193,7 @@ export component SectionView inherits Rectangle {
                                         text: I18n.trl(I18n.lang, row.label);
                                         color: root.palette.on-surface;
                                         font-size: Type.body-medium.size;
+                                        font-family: Font.title;
                                         font-weight: Type.label-large.weight;
                                         width: 100%;
                                         vertical-alignment: center;
@@ -311,6 +314,7 @@ export component SectionView inherits Rectangle {
                                             text: row.display;
                                             color: root.palette.on-surface-variant;
                                             font-size: Type.body-medium.size;
+                                            font-family: Type.body-medium.family;
                                             width: root.secret-width;
                                             height: 100%;
                                             horizontal-alignment: right;
@@ -373,6 +377,7 @@ export component SectionView inherits Rectangle {
                     text: I18n.trl(I18n.lang, "settings.lyricsProvidersHelp");
                     color: root.palette.on-surface-variant;
                     font-size: Type.body-small.size;
+                    font-family: Type.body-small.family;
                     width: 100%;
                     wrap: word-wrap;
                 }
@@ -381,6 +386,7 @@ export component SectionView inherits Rectangle {
                     text: I18n.trl(I18n.lang, "settings.lyricsYoutubeNote");
                     color: root.palette.on-surface-variant;
                     font-size: Type.body-small.size;
+                    font-family: Type.body-small.family;
                     width: 100%;
                     wrap: word-wrap;
                 }
@@ -393,6 +399,7 @@ export component SectionView inherits Rectangle {
                     text: root.po-ok ? I18n.trl(I18n.lang, "settings.potOk") : I18n.trl(I18n.lang, "settings.potMissing");
                     color: root.po-ok ? root.palette.primary : root.palette.error;
                     font-size: Type.body-medium.size;
+                    font-family: Type.body-medium.family;
                     width: 100%;
                     wrap: word-wrap;
                 }
@@ -429,6 +436,7 @@ export component SectionView inherits Rectangle {
                     text: root.test-result;
                     color: root.palette.on-surface-variant;
                     font-size: Type.body-medium.size;
+                    font-family: Type.body-medium.family;
                     width: 100%;
                     wrap: word-wrap;
                 }

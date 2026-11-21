@@ -1,4 +1,4 @@
-import { Palette, Shape, Type } from "../../tokens.slint";
+import { Font, Palette, Shape, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { M3IconButton, M3Button } from "../../components/buttons.slint";
 import { M3Chip } from "../../components/cards.slint";
@@ -62,6 +62,7 @@ export component DetailPage inherits Rectangle {
                         text: root.title;
                         color: root.palette.on-surface;
                         font-size: 26px;
+                        font-family: Font.title;
                         font-weight: 700;
                         wrap: word-wrap;
                     }
@@ -69,6 +70,7 @@ export component DetailPage inherits Rectangle {
                         text: root.subtitle;
                         color: root.palette.on-surface-variant;
                         font-size: 13px;
+                        font-family: Font.body;
                         font-weight: 400;
                         wrap: word-wrap;
                         visible: root.subtitle != "";
@@ -80,6 +82,7 @@ export component DetailPage inherits Rectangle {
                 text: root.description;
                 color: root.palette.on-surface-variant;
                 font-size: Type.body-medium.size;
+                font-family: Type.body-medium.family;
                 wrap: word-wrap;
                 visible: root.description != "";
             }
@@ -175,6 +178,7 @@ export component DetailPage inherits Rectangle {
                             text: album.title;
                             color: root.palette.on-surface;
                             font-size: Type.label-small.size;
+                            font-family: Type.label-small.family;
                             overflow: elide;
                         }
 
@@ -225,6 +229,7 @@ export component DetailPage inherits Rectangle {
                 text: I18n.trl(I18n.lang, "detail.empty");
                 color: root.palette.on-surface-variant;
                 font-size: Type.body-large.size;
+                font-family: Type.body-large.family;
                 horizontal-alignment: center;
                 visible: root.is-empty;
             }

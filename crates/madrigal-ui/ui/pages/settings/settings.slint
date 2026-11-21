@@ -73,6 +73,7 @@ export component SettingsPage inherits Rectangle {
                             text: I18n.trl(I18n.lang, title);
                             color: !root.show-diag && root.group == i ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                             font-size: Type.label-large.size;
+                            font-family: Type.label-large.family;
                             font-weight: Type.label-large.weight;
                             x: 16px;
                             width: parent.width - 32px;
@@ -99,6 +100,7 @@ export component SettingsPage inherits Rectangle {
                             text: I18n.trl(I18n.lang, "settings.diagnostics");
                             color: root.show-diag ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                             font-size: Type.label-large.size;
+                            font-family: Type.label-large.family;
                             font-weight: Type.label-large.weight;
                             x: 16px;
                             width: parent.width - 32px;
@@ -119,6 +121,7 @@ export component SettingsPage inherits Rectangle {
                 text: root.show-diag ? I18n.trl(I18n.lang, "settings.diagnostics") : I18n.trl(I18n.lang, root.group-titles[root.group]);
                 color: root.palette.on-surface;
                 font-size: Type.title-medium.size;
+                font-family: Type.title-medium.family;
                 font-weight: Type.title-medium.weight;
                 x: 16px;
                 y: 16px;

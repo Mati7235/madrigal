@@ -1,3 +1,6 @@
+import "fonts/Figtree.ttf";
+import "fonts/Inter-Variable.ttf";
+
 export struct Palette {
     background: color,
     error: color,
@@ -208,43 +211,49 @@ export global PureBlack {
     };
 }
 
+export global Font {
+    out property<string> title: "Figtree";
+    out property<string> body: "Inter";
+}
+
 export struct TypeStyle {
+    family: string,
     size: length,
     weight: int,
     tracking: length,
 }
 
 export global Type {
-    out property<TypeStyle> display-large: { size: 57px, weight: 400, tracking: -0.2px };
-    out property<TypeStyle> display-large-emphasized: { size: 57px, weight: 500, tracking: 0px };
-    out property<TypeStyle> display-medium: { size: 45px, weight: 400, tracking: 0px };
-    out property<TypeStyle> display-medium-emphasized: { size: 45px, weight: 500, tracking: 0px };
-    out property<TypeStyle> display-small: { size: 36px, weight: 400, tracking: 0px };
-    out property<TypeStyle> display-small-emphasized: { size: 36px, weight: 500, tracking: 0px };
-    out property<TypeStyle> headline-large: { size: 32px, weight: 400, tracking: 0px };
-    out property<TypeStyle> headline-large-emphasized: { size: 32px, weight: 500, tracking: 0px };
-    out property<TypeStyle> headline-medium: { size: 28px, weight: 400, tracking: 0px };
-    out property<TypeStyle> headline-medium-emphasized: { size: 28px, weight: 500, tracking: 0px };
-    out property<TypeStyle> headline-small: { size: 24px, weight: 400, tracking: 0px };
-    out property<TypeStyle> headline-small-emphasized: { size: 24px, weight: 500, tracking: 0px };
-    out property<TypeStyle> title-large: { size: 22px, weight: 400, tracking: 0px };
-    out property<TypeStyle> title-large-emphasized: { size: 22px, weight: 500, tracking: 0px };
-    out property<TypeStyle> title-medium: { size: 16px, weight: 500, tracking: 0.2px };
-    out property<TypeStyle> title-medium-emphasized: { size: 16px, weight: 700, tracking: 0.15px };
-    out property<TypeStyle> title-small: { size: 14px, weight: 500, tracking: 0.1px };
-    out property<TypeStyle> title-small-emphasized: { size: 14px, weight: 700, tracking: 0.1px };
-    out property<TypeStyle> body-large: { size: 16px, weight: 400, tracking: 0.5px };
-    out property<TypeStyle> body-large-emphasized: { size: 16px, weight: 500, tracking: 0.15px };
-    out property<TypeStyle> body-medium: { size: 14px, weight: 400, tracking: 0.2px };
-    out property<TypeStyle> body-medium-emphasized: { size: 14px, weight: 500, tracking: 0.25px };
-    out property<TypeStyle> body-small: { size: 12px, weight: 400, tracking: 0.4px };
-    out property<TypeStyle> body-small-emphasized: { size: 12px, weight: 500, tracking: 0.4px };
-    out property<TypeStyle> label-large: { size: 14px, weight: 500, tracking: 0.1px };
-    out property<TypeStyle> label-large-emphasized: { size: 14px, weight: 700, tracking: 0.1px };
-    out property<TypeStyle> label-medium: { size: 12px, weight: 500, tracking: 0.5px };
-    out property<TypeStyle> label-medium-emphasized: { size: 12px, weight: 700, tracking: 0.5px };
-    out property<TypeStyle> label-small: { size: 11px, weight: 500, tracking: 0.5px };
-    out property<TypeStyle> label-small-emphasized: { size: 11px, weight: 700, tracking: 0.5px };
+    out property<TypeStyle> display-large: { family: Font.title, size: 57px, weight: 400, tracking: -0.2px };
+    out property<TypeStyle> display-large-emphasized: { family: Font.title, size: 57px, weight: 500, tracking: 0px };
+    out property<TypeStyle> display-medium: { family: Font.title, size: 45px, weight: 400, tracking: 0px };
+    out property<TypeStyle> display-medium-emphasized: { family: Font.title, size: 45px, weight: 500, tracking: 0px };
+    out property<TypeStyle> display-small: { family: Font.title, size: 36px, weight: 400, tracking: 0px };
+    out property<TypeStyle> display-small-emphasized: { family: Font.title, size: 36px, weight: 500, tracking: 0px };
+    out property<TypeStyle> headline-large: { family: Font.title, size: 32px, weight: 400, tracking: 0px };
+    out property<TypeStyle> headline-large-emphasized: { family: Font.title, size: 32px, weight: 500, tracking: 0px };
+    out property<TypeStyle> headline-medium: { family: Font.title, size: 28px, weight: 400, tracking: 0px };
+    out property<TypeStyle> headline-medium-emphasized: { family: Font.title, size: 28px, weight: 500, tracking: 0px };
+    out property<TypeStyle> headline-small: { family: Font.title, size: 24px, weight: 400, tracking: 0px };
+    out property<TypeStyle> headline-small-emphasized: { family: Font.title, size: 24px, weight: 500, tracking: 0px };
+    out property<TypeStyle> title-large: { family: Font.title, size: 22px, weight: 400, tracking: 0px };
+    out property<TypeStyle> title-large-emphasized: { family: Font.title, size: 22px, weight: 500, tracking: 0px };
+    out property<TypeStyle> title-medium: { family: Font.title, size: 16px, weight: 500, tracking: 0.2px };
+    out property<TypeStyle> title-medium-emphasized: { family: Font.title, size: 16px, weight: 700, tracking: 0.15px };
+    out property<TypeStyle> title-small: { family: Font.title, size: 14px, weight: 500, tracking: 0.1px };
+    out property<TypeStyle> title-small-emphasized: { family: Font.title, size: 14px, weight: 700, tracking: 0.1px };
+    out property<TypeStyle> body-large: { family: Font.body, size: 16px, weight: 400, tracking: 0.5px };
+    out property<TypeStyle> body-large-emphasized: { family: Font.body, size: 16px, weight: 500, tracking: 0.15px };
+    out property<TypeStyle> body-medium: { family: Font.body, size: 14px, weight: 400, tracking: 0.2px };
+    out property<TypeStyle> body-medium-emphasized: { family: Font.body, size: 14px, weight: 500, tracking: 0.25px };
+    out property<TypeStyle> body-small: { family: Font.body, size: 12px, weight: 400, tracking: 0.4px };
+    out property<TypeStyle> body-small-emphasized: { family: Font.body, size: 12px, weight: 500, tracking: 0.4px };
+    out property<TypeStyle> label-large: { family: Font.title, size: 14px, weight: 500, tracking: 0.1px };
+    out property<TypeStyle> label-large-emphasized: { family: Font.title, size: 14px, weight: 700, tracking: 0.1px };
+    out property<TypeStyle> label-medium: { family: Font.title, size: 12px, weight: 500, tracking: 0.5px };
+    out property<TypeStyle> label-medium-emphasized: { family: Font.title, size: 12px, weight: 700, tracking: 0.5px };
+    out property<TypeStyle> label-small: { family: Font.body, size: 11px, weight: 500, tracking: 0.5px };
+    out property<TypeStyle> label-small-emphasized: { family: Font.body, size: 11px, weight: 700, tracking: 0.5px };
 }
 
 export global Shape {

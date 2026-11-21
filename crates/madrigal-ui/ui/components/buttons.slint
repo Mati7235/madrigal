@@ -3,6 +3,7 @@ import { Icon } from "icons.slint";
 
 export component M3Button inherits Rectangle {
     in property<string> text;
+    in property<string> accessible-text: "";
     in property<string> size: "small";
     in property<bool> enabled: true;
     in property<bool> focus-visible: false;
@@ -12,7 +13,7 @@ export component M3Button inherits Rectangle {
     in property<color> state-on-surface;
     callback clicked();
 
-    accessible-label: text;
+    accessible-label: root.accessible-text == "" ? text : root.accessible-text;
     accessible-role: AccessibleRole.button;
 
     property<bool> small: root.size == "small";
@@ -49,6 +50,7 @@ export component M3Button inherits Rectangle {
         text: root.text;
         color: root.enabled ? root.content : root.state-on-surface.with-alpha(0.38);
         font-size: Type.label-large.size;
+        font-family: Type.label-large.family;
         font-weight: Type.label-large.weight;
         letter-spacing: Type.label-large.tracking;
         horizontal-alignment: center;

@@ -52,6 +52,7 @@ export component DownloadsPage inherits Rectangle {
                 text: I18n.trl(I18n.lang, "nav.downloads");
                 color: root.palette.on-surface;
                 font-size: Type.headline-small.size;
+                font-family: Type.headline-small.family;
                 font-weight: Type.headline-small.weight;
                 vertical-alignment: center;
             }
@@ -60,6 +61,7 @@ export component DownloadsPage inherits Rectangle {
                 text: "" + root.total;
                 color: root.palette.on-surface-variant;
                 font-size: Type.body-medium.size;
+                font-family: Type.body-medium.family;
                 vertical-alignment: center;
                 horizontal-stretch: 1;
             }
@@ -83,6 +85,7 @@ export component DownloadsPage inherits Rectangle {
                             text: I18n.trl(I18n.lang, "common.retry");
                             color: root.palette.on-surface;
                             font-size: Type.label-large.size;
+                            font-family: Type.label-large.family;
                             font-weight: Type.label-large.weight;
                             horizontal-alignment: center;
                             vertical-alignment: center;
@@ -124,6 +127,7 @@ export component DownloadsPage inherits Rectangle {
                     text: I18n.trl(I18n.lang, "downloads.empty");
                     color: root.palette.on-surface-variant;
                     font-size: Type.body-medium.size;
+                    font-family: Type.body-medium.family;
                     horizontal-alignment: center;
                 }
             }
@@ -147,6 +151,7 @@ export component DownloadsPage inherits Rectangle {
                         text: I18n.trl(I18n.lang, "downloads.active") + " (" + root.rows.length + ")";
                         color: root.palette.on-surface-variant;
                         font-size: Type.title-small.size;
+                        font-family: Type.title-small.family;
                         font-weight: Type.title-small.weight;
                         vertical-alignment: center;
                     }
@@ -187,6 +192,7 @@ export component DownloadsPage inherits Rectangle {
                                     text: row.title;
                                     color: root.palette.on-surface;
                                     font-size: Type.body-large.size;
+                                    font-family: Type.body-large.family;
                                     font-weight: Type.body-large.weight;
                                     overflow: elide;
                                 }
@@ -195,6 +201,7 @@ export component DownloadsPage inherits Rectangle {
                                     text: row.subtitle;
                                     color: root.palette.on-surface-variant;
                                     font-size: Type.body-medium.size;
+                                    font-family: Type.body-medium.family;
                                     overflow: elide;
                                 }
                             }
@@ -211,6 +218,7 @@ export component DownloadsPage inherits Rectangle {
                                         text: root.state-label(row.state);
                                         color: root.state-color(row.state);
                                         font-size: Type.body-medium.size;
+                                        font-family: Type.body-medium.family;
                                         horizontal-alignment: right;
                                         vertical-alignment: center;
                                         overflow: elide;
@@ -252,6 +260,7 @@ export component DownloadsPage inherits Rectangle {
                                         text: row.state == 1 ? row.speed : "";
                                         color: root.palette.on-surface-variant;
                                         font-size: Type.body-medium.size;
+                                        font-family: Type.body-medium.family;
                                         horizontal-alignment: right;
                                         vertical-alignment: center;
                                         overflow: elide;
@@ -328,6 +337,7 @@ export component DownloadsPage inherits Rectangle {
                         text: I18n.trl(I18n.lang, "downloads.failed") + " (" + root.failed.length + ")";
                         color: root.palette.error;
                         font-size: Type.title-small.size;
+                        font-family: Type.title-small.family;
                         font-weight: Type.title-small.weight;
                         vertical-alignment: center;
                     }
@@ -368,6 +378,7 @@ export component DownloadsPage inherits Rectangle {
                                     text: row.title;
                                     color: root.palette.on-surface;
                                     font-size: Type.body-large.size;
+                                    font-family: Type.body-large.family;
                                     font-weight: Type.body-large.weight;
                                     overflow: elide;
                                 }
@@ -376,6 +387,7 @@ export component DownloadsPage inherits Rectangle {
                                     text: row.subtitle;
                                     color: root.palette.error;
                                     font-size: Type.body-medium.size;
+                                    font-family: Type.body-medium.family;
                                     overflow: elide;
                                 }
                             }
@@ -392,6 +404,7 @@ export component DownloadsPage inherits Rectangle {
                                         text: root.state-label(row.state);
                                         color: root.palette.error;
                                         font-size: Type.body-medium.size;
+                                        font-family: Type.body-medium.family;
                                         horizontal-alignment: right;
                                         vertical-alignment: center;
                                         overflow: elide;

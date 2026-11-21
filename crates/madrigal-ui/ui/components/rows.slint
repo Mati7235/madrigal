@@ -1,4 +1,4 @@
-import { Shape, Type } from "../tokens.slint";
+import { Font, Shape, Type } from "../tokens.slint";
 import { Cover } from "cover.slint";
 import { M3IconButton } from "buttons.slint";
 
@@ -62,6 +62,7 @@ export component M3ListItem inherits Rectangle {
                 text: root.title;
                 color: root.active ? root.accent : root.title-color;
                 font-size: Type.title-small.size;
+                font-family: Font.body;
                 font-weight: Type.title-small.weight;
                 overflow: elide;
             }
@@ -70,6 +71,7 @@ export component M3ListItem inherits Rectangle {
                 text: root.subtitle;
                 color: root.subtitle-color;
                 font-size: Type.label-small.size;
+                font-family: Type.label-small.family;
                 font-weight: 400;
                 overflow: elide;
             }
@@ -99,6 +101,7 @@ export component M3ListItem inherits Rectangle {
             text: root.duration;
             color: root.subtitle-color;
             font-size: Type.label-small.size;
+            font-family: Type.label-small.family;
             font-weight: 400;
             vertical-alignment: center;
         }
@@ -107,6 +110,7 @@ export component M3ListItem inherits Rectangle {
             text: root.action-label;
             color: root.title-color;
             font-size: Type.body-large.size;
+            font-family: Type.body-large.family;
             vertical-alignment: center;
             visible: !root.action-visible && (root.active || item-touch.has-hover);
             animate opacity { duration: 100ms; easing: ease-in-out; }

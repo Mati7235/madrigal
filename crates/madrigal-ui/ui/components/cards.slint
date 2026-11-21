@@ -1,4 +1,4 @@
-import { Shape, Type } from "../tokens.slint";
+import { Font, Shape, Type } from "../tokens.slint";
 import { Cover } from "cover.slint";
 import { Icon, Icons } from "icons.slint";
 
@@ -55,6 +55,7 @@ export component M3Card inherits Rectangle {
             text: root.title;
             color: root.title-color;
             font-size: 13px;
+            font-family: Font.title;
             font-weight: 600;
             overflow: elide;
         }
@@ -63,6 +64,7 @@ export component M3Card inherits Rectangle {
             text: root.subtitle;
             color: root.subtitle-color;
             font-size: Type.label-small.size;
+            font-family: Type.label-small.family;
             font-weight: 400;
             overflow: elide;
         }
@@ -77,6 +79,7 @@ export component M3Card inherits Rectangle {
             text: root.title;
             color: root.title-color;
             font-size: Type.title-large.size;
+            font-family: Type.title-large.family;
             font-weight: Type.title-large.weight;
             overflow: elide;
         }
@@ -85,6 +88,7 @@ export component M3Card inherits Rectangle {
             text: root.subtitle;
             color: root.subtitle-color;
             font-size: Type.body-medium.size;
+            font-family: Type.body-medium.family;
             overflow: elide;
         }
     }
@@ -147,6 +151,7 @@ export component M3Chip inherits Rectangle {
             text: root.text;
             color: root.selected ? root.selected-content : root.unselected-content;
             font-size: Type.label-large.size;
+            font-family: Type.label-large.family;
             font-weight: Type.label-large.weight;
             vertical-alignment: center;
             animate color { duration: 100ms; easing: ease-in-out; }
@@ -202,6 +207,7 @@ export component M3MoodTile inherits Rectangle {
         text: root.text;
         color: root.content;
         font-size: Type.label-large.size;
+        font-family: Type.label-large.family;
         font-weight: Type.label-large.weight;
         letter-spacing: Type.label-large.tracking;
         vertical-alignment: center;

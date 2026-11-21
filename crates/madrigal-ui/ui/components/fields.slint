@@ -41,6 +41,7 @@ export component M3TextField inherits Rectangle {
             visible: !root.dense;
             color: !root.enabled ? root.state-on-surface.with-alpha(0.38) : root.error ? root.error-color : root.focused || root.text != "" ? root.focus-line : root.support-color;
             font-size: root.focused || root.text != "" ? Type.body-small.size : Type.body-large.size;
+            font-family: Type.body-large.family;
             x: 16px;
             y: root.focused || root.text != "" ? 6px : 0px;
             height: root.focused || root.text != "" ? 16px : 56px;
@@ -54,6 +55,7 @@ export component M3TextField inherits Rectangle {
             enabled: root.enabled;
             color: root.enabled ? root.content : root.state-on-surface.with-alpha(0.38);
             font-size: Type.body-large.size;
+            font-family: Type.body-large.family;
             x: 16px;
             y: root.dense ? 6px : 22px;
             width: parent.width - 32px;
@@ -67,6 +69,7 @@ export component M3TextField inherits Rectangle {
         visible: !root.dense;
         color: root.error ? root.error-color : root.support-color;
         font-size: Type.body-small.size;
+        font-family: Type.body-small.family;
         x: 16px;
         y: 60px;
         width: parent.width - 32px;
@@ -142,6 +145,7 @@ export component M3SearchBar inherits Rectangle {
                     enabled: root.enabled;
                     color: root.enabled ? root.content : root.state-on-surface.with-alpha(0.38);
                     font-size: Type.body-large.size;
+                    font-family: Type.body-large.family;
                     vertical-alignment: center;
                     width: 100%;
                     height: 100%;
@@ -160,6 +164,7 @@ export component M3SearchBar inherits Rectangle {
                     text: root.hint;
                     color: root.hint-color;
                     font-size: Type.body-large.size;
+                    font-family: Type.body-large.family;
                     vertical-alignment: center;
                     width: 100%;
                     height: 100%;

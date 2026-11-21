@@ -60,6 +60,7 @@ export component HomePage inherits Rectangle {
                     text: I18n.trl(I18n.lang, "catalog.pins");
                     color: root.palette.on-surface;
                     font-size: Type.title-medium.size;
+                    font-family: Type.title-medium.family;
                     font-weight: Type.title-medium.weight;
                 }
                 pins-row := HorizontalLayout {
@@ -86,6 +87,7 @@ export component HomePage inherits Rectangle {
                     text: I18n.trl(I18n.lang, "catalog.quickPicks");
                     color: root.palette.on-surface;
                     font-size: Type.title-medium.size;
+                    font-family: Type.title-medium.family;
                     font-weight: Type.title-medium.weight;
                 }
                 if (root.card-layout) : picks-rail := Flickable {
@@ -150,6 +152,7 @@ export component HomePage inherits Rectangle {
                 text: I18n.trl(I18n.lang, "home.empty");
                 color: root.palette.on-surface-variant;
                 font-size: Type.body-large.size;
+                font-family: Type.body-large.family;
                 horizontal-alignment: center;
             }
         }

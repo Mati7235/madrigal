@@ -1,4 +1,4 @@
-import { Palette, Type } from "../tokens.slint";
+import { Font, Palette, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
 
 export component ConfirmOverlay inherits Rectangle {
@@ -32,12 +32,14 @@ export component ConfirmOverlay inherits Rectangle {
                         text: root.title;
                         color: root.palette.on-surface;
                         font-size: Type.title-large.size;
+                        font-family: Type.title-large.family;
                         font-weight: Type.title-large.weight;
                     }
                     confirm-body := Text {
                         text: root.body;
                         color: root.palette.on-surface-variant;
                         font-size: Type.body-medium.size;
+                        font-family: Type.body-medium.family;
                         wrap: word-wrap;
                     }
                     HorizontalLayout {
@@ -56,6 +58,7 @@ export component ConfirmOverlay inherits Rectangle {
                                 text: I18n.trl(I18n.lang, "confirm.cancel");
                                 color: root.palette.on-surface;
                                 font-size: Type.label-large.size;
+                                font-family: Type.label-large.family;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
                             }
@@ -79,6 +82,7 @@ export component ConfirmOverlay inherits Rectangle {
                                 text: I18n.trl(I18n.lang, "prompt.ok");
                                 color: root.palette.on-primary;
                                 font-size: Type.label-large.size;
+                                font-family: Type.label-large.family;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
                             }
@@ -127,6 +131,7 @@ export component PromptOverlay inherits Rectangle {
                         text: root.title;
                         color: root.palette.on-surface;
                         font-size: Type.title-large.size;
+                        font-family: Type.title-large.family;
                         font-weight: Type.title-large.weight;
                     }
                     prompt-field-bg := Rectangle {
@@ -142,6 +147,7 @@ export component PromptOverlay inherits Rectangle {
                             text <=> root.input;
                             color: root.palette.on-surface;
                             font-size: 16px;
+                            font-family: Font.body;
                         }
                     }
                     HorizontalLayout {
@@ -160,6 +166,7 @@ export component PromptOverlay inherits Rectangle {
                                 text: I18n.trl(I18n.lang, "confirm.cancel");
                                 color: root.palette.on-surface;
                                 font-size: Type.label-large.size;
+                                font-family: Type.label-large.family;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
                             }
@@ -183,6 +190,7 @@ export component PromptOverlay inherits Rectangle {
                                 text: I18n.trl(I18n.lang, "prompt.ok");
                                 color: root.palette.on-primary;
                                 font-size: Type.label-large.size;
+                                font-family: Type.label-large.family;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
                             }

@@ -1,4 +1,4 @@
-import { Palette, Type } from "../tokens.slint";
+import { Font, Palette, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
 import { M3IconButton } from "../components/buttons.slint";
 import { Cover } from "../components/cover.slint";
@@ -122,6 +122,7 @@ export component NowPlayingBar inherits Rectangle {
                     text: root.has-track ? root.title : I18n.trl(I18n.lang, "player.noTrack");
                     color: root.palette.on-surface;
                     font-size: 13px;
+                    font-family: Font.body;
                     font-weight: 700;
                     width: 100%;
                     overflow: elide;
@@ -131,6 +132,7 @@ export component NowPlayingBar inherits Rectangle {
                     text: root.has-track ? root.artist : "";
                     color: root.palette.on-surface-variant;
                     font-size: 11px;
+                    font-family: Font.body;
                     width: 100%;
                     overflow: elide;
                 }
@@ -139,6 +141,7 @@ export component NowPlayingBar inherits Rectangle {
                     text: root.has-track ? I18n.trl(I18n.lang, "player.tab.queue") + " · " + root.queue-count : "";
                     color: root.palette.on-surface-variant;
                     font-size: 10px;
+                    font-family: Font.body;
                     width: 100%;
                     overflow: elide;
                 }
@@ -148,6 +151,7 @@ export component NowPlayingBar inherits Rectangle {
                 text: root.pos-text;
                 color: root.palette.on-surface-variant;
                 font-size: 11px;
+                font-family: Font.body;
                 vertical-alignment: center;
             }
 
@@ -206,6 +210,7 @@ export component NowPlayingBar inherits Rectangle {
                 text: root.dur-text;
                 color: root.palette.on-surface-variant;
                 font-size: 11px;
+                font-family: Font.body;
                 vertical-alignment: center;
             }
 
