@@ -509,6 +509,17 @@ mod tests {
     }
 
     #[test]
+    fn decrypts_legacy_rows_without_host_hash() {
+        let encrypted = hex_to_bytes("763130cb5e7004e0acbc59a540e6c6e151a1c1");
+        assert_eq!(
+            decrypt_cookie(&encrypted, ".youtube.com", 23, None).as_deref(),
+            Some("legacy-value")
+        );
+        assert_eq!(decrypt_cookie(&encrypted, ".youtube.com", 24, None), None);
+        assert_eq!(decrypt_cookie(b"v12data", ".youtube.com", 23, None), None);
+    }
+
+    #[test]
     fn v11_database_rows_import() {
         let dir = tempfile::tempdir().expect("tempdir");
         let db = dir.path().join("Cookies");
