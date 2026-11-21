@@ -1,0 +1,292 @@
+import { Font, Palette, Shape, Type } from "../tokens.slint";
+import { I18n } from "../i18n.slint";
+import { Icon, Icons } from "icons.slint";
+
+export struct TrackMenuEntry {
+    id: string,
+    title: string,
+}
+
+export struct TrackMenuRequest {
+    id: string,
+    title: string,
+    artist: string,
+    album: string,
+    duration-secs: int,
+    anchor-x: length,
+    anchor-y: length,
+}
+
+component MenuRow inherits Rectangle {
+    in property<Palette> palette;
+    in property<image> icon;
+    in property<string> label;
+    in property<bool> active: false;
+    in property<bool> enabled: true;
+    in property<bool> ticked: false;
+    in property<bool> accented: false;
+    callback clicked();
+
+    accessible-label: root.label;
+    accessible-role: AccessibleRole.button;
+
+    height: 48px;
+    border-radius: Shape.small;
+    background: root.active ? root.palette.secondary-container : row-touch.has-hover && root.enabled ? root.palette.surface-container-highest : transparent;
+    opacity: root.enabled ? 1 : 0.55;
+    animate background { duration: 100ms; easing: ease-in-out; }
+
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        spacing: 12px;
+        alignment: center;
+
+        Icon {
+            source: root.icon;
+            colorize: root.accented ? root.palette.primary : root.active ? root.palette.on-secondary-container : root.palette.on-surface-variant;
+            icon-size: 20px;
+        }
+
+        Text {
+            text: root.label;
+            color: root.active ? root.palette.on-secondary-container : root.palette.on-surface;
+            font-size: Type.label-large.size;
+            font-family: Type.label-large.family;
+            font-weight: Type.label-large.weight;
+            horizontal-stretch: 1;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+
+        if (root.ticked) : Icon {
+            source: Icons.check;
+            colorize: root.palette.primary;
+            icon-size: 18px;
+        }
+    }
+
+    row-touch := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: root.enabled ? pointer : default;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component TrackMenu inherits Rectangle {
+    in property<Palette> palette;
+    in property<bool> open: false;
+    in property<TrackMenuRequest> track;
+    in property<bool> liked: false;
+    in property<int> download-state: -1;
+    in property<float> download-progress: 0;
+    in property<[TrackMenuEntry]> playlists;
+    in-out property<int> view: 0;
+    in-out property<int> selected: 0;
+    in-out property<length> playlist-viewport-y: 0px;
+
+    callback activated(string, string);
+    callback closed();
+    callback key-command(string) -> bool;
+
+    property<bool> has-artist: root.track.artist != "";
+    property<bool> has-album: root.track.album != "";
+    property<string> download-label: root.download-state == 0 ? I18n.trl(I18n.lang, "detail.state.queued")
+        : root.download-state == 1 ? I18n.trl(I18n.lang, "detail.state.downloading") + " " + Math.round(root.download-progress * 100) + "%"
+        : root.download-state == 2 ? I18n.trl(I18n.lang, "detail.state.paused")
+        : root.download-state == 3 ? I18n.trl(I18n.lang, "downloads.downloaded")
+        : root.download-state == 4 || root.download-state == 5 ? I18n.trl(I18n.lang, "detail.state.error")
+        : I18n.trl(I18n.lang, "action.download");
+    property<image> download-icon: root.download-state == 3 ? Icons.circle-check
+        : root.download-state == 1 ? Icons.loader-circle
+        : root.download-state == 4 || root.download-state == 5 ? Icons.triangle-alert
+        : root.download-state == 2 ? Icons.pause
+        : root.download-state == 0 ? Icons.clock
+        : Icons.download;
+    property<bool> download-enabled: root.download-state < 0 || root.download-state == 3 || root.download-state == 4 || root.download-state == 5;
+    property<length> playlist-content: root.playlists.length * 48px + 48px;
+    property<length> playlist-rows: Math.min(root.playlists.length, 6) * 48px + 48px;
+
+    accessible-role: AccessibleRole.list;
+    accessible-label: I18n.trl(I18n.lang, "trackMenu.title");
+
+    visible: root.open;
+    width: 100%;
+    height: 100%;
+
+    changed open => {
+        if (root.open) {
+            root.selected = 0;
+            root.view = 0;
+            root.playlist-viewport-y = 0px;
+            menu-focus.focus();
+        }
+    }
+
+    changed selected => {
+        if (root.view == 1) {
+            root.playlist-viewport-y = Math.max(0px, Math.min(root.selected * 48px - 96px, root.playlist-content - root.playlist-rows));
+        }
+    }
+
+    menu-focus := FocusScope {
+        width: 100%;
+        height: 100%;
+        key-pressed(event) => {
+            if (root.key-command(event.text)) {
+                return EventResult.accept;
+            }
+            return EventResult.reject;
+        }
+    }
+
+    menu-scrim := TouchArea {
+        width: 100%;
+        height: 100%;
+        clicked => { root.closed(); }
+    }
+
+    menu-card := Rectangle {
+        x: Math.max(8px, Math.min(root.track.anchor-x + 2px, root.width - 8px - self.width));
+        y: Math.max(8px, Math.min(root.track.anchor-y + 2px, root.height - 8px - self.height));
+        width: 304px;
+        height: menu-col.preferred-height;
+        border-radius: Shape.medium;
+        background: root.palette.surface-container-high;
+        drop-shadow-color: root.palette.shadow.with-alpha(0.32);
+        drop-shadow-blur: 18px;
+        drop-shadow-offset-y: 4px;
+        clip: true;
+
+        menu-col := VerticalLayout {
+            padding: 6px;
+            spacing: 0px;
+
+            menu-head := Rectangle {
+                height: 56px;
+
+                VerticalLayout {
+                    padding-left: 12px;
+                    padding-right: 12px;
+                    spacing: 2px;
+                    alignment: center;
+
+                    menu-head-title := Text {
+                        text: root.view == 1 ? I18n.trl(I18n.lang, "action.addToPlaylist") : root.track.title;
+                        color: root.palette.on-surface;
+                        font-size: Type.title-small.size;
+                        font-family: Type.title-small.family;
+                        font-weight: Type.title-small.weight;
+                        overflow: elide;
+                        width: 100%;
+                    }
+
+                    menu-head-sub := Text {
+                        text: root.view == 1 ? root.track.title : root.track.artist;
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.label-small.size;
+                        font-family: Type.label-small.family;
+                        overflow: elide;
+                        width: 100%;
+                    }
+                }
+            }
+
+            if (root.view == 0) : actions-col := VerticalLayout {
+                spacing: 0px;
+
+                menu-next := MenuRow {
+                    palette: root.palette;
+                    icon: Icons.play;
+                    label: I18n.trl(I18n.lang, "action.playNext");
+                    active: root.selected == 0;
+                    clicked => { root.activated("play-next", ""); }
+                }
+
+                menu-queue := MenuRow {
+                    palette: root.palette;
+                    icon: Icons.list-plus;
+                    label: I18n.trl(I18n.lang, "action.addToQueue");
+                    active: root.selected == 1;
+                    clicked => { root.activated("queue", ""); }
+                }
+
+                menu-like := MenuRow {
+                    palette: root.palette;
+                    icon: root.liked ? Icons.star-filled : Icons.heart;
+                    label: root.liked ? I18n.trl(I18n.lang, "action.unlike") : I18n.trl(I18n.lang, "action.like");
+                    active: root.selected == 2;
+                    accented: root.liked;
+                    ticked: root.liked;
+                    clicked => { root.activated("like", ""); }
+                }
+
+                menu-download := MenuRow {
+                    palette: root.palette;
+                    icon: root.download-icon;
+                    label: root.download-label;
+                    active: root.selected == 3;
+                    enabled: root.download-enabled;
+                    accented: root.download-state == 3;
+                    clicked => { root.activated("download", ""); }
+                }
+
+                menu-playlist := MenuRow {
+                    palette: root.palette;
+                    icon: Icons.list-music;
+                    label: I18n.trl(I18n.lang, "action.addToPlaylist");
+                    active: root.selected == 4;
+                    clicked => {
+                        root.view = 1;
+                        root.selected = 0;
+                        root.playlist-viewport-y = 0px;
+                    }
+                }
+
+                if (root.has-artist) : menu-artist := MenuRow {
+                    palette: root.palette;
+                    icon: Icons.user-round;
+                    label: I18n.trl(I18n.lang, "action.goToArtist");
+                    active: root.selected == 5;
+                    clicked => { root.activated("artist", ""); }
+                }
+
+                if (root.has-album) : menu-album := MenuRow {
+                    palette: root.palette;
+                    icon: Icons.music-2;
+                    label: I18n.trl(I18n.lang, "action.goToAlbum");
+                    active: root.selected == (root.has-artist ? 6 : 5);
+                    clicked => { root.activated("album", ""); }
+                }
+            }
+
+            if (root.view == 1) : playlist-scroll := Flickable {
+                height: root.playlist-rows;
+                content-width: self.width;
+                content-height: root.playlist-content;
+                content-y <=> root.playlist-viewport-y;
+
+                playlist-col := VerticalLayout {
+                    width: 100%;
+                    spacing: 0px;
+
+                    for pl[i] in root.playlists : playlist-row := MenuRow {
+                        palette: root.palette;
+                        icon: Icons.list-music;
+                        label: pl.title;
+                        active: root.selected == i;
+                        clicked => { root.activated("playlist", pl.id); }
+                    }
+
+                    menu-new-playlist := MenuRow {
+                        palette: root.palette;
+                        icon: Icons.plus;
+                        label: I18n.trl(I18n.lang, "playlists.create");
+                        active: root.selected == root.playlists.length;
+                        clicked => { root.activated("playlist-new", ""); }
+                    }
+                }
+            }
+        }
+    }
+}

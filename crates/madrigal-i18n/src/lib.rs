@@ -37,6 +37,10 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("action.favorite", "Cambiar favorito", "Toggle favorite"),
     ("action.favoriteOff", "Agregar a favoritos", "Add to favorites"),
     ("action.favoriteOn", "Quitar de favoritos", "Remove from favorites"),
+    ("action.goToAlbum", "Ir al álbum", "Go to album"),
+    ("action.goToArtist", "Ir al artista", "Go to artist"),
+    ("action.like", "Me gusta", "Like"),
+    ("action.more", "Más acciones", "More actions"),
     ("action.moveDown", "Mover abajo", "Move down"),
     ("action.moveUp", "Mover arriba", "Move up"),
     ("action.nextTrack", "Pista siguiente", "Next track"),
@@ -46,6 +50,7 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("action.pauseDownload", "Pausar descarga", "Pause download"),
     ("action.play", "Reproducir", "Play"),
     ("action.playAlbum", "Reproducir álbum", "Play album"),
+    ("action.playNext", "Reproducir a continuación", "Play next"),
     ("action.playPause", "Reproducir o pausar", "Play or pause"),
     ("action.previousTrack", "Pista anterior", "Previous track"),
     ("action.remove", "Quitar", "Remove"),
@@ -60,6 +65,7 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("action.shareTrack", "Copiar enlace de la canción", "Copy song link"),
     ("action.shuffle", "Reproducción aleatoria", "Shuffle playback"),
     ("action.startRadio", "Iniciar radio", "Start radio"),
+    ("action.unlike", "Quitar me gusta", "Remove like"),
     ("action.volume", "Volumen", "Volume"),
     ("addsongs.banner", "Agregando a «%1»", "Adding to “%1”"),
     ("addsongs.cta", "Agregar canciones", "Add songs"),
@@ -156,6 +162,7 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("detail.yesterday", "Ayer", "Yesterday"),
     ("downloads.active", "Activas", "Active"),
     ("downloads.done", "Completada", "Done"),
+    ("downloads.downloaded", "Descargada", "Downloaded"),
     ("downloads.empty", "Sin descargas", "No downloads"),
     ("downloads.failed", "Fallidas", "Failed"),
     ("error.no_internet", "Sin conexión de red", "No network connection"),
@@ -787,6 +794,7 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("stream.source.stream", "Streaming", "Streaming"),
     ("stream.title", "Información del audio", "Audio information"),
     ("stream.unknown", "Sin datos todavía", "No data yet"),
+    ("trackMenu.title", "Acciones de la canción", "Song actions"),
 ];
 
 fn find(key: &str) -> Option<&'static (&'static str, &'static str, &'static str)> {
