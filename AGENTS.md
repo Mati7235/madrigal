@@ -22,4 +22,10 @@
   background a build and poll it with sleep/grep loops. Agents that support
   background commands with a completion notice may use that instead, and stay
   idle until the notice arrives.
+- Build env: `source /tmp/opencode/env-v2.sh` (shared target dir, sccache, lld).
+  Every worktree uses that one target dir so dependencies compile once. Copy a
+  release binary out of it before running it: another build may replace it.
+- While iterating, run only the test binaries for what changed
+  (`cargo test -p <crate> --test <check>`); run the touched crates in full once,
+  before reporting.
 - Document map: `docs/README.md`.
