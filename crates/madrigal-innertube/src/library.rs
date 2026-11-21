@@ -1,3 +1,4 @@
+use ytmapi_rs::Client;
 use ytmapi_rs::auth::BrowserToken;
 use ytmapi_rs::common::{AlbumID, ArtistChannelID, PlaylistID, YoutubeID};
 use ytmapi_rs::parse::{
@@ -8,7 +9,7 @@ use ytmapi_rs::query::search::{AlbumsFilter, ArtistsFilter, SongsFilter};
 use ytmapi_rs::query::{
     GetAlbumQuery, GetArtistQuery, GetHistoryQuery, GetLibraryPlaylistsQuery,
     GetLibrarySongsQuery, GetPlaylistDetailsQuery, GetPlaylistTracksQuery,
-    GetSearchSuggestionsQuery, Query, SearchQuery,
+    GetSearchSuggestionsQuery, PostQuery, SearchQuery,
 };
 use ytmapi_rs::{ProcessedResult, YtMusic};
 
@@ -16,7 +17,7 @@ use madrigal_core::{Playlist, PlaylistId, PlaylistKind, Track, TrackIdentity, pa
 
 use crate::browse::{BrowsePage, GetBrowseQuery};
 use crate::charts::{ChartsPage, GetChartsQuery, GetNewReleasesQuery, NewReleases};
-use crate::client::{SearchFilter, SearchOutcome};
+use crate::client::{localized_json, Locale, SearchFilter, SearchOutcome};
 use crate::error::Error;
 use crate::home::{GetHomeQuery, HomeFeed};
 use crate::mapping;
@@ -25,6 +26,9 @@ use crate::CatalogClient;
 
 pub struct AuthCatalogClient {
     pub(crate) yt: YtMusic<BrowserToken>,
+    client: Client,
+    token: BrowserToken,
+    locale: Locale,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -40,6 +44,13 @@ pub struct HistoryFeed {
 
 impl CatalogClient {
     pub fn with_cookies(cookie_header: &str) -> Result<AuthCatalogClient, Error> {
+        Self::with_cookies_locale(cookie_header, Locale::default())
+    }
+
+    pub fn with_cookies_locale(
+        cookie_header: &str,
+        locale: Locale,
+    ) -> Result<AuthCatalogClient, Error> {
         let pairs = madrigal_account::cookies::parse_cookie_header(cookie_header)
             .map_err(|e| Error::Fixture(e.to_string()))?;
         if !madrigal_account::cookies::has_login_cookie(&pairs) {
@@ -56,17 +67,23 @@ impl CatalogClient {
         }))
         // BrowserToken has no sync constructor; field names pinned to ytmapi-rs =0.3.4.
         .map_err(|_| Error::Fixture("browser token shape changed".to_owned()))?;
+        Self::auth_from_token(token, locale)
+    }
+
+    fn auth_from_token(token: BrowserToken, locale: Locale) -> Result<AuthCatalogClient, Error> {
+        let client = Client::new()?;
         Ok(AuthCatalogClient {
-            yt: YtMusic::from_auth_token(token),
+            yt: YtMusic::from_auth_token(token.clone()),
+            client,
+            token,
+            locale,
         })
     }
 }
 
 impl AuthCatalogClient {
-    pub fn from_token(token: BrowserToken) -> Self {
-        Self {
-            yt: YtMusic::from_auth_token(token),
-        }
+    pub fn from_token(token: BrowserToken) -> Result<Self, Error> {
+        CatalogClient::auth_from_token(token, Locale::default())
     }
 
     pub async fn liked_songs(&self) -> Result<Vec<Track>, Error> {
@@ -95,9 +112,9 @@ impl AuthCatalogClient {
 
     async fn raw_json<Q>(&self, query: Q) -> Result<serde_json::Value, Error>
     where
-        Q: Query<BrowserToken>,
+        Q: PostQuery,
     {
-        Ok(self.yt.json_query(query).await?.into_inner())
+        localized_json(&self.client, &self.token, &self.locale, &query).await
     }
 
     pub async fn get_home(&self) -> Result<HomeFeed, Error> {
@@ -107,39 +124,34 @@ impl AuthCatalogClient {
 
     pub async fn suggestions(&self, query: &str) -> Result<Vec<String>, Error> {
         let raw = self
-            .yt
-            .raw_json_query(GetSearchSuggestionsQuery::new(query))
+            .raw_json(GetSearchSuggestionsQuery::new(query))
             .await?;
-        CatalogClient::parse_suggestions(&raw)
+        CatalogClient::parse_suggestions(&raw.to_string())
     }
 
     pub async fn search(&self, query: &str, filter: SearchFilter) -> Result<SearchOutcome, Error> {
         let raw = match filter {
             SearchFilter::Songs => {
-                self.yt
-                    .raw_json_query(SearchQuery::new_filtered(query, SongsFilter))
+                self.raw_json(SearchQuery::new_filtered(query, SongsFilter))
                     .await?
             }
             SearchFilter::Artists => {
-                self.yt
-                    .raw_json_query(SearchQuery::new_filtered(query, ArtistsFilter))
+                self.raw_json(SearchQuery::new_filtered(query, ArtistsFilter))
                     .await?
             }
             SearchFilter::Albums => {
-                self.yt
-                    .raw_json_query(SearchQuery::new_filtered(query, AlbumsFilter))
+                self.raw_json(SearchQuery::new_filtered(query, AlbumsFilter))
                     .await?
             }
         };
-        CatalogClient::parse_search(filter, &raw)
+        CatalogClient::parse_search(filter, &raw.to_string())
     }
 
     pub async fn mood_listing(&self) -> Result<MoodListing, Error> {
         let raw = self
-            .yt
-            .raw_json_query(ytmapi_rs::query::GetMoodCategoriesQuery)
+            .raw_json(ytmapi_rs::query::GetMoodCategoriesQuery)
             .await?;
-        CatalogClient::parse_mood_listing(&raw)
+        CatalogClient::parse_mood_listing(&raw.to_string())
     }
 
     pub async fn browse(&self, browse_id: &str, params: Option<&str>) -> Result<BrowsePage, Error> {
@@ -163,32 +175,32 @@ impl AuthCatalogClient {
 
     pub async fn artist_page(&self, channel_id: &str) -> Result<ArtistPage, Error> {
         let raw = self
-            .yt
-            .raw_json_query(GetArtistQuery::new(ArtistChannelID::from_raw(channel_id)))
+            .raw_json(GetArtistQuery::new(ArtistChannelID::from_raw(channel_id)))
             .await?;
-        CatalogClient::parse_artist_page(channel_id, &raw)
+        CatalogClient::parse_artist_page(channel_id, &raw.to_string())
     }
 
     pub async fn album_page(&self, browse_id: &str) -> Result<AlbumPage, Error> {
         let raw = self
-            .yt
-            .raw_json_query(GetAlbumQuery::new(AlbumID::from_raw(browse_id)))
+            .raw_json(GetAlbumQuery::new(AlbumID::from_raw(browse_id)))
             .await?;
-        CatalogClient::parse_album_page(browse_id, &raw)
+        CatalogClient::parse_album_page(browse_id, &raw.to_string())
     }
 
     pub async fn playlist_page(&self, playlist_id: &str) -> Result<PlaylistPage, Error> {
         let details_raw = self
-            .yt
-            .raw_json_query(GetPlaylistDetailsQuery::new(PlaylistID::from_raw(
+            .raw_json(GetPlaylistDetailsQuery::new(PlaylistID::from_raw(
                 playlist_id,
             )))
             .await?;
         let tracks_raw = self
-            .yt
-            .raw_json_query(GetPlaylistTracksQuery::new(PlaylistID::from_raw(playlist_id)))
+            .raw_json(GetPlaylistTracksQuery::new(PlaylistID::from_raw(playlist_id)))
             .await?;
-        CatalogClient::parse_playlist_page(playlist_id, &details_raw, &tracks_raw)
+        CatalogClient::parse_playlist_page(
+            playlist_id,
+            &details_raw.to_string(),
+            &tracks_raw.to_string(),
+        )
     }
 
     pub async fn new_releases(&self) -> Result<NewReleases, Error> {

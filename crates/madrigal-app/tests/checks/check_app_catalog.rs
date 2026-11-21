@@ -134,6 +134,9 @@ fn app_catalog() {
     std::env::set_var("XDG_CONFIG_HOME", root.path().join("config"));
     std::env::set_var("XDG_CACHE_HOME", root.path().join("cache"));
     std::env::set_var("XDG_STATE_HOME", root.path().join("state"));
+    std::env::remove_var("LC_ALL");
+    std::env::remove_var("LC_MESSAGES");
+    std::env::remove_var("LANG");
 
     kit::init_headless();
     let shell = MainShell::new().expect("shell");
@@ -173,6 +176,11 @@ fn app_catalog() {
 
     assert_eq!(shell.get_home_sections().row_count(), 2, "home sections");
     assert_eq!(shell.get_home_chips().row_count(), 3, "home chips");
+    assert_eq!(
+        shell.get_home_chips().row_data(0).unwrap().as_str(),
+        "Todo",
+        "home chip uses i18n"
+    );
     assert_eq!(
         shell.get_home_quick_picks().row_count(),
         20,

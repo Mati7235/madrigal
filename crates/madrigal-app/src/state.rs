@@ -81,7 +81,11 @@ impl AppState {
         );
         let desktop = Desktop::start(&ui.shell, Arc::clone(&core), settings);
         let poll = start_poll(&ui.shell, Rc::clone(&service));
-        let catalog = Arc::new(catalog::wire_catalog(&ui.shell, settings)?);
+        let catalog = Arc::new(catalog::wire_catalog(
+            &ui.shell,
+            settings,
+            madrigal_ui::lang_code(ui.lang.get()),
+        )?);
         let account_timer =
             crate::account::wire_account(&ui.shell, ui.presenter.clone(), Arc::clone(&catalog));
 

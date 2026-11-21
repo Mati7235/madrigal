@@ -19,7 +19,7 @@ pub use charts::{
     ChartArtist, ChartTrend, ChartsPage, GetChartsQuery, GetNewReleasesQuery, NewReleases,
 };
 
-pub use client::CatalogClient;
+pub use client::{CatalogClient, Locale};
 pub use client::{SearchFilter, SearchOutcome};
 pub use error::Error;
 pub use home::{GetHomeQuery, HomeFeed, HomeItem, HomeSection};

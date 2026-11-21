@@ -233,8 +233,14 @@ fn ui_catalog() {
     assert_eq!(feed.sections.len(), 2);
     assert_eq!(feed.sections[0].title, "Trending community playlists");
     assert_eq!(feed.sections[1].title, "Quick picks");
-    apply_home_chips(&shell, &feed, &madrigal_settings::Content::default());
+    apply_home_chips(
+        &shell,
+        &feed,
+        &madrigal_settings::Content::default(),
+        madrigal_i18n::Lang::Es,
+    );
     assert_eq!(shell.get_home_chips().row_count(), 3);
+    assert_eq!(shell.get_home_chips().row_data(0).unwrap().as_str(), "Todo");
     assert_eq!(shell.get_home_sections().row_count(), 2);
     assert_eq!(shell.get_home_quick_picks().row_count(), 20);
     let first_pick = shell.get_home_quick_picks().row_data(0).unwrap();

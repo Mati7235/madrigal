@@ -1,4 +1,4 @@
-use slint::ComponentHandle;
+use slint::{ComponentHandle, Model as _};
 use std::cell::Cell;
 use std::rc::Rc;
 
@@ -95,6 +95,10 @@ pub fn apply_shell_appearance(shell: &MainShell, appearance: &madrigal_settings:
 
 pub fn dispatch_key(shell: &MainShell, key: &str) -> bool {
     shell.invoke_handle_key(key.into())
+}
+
+pub fn shell_lang(shell: &MainShell) -> madrigal_i18n::Lang {
+    lang_from_code(shell.global::<I18n>().get_lang().as_str())
 }
 
 pub fn sync_queue_seam(shell: &MainShell, queue: &madrigal_player::queue::Queue) {

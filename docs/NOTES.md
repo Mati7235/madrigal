@@ -560,6 +560,15 @@ that pair in `madrigal-player`.
 that to `EngineEvent::Error` (with the last mpv error log line as detail);
 dropping it leaves playback stalled with no error to show.
 
+## Innertube content locale
+
+`ytmapi-rs 0.3.4` hardcodes the innertube context without `hl`/`gl`, so
+`madrigal-innertube` posts its reads itself (`localized_json`) with the
+context from `Locale`. `Content::resolved_language` falls back to the UI
+language and `Content::resolved_country` to the system locale; empty
+settings mean auto. The legacy `en`/`US` defaults migrate once, marked by
+`content_locale_auto` in the settings file.
+
 ## Provenance
 
 Madrigal is an independent reimplementation of the Android app's behavior and

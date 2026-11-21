@@ -173,11 +173,14 @@ pub fn quick_pick_items(feed: &HomeFeed) -> Vec<CatalogItem> {
         .unwrap_or_default()
 }
 
-pub fn home_chips(feed: &HomeFeed, show: bool) -> Vec<SharedString> {
+pub fn home_chips(feed: &HomeFeed, show: bool, lang: madrigal_i18n::Lang) -> Vec<SharedString> {
     if !show {
         return Vec::new();
     }
-    let mut chips = vec![SharedString::from("All")];
+    let mut chips = vec![SharedString::from(madrigal_i18n::tr(
+        lang,
+        "catalog.filter.all",
+    ))];
     chips.extend(
         feed.sections
             .iter()
@@ -200,10 +203,12 @@ pub fn apply_home_chips(
     shell: &MainShell,
     feed: &HomeFeed,
     content: &madrigal_settings::Content,
+    lang: madrigal_i18n::Lang,
 ) {
     shell.set_home_chips(ModelRc::new(VecModel::from_slice(&home_chips(
         feed,
         content.show_home_category_chips,
+        lang,
     ))));
 }
 

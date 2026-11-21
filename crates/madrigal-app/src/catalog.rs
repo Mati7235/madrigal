@@ -4,10 +4,10 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 
 use madrigal_artwork::{ArtworkCache, Source as ArtworkSource};
-use madrigal_core::{Track, TrackIdentity};
+use madrigal_core::{Album, Artist, Track, TrackIdentity};
 use madrigal_innertube::{
     AlbumPage, ArtistPage, AuthCatalogClient, BrowsePage, CatalogClient, ChartsPage,
-    Error as InnertubeError, HomeFeed, MoodListing, NewReleases, PlaylistPage, SearchFilter,
+    Error as InnertubeError, HomeFeed, Locale, MoodListing, NewReleases, PlaylistPage, SearchFilter,
     SearchOutcome,
 };
 use madrigal_settings::{Content, SearchSource, Settings};
@@ -342,7 +342,9 @@ pub fn apply_catalog_event(
             }
             apply_home(shell, &feed);
             shell.set_home_chips(ModelRc::new(VecModel::from_slice(&home_chips(
-                &feed, show_chips,
+                &feed,
+                show_chips,
+                madrigal_ui::shell_lang(shell),
             ))));
             *lock(home) = Some(feed);
         }
@@ -566,7 +568,12 @@ impl Wiring {
     }
 }
 
-pub fn wire_catalog(shell: &MainShell, settings: &Settings) -> Result<Wiring, String> {
+pub fn wire_catalog(
+    shell: &MainShell,
+    settings: &Settings,
+    ui_language: &str,
+) -> Result<Wiring, String> {
+    let content = &settings.content;
     let generations = Arc::new(Generations::default());
     let home: Arc<HomeSlot> = Arc::new(Mutex::new(None));
     let show_chips = settings.content.show_home_category_chips;
@@ -597,7 +604,12 @@ pub fn wire_catalog(shell: &MainShell, settings: &Settings) -> Result<Wiring, St
             });
         })
     };
-    let source = LiveSource::new()?;
+    let system_country = madrigal_settings::system_country();
+    let locale = Locale::new(
+        content.resolved_language(ui_language),
+        content.resolved_country(system_country.as_deref()),
+    );
+    let source = LiveSource::new(locale)?;
     wire_shared(
         shell,
         &settings.content,
@@ -693,9 +705,10 @@ fn wire_shared(
     let id = generations.begin(CatalogSlot::Home);
     link.send(Request::Home { id });
     let id = generations.begin(CatalogSlot::Explore);
+    let system_country = madrigal_settings::system_country();
     link.send(Request::Explore {
         id,
-        country: content.content_country.clone(),
+        country: content.resolved_country(system_country.as_deref()),
     });
 
     Ok(Wiring {
@@ -802,18 +815,20 @@ fn register_callbacks(shell: &MainShell, link: &Link) {
 
 struct LiveSource {
     runtime: tokio::runtime::Runtime,
+    locale: Locale,
     client: Option<CatalogClient>,
     auth: Option<AuthCatalogClient>,
 }
 
 impl LiveSource {
-    fn new() -> Result<Self, String> {
+    fn new(locale: Locale) -> Result<Self, String> {
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .map_err(|err| err.to_string())?;
         Ok(Self {
             runtime,
+            locale,
             client: None,
             auth: None,
         })
@@ -821,7 +836,8 @@ impl LiveSource {
 
     fn parts(&mut self) -> Result<(&tokio::runtime::Runtime, &CatalogClient), InnertubeError> {
         if self.client.is_none() {
-            self.client = Some(self.runtime.block_on(CatalogClient::new())?);
+            let locale = self.locale.clone();
+            self.client = Some(self.runtime.block_on(CatalogClient::with_locale(locale))?);
         }
         let client = self
             .client
@@ -916,9 +932,9 @@ impl LiveSource {
 
 impl CatalogSource for LiveSource {
     fn set_session(&mut self, cookie: Option<String>) {
-        self.auth = cookie
-            .as_deref()
-            .and_then(|cookie| CatalogClient::with_cookies(cookie).ok());
+        self.auth = cookie.as_deref().and_then(|cookie| {
+            CatalogClient::with_cookies_locale(cookie, self.locale.clone()).ok()
+        });
     }
 
     fn home(&mut self) -> Result<HomeFeed, InnertubeError> {

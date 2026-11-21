@@ -1,8 +1,8 @@
 use std::env;
 
 use madrigal_settings::{
-    AudioQuality, Language, LyricsProvider, Settings, SponsorCategory, Theme, UpdateChannel,
-    set_active_account_in,
+    AudioQuality, CONTENT_LOCALE_MARKER, Language, LyricsProvider, Settings, SponsorCategory,
+    Theme, UpdateChannel, set_active_account_in,
 };
 
 fn isolate_profile() -> tempfile::TempDir {
@@ -143,4 +143,35 @@ fn settings_roundtrip() {
     ));
     let second = madrigal_paths::profile_account_path("personal").expect("account path");
     assert_ne!(other, second);
+}
+
+#[test]
+fn legacy_content_locale_migrates_once() {
+    let root = isolate_profile();
+    let path = root.path().join("settings.json");
+    let legacy = serde_json::json!({
+        "content": {"content_language": "en", "content_country": "US"},
+    });
+    std::fs::write(&path, serde_json::to_string_pretty(&legacy).unwrap()).unwrap();
+    let migrated = Settings::load_from(&path);
+    assert_eq!(migrated.content.content_language, "");
+    assert_eq!(migrated.content.content_country, "");
+    assert_eq!(
+        migrated.extra.get(CONTENT_LOCALE_MARKER),
+        Some(&serde_json::json!(true))
+    );
+    assert_eq!(migrated.content.resolved_language("es"), "es");
+    migrated.save_to(&path).unwrap();
+
+    let mut explicit = Settings::load_from(&path);
+    explicit.content = madrigal_settings::Content {
+        content_language: "en".to_owned(),
+        content_country: "GB".to_owned(),
+        ..explicit.content
+    };
+    explicit.save_to(&path).unwrap();
+    let kept = Settings::load_from(&path);
+    assert_eq!(kept.content.content_language, "en");
+    assert_eq!(kept.content.content_country, "GB");
+    assert_eq!(kept.content.resolved_language("es"), "en");
 }

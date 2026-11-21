@@ -28,7 +28,7 @@ pub use appearance::{
 pub use content::{
     AlbumFilter, AlbumSortType, ArtistFilter, ArtistSortType, ArtistSongSortType, AutoPlaylistSongSortType,
     Content, PlaylistSongSortType, PlaylistSortType, PlaylistSuggestionSource, QuickPicks,
-    SearchSource, SongFilter, SongSortType, TopRange,
+    SearchSource, SongFilter, SongSortType, TopRange, country_from_locale, system_country,
 };
 pub use integrations::{
     DiscordActivityType, DiscordPresenceStatus, Integrations, LastFmProvider, SponsorCategory,
@@ -49,7 +49,9 @@ pub use updates::{UpdateChannel, Updates};
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
+pub const CONTENT_LOCALE_MARKER: &str = "content_locale_auto";
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
     #[serde(deserialize_with = "de::or_default")]
@@ -80,6 +82,28 @@ pub struct Settings {
     pub extra: HashMap<String, serde_json::Value>,
 }
 
+impl Default for Settings {
+    fn default() -> Self {
+        let mut extra = HashMap::new();
+        extra.insert(CONTENT_LOCALE_MARKER.to_owned(), serde_json::json!(true));
+        Self {
+            appearance: Appearance::default(),
+            content: Content::default(),
+            player: Player::default(),
+            lyrics: Lyrics::default(),
+            internet: Internet::default(),
+            storage: Storage::default(),
+            privacy: Privacy::default(),
+            recognition: Recognition::default(),
+            account: Account::default(),
+            integrations: Integrations::default(),
+            ai: Ai::default(),
+            updates: Updates::default(),
+            extra,
+        }
+    }
+}
+
 pub fn sanitize_account_id(raw: &str) -> String {
     let id = raw.trim();
     if madrigal_paths::valid_profile_id(id) {
@@ -106,7 +130,23 @@ impl Settings {
         if !value.is_object() {
             return Self::default();
         }
+        let has_locale_marker = value
+            .get(CONTENT_LOCALE_MARKER)
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false);
         let mut settings: Self = serde_json::from_value(value).unwrap_or_default();
+        if !has_locale_marker {
+            if settings.content.content_language == "en"
+                && settings.content.content_country == "US"
+            {
+                settings.content.content_language.clear();
+                settings.content.content_country.clear();
+            }
+            settings.extra.insert(
+                CONTENT_LOCALE_MARKER.to_owned(),
+                serde_json::json!(true),
+            );
+        }
         settings.sanitize();
         settings
     }

@@ -62,13 +62,14 @@ pub use pages_settings::{
 };
 pub use shell::{
     apply_shell_appearance, apply_shell_theme, close_detail, dispatch_key, is_detail_open,
-    overlay_from_index, overlay_index, page_from_index, page_index, set_shell_lang,
+    overlay_from_index, overlay_index, page_from_index, page_index, set_shell_lang, shell_lang,
     sync_queue_seam, wire_shell_i18n, ShellOverlay, ShellPage,
 };
 pub use theme::{
     from_appearance, lang_code, lang_from_code, theme_from_index, theme_index, ThemeKind,
 };
 
+use slint::Model as _;
 use std::cell::Cell;
 use std::rc::Rc;
 

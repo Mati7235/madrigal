@@ -1,5 +1,6 @@
+use serde_json::{json, Value};
 use ytmapi_rs::Client;
-use ytmapi_rs::auth::noauth::NoAuthToken;
+use ytmapi_rs::auth::{AuthToken, noauth::NoAuthToken};
 use ytmapi_rs::common::{AlbumID, ArtistChannelID, PlaylistID, SearchSuggestion, VideoID, YoutubeID};
 use ytmapi_rs::parse::{
     GetAlbum, GetArtist, GetPlaylistDetails, ParseFrom, PlaylistItem, SearchResultAlbum,
@@ -8,10 +9,10 @@ use ytmapi_rs::parse::{
 use ytmapi_rs::query::search::{AlbumsFilter, ArtistsFilter, FilteredSearch, SearchQuery, SongsFilter};
 use ytmapi_rs::query::{
     GetAlbumQuery, GetArtistQuery, GetMoodCategoriesQuery, GetPlaylistDetailsQuery,
-    GetPlaylistTracksQuery, GetSearchSuggestionsQuery, GetWatchPlaylistQuery, Query,
+    GetPlaylistTracksQuery, GetSearchSuggestionsQuery, GetWatchPlaylistQuery, PostQuery,
 };
 use ytmapi_rs::json::Json;
-use ytmapi_rs::{ProcessedResult, YtMusic, YtMusicBuilder};
+use ytmapi_rs::{ProcessedResult, YtMusic};
 
 use madrigal_core::{Album, Artist, Track};
 
@@ -33,20 +34,104 @@ pub enum SearchOutcome {
     Albums(Vec<Album>),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Locale {
+    pub hl: String,
+    pub gl: String,
+}
+
+impl Locale {
+    pub fn new(hl: impl Into<String>, gl: impl Into<String>) -> Self {
+        Self {
+            hl: hl.into(),
+            gl: gl.into(),
+        }
+    }
+
+    pub fn context(&self, client_version: &str) -> Value {
+        json!({
+            "client": {
+                "clientName": "WEB_REMIX",
+                "clientVersion": client_version,
+                "hl": self.hl,
+                "gl": self.gl,
+                "user": {},
+            },
+            "user": {},
+            "request": {},
+        })
+    }
+}
+
+impl Default for Locale {
+    fn default() -> Self {
+        Self::new("en", "US")
+    }
+}
+
+const INNERTUBE_API_URL: &str = "https://music.youtube.com/youtubei/v1/";
+const INNERTUBE_PARAMS: &str =
+    "?alt=json&prettyPrint=false&key=AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30";
+
+// ytmapi-rs 0.3.4 hardcodes the innertube context without hl/gl.
+pub(crate) async fn localized_json<Q, A>(
+    client: &Client,
+    token: &A,
+    locale: &Locale,
+    query: &Q,
+) -> Result<Value, Error>
+where
+    Q: PostQuery,
+    A: AuthToken,
+{
+    let url = format!("{INNERTUBE_API_URL}{}{INNERTUBE_PARAMS}", query.path());
+    let mut body = json!({ "context": locale.context(token.client_version().as_ref()) });
+    if let Some(map) = body.as_object_mut() {
+        map.append(&mut query.header());
+    }
+    let params = query.params();
+    let response = client
+        .post_json_query(url, token.headers()?, &body, &params)
+        .await?;
+    if !(200..300).contains(&response.status_code) {
+        return Err(Error::Request(format!(
+            "innertube returned HTTP {}",
+            response.status_code
+        )));
+    }
+    let value: Value = serde_json::from_str(&response.text)?;
+    if let Some(error) = value.pointer("/error") {
+        let message = error
+            .pointer("/message")
+            .and_then(Value::as_str)
+            .unwrap_or("innertube error");
+        return Err(Error::Request(message.to_owned()));
+    }
+    Ok(value)
+}
+
 pub struct CatalogClient {
     yt: YtMusic<NoAuthToken>,
     client: Client,
+    token: NoAuthToken,
+    locale: Locale,
 }
 
 impl CatalogClient {
     pub async fn new() -> Result<Self, Error> {
-        let client = Client::new()?;
-        let yt = YtMusicBuilder::new_with_client(client.clone()).build().await?;
-        Ok(Self { yt, client })
+        Self::with_locale(Locale::default()).await
     }
 
-    pub fn from_inner(yt: YtMusic<NoAuthToken>, client: Client) -> Self {
-        Self { yt, client }
+    pub async fn with_locale(locale: Locale) -> Result<Self, Error> {
+        let client = Client::new()?;
+        let token = NoAuthToken::new(&client).await?;
+        let yt = YtMusic::from_auth_token(token.clone());
+        Ok(Self {
+            yt,
+            client,
+            token,
+            locale,
+        })
     }
 
     pub fn client(&self) -> &Client {
@@ -57,37 +142,29 @@ impl CatalogClient {
         (self.yt, self.client)
     }
 
-    pub async fn raw_json<Q>(&self, query: Q) -> Result<serde_json::Value, Error>
+    pub async fn raw_json<Q>(&self, query: Q) -> Result<Value, Error>
     where
-        Q: Query<NoAuthToken>,
+        Q: PostQuery,
     {
-        Ok(self.yt.json_query(query).await?.into_inner())
+        localized_json(&self.client, &self.token, &self.locale, &query).await
     }
 
     pub async fn search(&self, query: &str, filter: SearchFilter) -> Result<SearchOutcome, Error> {
-        match filter {
+        let raw = match filter {
             SearchFilter::Songs => {
-                let raw = self
-                    .yt
-                    .raw_json_query(SearchQuery::new_filtered(query, SongsFilter))
-                    .await?;
-                Self::parse_search(filter, &raw)
+                self.raw_json(SearchQuery::new_filtered(query, SongsFilter))
+                    .await?
             }
             SearchFilter::Artists => {
-                let raw = self
-                    .yt
-                    .raw_json_query(SearchQuery::new_filtered(query, ArtistsFilter))
-                    .await?;
-                Self::parse_search(filter, &raw)
+                self.raw_json(SearchQuery::new_filtered(query, ArtistsFilter))
+                    .await?
             }
             SearchFilter::Albums => {
-                let raw = self
-                    .yt
-                    .raw_json_query(SearchQuery::new_filtered(query, AlbumsFilter))
-                    .await?;
-                Self::parse_search(filter, &raw)
+                self.raw_json(SearchQuery::new_filtered(query, AlbumsFilter))
+                    .await?
             }
-        }
+        };
+        Self::parse_search(filter, &raw.to_string())
     }
 
     pub async fn search_songs(&self, query: &str) -> Result<Vec<Track>, Error> {
@@ -117,61 +194,49 @@ impl CatalogClient {
 
     pub async fn suggestions(&self, query: &str) -> Result<Vec<String>, Error> {
         let raw = self
-            .yt
-            .raw_json_query(GetSearchSuggestionsQuery::new(query))
+            .raw_json(GetSearchSuggestionsQuery::new(query))
             .await?;
-        Self::parse_suggestions(&raw)
+        Self::parse_suggestions(&raw.to_string())
     }
 
     pub async fn artist_page(&self, channel_id: &str) -> Result<ArtistPage, Error> {
         let raw = self
-            .yt
-            .raw_json_query(GetArtistQuery::new(ArtistChannelID::from_raw(channel_id)))
+            .raw_json(GetArtistQuery::new(ArtistChannelID::from_raw(channel_id)))
             .await?;
-        Self::parse_artist_page(channel_id, &raw)
+        Self::parse_artist_page(channel_id, &raw.to_string())
     }
 
     pub async fn album_page(&self, browse_id: &str) -> Result<AlbumPage, Error> {
         let raw = self
-            .yt
-            .raw_json_query(GetAlbumQuery::new(AlbumID::from_raw(browse_id)))
+            .raw_json(GetAlbumQuery::new(AlbumID::from_raw(browse_id)))
             .await?;
-        Self::parse_album_page(browse_id, &raw)
+        Self::parse_album_page(browse_id, &raw.to_string())
     }
 
     pub async fn playlist_page(&self, playlist_id: &str) -> Result<PlaylistPage, Error> {
-        let details_raw = self
-            .yt
-            .raw_json_query(GetPlaylistDetailsQuery::new(PlaylistID::from_raw(
+        let details = self
+            .raw_json(GetPlaylistDetailsQuery::new(PlaylistID::from_raw(
                 playlist_id,
             )))
             .await?;
-        let tracks_raw = self
-            .yt
-            .raw_json_query(GetPlaylistTracksQuery::new(PlaylistID::from_raw(playlist_id)))
+        let tracks = self
+            .raw_json(GetPlaylistTracksQuery::new(PlaylistID::from_raw(playlist_id)))
             .await?;
-        Self::parse_playlist_page(playlist_id, &details_raw, &tracks_raw)
+        Self::parse_playlist_page(playlist_id, &details.to_string(), &tracks.to_string())
     }
 
     pub async fn watch_playlist(&self, video_id: &str) -> Result<Vec<Track>, Error> {
         let raw = self
-            .yt
-            .raw_json_query(GetWatchPlaylistQuery::new_from_video_id(VideoID::from_raw(
-                video_id,
-            )))
+            .raw_json(
+                GetWatchPlaylistQuery::new_from_video_id(VideoID::from_raw(video_id)),
+            )
             .await?;
-        Self::parse_watch_playlist(&raw)
+        Self::parse_watch_playlist(&raw.to_string())
     }
 
     pub async fn mood_listing(&self) -> Result<MoodListing, Error> {
-        let query = GetMoodCategoriesQuery;
-        let json = self.yt.json_query(query.clone()).await?;
-        let processed = ProcessedResult {
-            query: &query,
-            source: String::new(),
-            json,
-        };
-        Ok(MoodListing::parse_from(processed)?)
+        let raw = self.raw_json(GetMoodCategoriesQuery).await?;
+        Self::parse_mood_listing(&raw.to_string())
     }
 
     pub fn parse_search(filter: SearchFilter, source: &str) -> Result<SearchOutcome, Error> {
@@ -328,3 +393,31 @@ where
     };
     Ok(O::parse_from(processed)?)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn contexto_lleva_idioma_y_pais() {
+        let context = Locale::new("es", "AR").context("1.20261118.01.00");
+        assert_eq!(context.pointer("/client/hl").and_then(Value::as_str), Some("es"));
+        assert_eq!(context.pointer("/client/gl").and_then(Value::as_str), Some("AR"));
+        assert_eq!(
+            context.pointer("/client/clientName").and_then(Value::as_str),
+            Some("WEB_REMIX")
+        );
+        assert_eq!(
+            context.pointer("/client/clientVersion").and_then(Value::as_str),
+            Some("1.20261118.01.00")
+        );
+    }
+
+    #[test]
+    fn locale_por_defecto_es_ingles_estados_unidos() {
+        let locale = Locale::default();
+        assert_eq!(locale.hl, "en");
+        assert_eq!(locale.gl, "US");
+    }
+}
+

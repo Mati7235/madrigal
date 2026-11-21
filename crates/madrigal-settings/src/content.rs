@@ -222,8 +222,8 @@ pub struct Content {
 impl Default for Content {
     fn default() -> Self {
         Self {
-            content_language: "en".to_owned(),
-            content_country: "US".to_owned(),
+            content_language: String::new(),
+            content_country: String::new(),
             hide_explicit: false,
             hide_video: false,
             search_source: SearchSource::Online,
@@ -266,13 +266,7 @@ impl Default for Content {
 impl Content {
     pub fn sanitize(&mut self) {
         self.content_language = self.content_language.trim().to_owned();
-        if self.content_language.is_empty() {
-            self.content_language = "en".to_owned();
-        }
         self.content_country = self.content_country.trim().to_owned();
-        if self.content_country.is_empty() {
-            self.content_country = "US".to_owned();
-        }
         self.local_songs_min_duration_secs =
             crate::sanitize::clamp_i32(self.local_songs_min_duration_secs, 0, 3600);
         self.speed_dial_song_ids = self
@@ -281,5 +275,65 @@ impl Content {
             .map(|id| id.trim().to_owned())
             .filter(|id| !id.is_empty())
             .collect();
+    }
+
+    pub fn resolved_language(&self, ui_language: &str) -> String {
+        if self.content_language.is_empty() {
+            ui_language.to_owned()
+        } else {
+            self.content_language.clone()
+        }
+    }
+
+    pub fn resolved_country(&self, system_country: Option<&str>) -> String {
+        if self.content_country.is_empty() {
+            system_country.unwrap_or("US").to_owned()
+        } else {
+            self.content_country.clone()
+        }
+    }
+}
+
+pub fn system_country() -> Option<String> {
+    ["LC_ALL", "LC_MESSAGES", "LANG"]
+        .iter()
+        .find_map(|key| std::env::var(key).ok())
+        .and_then(|value| country_from_locale(&value))
+}
+
+pub fn country_from_locale(value: &str) -> Option<String> {
+    let base = value.split(['.', '@']).next()?;
+    let region = base.split('_').nth(1)?;
+    let valid = region.len() == 2 && region.chars().all(|ch| ch.is_ascii_alphabetic());
+    valid.then(|| region.to_ascii_uppercase())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pais_desde_locale() {
+        assert_eq!(country_from_locale("es_AR.UTF-8"), Some("AR".to_owned()));
+        assert_eq!(country_from_locale("en_US"), Some("US".to_owned()));
+        assert_eq!(country_from_locale("es_ES@euro"), Some("ES".to_owned()));
+        assert_eq!(country_from_locale("es"), None);
+        assert_eq!(country_from_locale("C"), None);
+        assert_eq!(country_from_locale("es_"), None);
+    }
+
+    #[test]
+    fn locale_efectivo_sigue_ui_y_sistema() {
+        let content = Content::default();
+        assert_eq!(content.resolved_language("es"), "es");
+        assert_eq!(content.resolved_country(Some("AR")), "AR");
+        assert_eq!(content.resolved_country(None), "US");
+        let explicit = Content {
+            content_language: "en".to_owned(),
+            content_country: "GB".to_owned(),
+            ..Content::default()
+        };
+        assert_eq!(explicit.resolved_language("es"), "en");
+        assert_eq!(explicit.resolved_country(Some("AR")), "GB");
     }
 }
