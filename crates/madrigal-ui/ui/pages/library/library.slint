@@ -1,4 +1,4 @@
-import { Palette, Type } from "../../tokens.slint";
+import { Palette, Shape, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { M3Chip, M3Card } from "../../components/cards.slint";
 import { M3Button } from "../../components/buttons.slint";
@@ -6,6 +6,7 @@ import { M3IconButton } from "../../components/buttons.slint";
 import { M3TextField } from "../../components/fields.slint";
 import { Icon, Icons } from "../../components/icons.slint";
 import { M3ListItem } from "../../components/rows.slint";
+import { Cover } from "../../components/cover.slint";
 import { TrackMenuRequest } from "../../components/menu.slint";
 import { LibSongRow, LibPlaylistRow, LibCardRow, HistoryRow, StatRow } from "models.slint";
 
@@ -570,19 +571,9 @@ export component LibraryPage inherits Rectangle {
                     padding: 8px;
                     padding-bottom: 96px;
                     history-head := HorizontalLayout {
-                        padding-left: 12px;
-                        padding-right: 12px;
+                        width: 100%;
                         spacing: 8px;
-                        alignment: center;
-
-                        paused-label := Text {
-                            text: I18n.trl(I18n.lang, "library.history.paused");
-                            color: root.palette.on-surface-variant;
-                            font-size: Type.body-medium.size;
-                            font-family: Type.body-medium.family;
-                            horizontal-stretch: 1;
-                            visible: root.history-paused;
-                        }
+                        alignment: start;
 
                         history-clear-wrap := Rectangle {
                             height: 36px;
@@ -608,6 +599,17 @@ export component LibraryPage inherits Rectangle {
                                 clicked => { root.history-cleared(); }
                             }
                         }
+
+                        paused-label := Text {
+                            text: I18n.trl(I18n.lang, "library.history.paused");
+                            color: root.palette.on-surface-variant;
+                            font-size: Type.body-medium.size;
+                            font-family: Type.body-medium.family;
+                            horizontal-stretch: 1;
+                            vertical-alignment: center;
+                            visible: root.history-paused;
+                            overflow: elide;
+                        }
                     }
 
                     if (root.history.length == 0) : history-empty := Text {
@@ -618,14 +620,27 @@ export component LibraryPage inherits Rectangle {
                         horizontal-alignment: center;
                     }
 
-                    for entry in root.history: Rectangle {
-                        height: 56px;
+                    for entry in root.history : history-row := Rectangle {
+                        width: 100%;
+                        height: 54px;
+                        border-radius: Shape.small;
 
                         HorizontalLayout {
-                            padding-left: 12px;
-                            padding-right: 12px;
+                            padding-left: 10px;
+                            padding-right: 16px;
                             spacing: 12px;
-                            alignment: center;
+
+                            history-art-frame := Rectangle {
+                                width: 36px;
+                                VerticalLayout {
+                                    alignment: center;
+                                    history-cover := Cover {
+                                        size: 36px;
+                                        radius: 8px;
+                                        palette: root.palette;
+                                    }
+                                }
+                            }
 
                             entry-texts := VerticalLayout {
                                 spacing: 2px;
@@ -634,15 +649,17 @@ export component LibraryPage inherits Rectangle {
                                 entry-title := Text {
                                     text: entry.title;
                                     color: root.palette.on-surface;
-                                    font-size: Type.body-large.size;
-                                    font-family: Type.body-large.family;
+                                    font-size: Type.title-small.size;
+                                    font-family: Type.title-small.family;
+                                    font-weight: Type.title-small.weight;
                                     overflow: elide;
                                 }
                                 entry-sub := Text {
                                     text: entry.subtitle;
                                     color: root.palette.on-surface-variant;
-                                    font-size: Type.body-medium.size;
-                                    font-family: Type.body-medium.family;
+                                    font-size: Type.label-small.size;
+                                    font-family: Type.label-small.family;
+                                    font-weight: 400;
                                     overflow: elide;
                                 }
                             }

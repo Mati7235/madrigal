@@ -259,6 +259,64 @@ fn ui_library() {
     assert!(!shell.get_lib_history_paused());
     assert_eq!(shell.get_lib_history().row_count(), 12);
     shell.invoke_lib_chip_selected(5);
+    kit::mock_advance(Duration::from_millis(50));
+
+    let list = kit::find_by_id(&shell, "LibraryPage::history-list").unwrap();
+    let mut rows = kit::ElementHandle::find_by_element_id(&shell, "LibraryPage::history-row");
+    let first = rows.next().expect("first history row");
+    let second = rows.next().expect("second history row");
+    let list_pos = list.absolute_position();
+    let list_size = list.size();
+    let first_pos = first.absolute_position();
+    let first_size = first.size();
+    let second_pos = second.absolute_position();
+    let second_size = second.size();
+    assert!((first_size.height - 54.0).abs() < 0.5, "row height {}", first_size.height);
+    assert!((second_size.height - 54.0).abs() < 0.5, "row height {}", second_size.height);
+    assert!(
+        (first_pos.x - second_pos.x).abs() < 0.5,
+        "row left edges {} vs {}",
+        first_pos.x,
+        second_pos.x
+    );
+    assert!(
+        (first_size.width - second_size.width).abs() < 0.5,
+        "row widths {} vs {}",
+        first_size.width,
+        second_size.width
+    );
+    assert!(
+        (first_size.width - (list_size.width - 16.0)).abs() < 1.0,
+        "row width {} in list {}",
+        first_size.width,
+        list_size.width
+    );
+    assert!(
+        (first_pos.x - (list_pos.x + 8.0)).abs() < 1.0,
+        "row x {} at list {}",
+        first_pos.x,
+        list_pos.x
+    );
+    let clear = kit::find_by_id(&shell, "LibraryPage::history-clear-wrap").unwrap();
+    assert!(
+        (clear.absolute_position().x - first_pos.x).abs() < 1.0,
+        "clear button x {} vs row x {}",
+        clear.absolute_position().x,
+        first_pos.x
+    );
+    let cover = kit::find_by_id(&shell, "LibraryPage::history-cover").unwrap();
+    let cover_pos = cover.absolute_position();
+    let cover_size = cover.size();
+    assert!((cover_size.width - 36.0).abs() < 0.5, "cover width {}", cover_size.width);
+    assert!((cover_size.height - 36.0).abs() < 0.5, "cover height {}", cover_size.height);
+    assert!(
+        (cover_pos.x - (first_pos.x + 10.0)).abs() < 1.0,
+        "cover x {} vs row x {}",
+        cover_pos.x,
+        first_pos.x
+    );
+    kit::lint_layout_at_sizes(&shell, "library-history");
+
     kit::click_by_id(&shell, "LibraryPage::history-clear-touch").unwrap();
     assert_eq!(shell.get_lib_last_action().as_str(), "history-cleared");
     lib.clear_listen_history().unwrap();
