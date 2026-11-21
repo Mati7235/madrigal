@@ -381,11 +381,11 @@ pub fn set_now_playing_cover(shell: &MainShell, thumbnail: &str) {
         &load,
         bucket,
         Box::new(move |image| {
-            if !NOW_PLAYING.with(|slot| *slot.borrow() == url) {
-                return;
-            }
             let weak = weak.clone();
             let _ = slint::invoke_from_event_loop(move || {
+                if !NOW_PLAYING.with(|slot| *slot.borrow() == url) {
+                    return;
+                }
                 if let Some(shell) = weak.upgrade() {
                     shell.set_cover(to_slint_image(&image));
                 }

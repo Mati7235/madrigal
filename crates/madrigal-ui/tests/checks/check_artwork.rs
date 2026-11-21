@@ -2,8 +2,8 @@ use image::{Rgba, RgbaImage};
 use madrigal_artwork::{bucket_for, sized_url, ArtworkCache, Source};
 use madrigal_testkit as kit;
 use madrigal_ui::{
-    apply_cover, init_artwork, resolve_search, to_slint_image, CatalogItem, CoverTestWindow,
-    DetailKind, MainShell,
+    apply_cover, init_artwork, resolve_search, set_now_playing_cover, to_slint_image, CatalogItem,
+    CoverTestWindow, DetailKind, MainShell,
 };
 use slint::{ComponentHandle, Model, ModelRc, VecModel};
 use std::collections::HashSet;
@@ -113,4 +113,25 @@ fn artwork_ui_check() {
         assert!(Instant::now() < deadline, "catalog cover never loaded");
         std::thread::sleep(Duration::from_millis(10));
     }
+
+    let now_bucket = bucket_for(300.0, shell.window().scale_factor());
+    let thumbnail = "https://yt3.googleusercontent.com/now-playing=w120-h120-l90-rj";
+    let now_url = sized_url(thumbnail, now_bucket);
+    let art = checkerboard(Rgba([220, 10, 90, 255]), Rgba([10, 210, 90, 255]));
+    cache
+        .get(&now_url, Source::Bytes(png(&art)), now_bucket)
+        .unwrap();
+    set_now_playing_cover(&shell, thumbnail);
+    let deadline = Instant::now() + Duration::from_secs(3);
+    loop {
+        pump_events();
+        let cover = shell.get_cover();
+        if cover.size().width > 0 {
+            assert_eq!(cover.size().width, now_bucket);
+            break;
+        }
+        assert!(Instant::now() < deadline, "now playing cover never loaded");
+        std::thread::sleep(Duration::from_millis(10));
+    }
 }
+
