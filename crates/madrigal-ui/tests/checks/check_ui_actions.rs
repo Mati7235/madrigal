@@ -28,6 +28,7 @@ fn search_item() -> CatalogItem {
         artist: "The Beatles".into(),
         album: "Abbey Road".into(),
         thumbnail: "".into(),
+        cover: Default::default(),
         duration_secs: 259,
     }
 }
@@ -193,6 +194,8 @@ fn ui_actions() {
         artist: "The Beatles".into(),
         album: "Abbey Road".into(),
         current: true,
+        thumbnail: "".into(),
+        cover: Default::default(),
     }])));
     kit::mock_advance(std::time::Duration::from_millis(100));
     let queue_row = kit::find_by_id(&shell, "QueueDrawer::row-touch").unwrap();
