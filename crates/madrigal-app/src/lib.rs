@@ -9,6 +9,7 @@ pub mod state;
 pub mod store;
 pub mod streams;
 pub mod ui;
+pub mod account;
 
 use std::path::Path;
 use std::time::Instant;

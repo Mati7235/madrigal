@@ -5,8 +5,8 @@ use std::thread;
 
 use madrigal_core::{Track, TrackIdentity};
 use madrigal_innertube::{
-    BrowsePage, CatalogClient, ChartsPage, Error as InnertubeError, HomeFeed, MoodListing,
-    NewReleases, SearchFilter, SearchOutcome,
+    AuthCatalogClient, BrowsePage, CatalogClient, ChartsPage, Error as InnertubeError, HomeFeed,
+    MoodListing, NewReleases, SearchFilter, SearchOutcome,
 };
 use madrigal_settings::{Content, SearchSource};
 use madrigal_ui::{
@@ -34,6 +34,7 @@ pub trait CatalogSource {
         filter: SearchFilter,
     ) -> Result<SearchOutcome, InnertubeError>;
     fn explore(&mut self, country: &str) -> Result<ExplorePages, InnertubeError>;
+    fn set_session(&mut self, _cookie: Option<String>) {}
 }
 
 pub struct ExplorePages {
@@ -120,15 +121,19 @@ enum Request {
         id: u64,
         country: String,
     },
+    SetSession {
+        cookie: Option<String>,
+    },
 }
 
 impl Request {
-    fn slot_and_id(&self) -> (CatalogSlot, u64) {
+    fn slot_and_id(&self) -> Option<(CatalogSlot, u64)> {
         match self {
-            Request::Home { id } => (CatalogSlot::Home, *id),
-            Request::Suggestions { id, .. } => (CatalogSlot::Suggestions, *id),
-            Request::Search { id, .. } => (CatalogSlot::Search, *id),
-            Request::Explore { id, .. } => (CatalogSlot::Explore, *id),
+            Request::Home { id } => Some((CatalogSlot::Home, *id)),
+            Request::Suggestions { id, .. } => Some((CatalogSlot::Suggestions, *id)),
+            Request::Search { id, .. } => Some((CatalogSlot::Search, *id)),
+            Request::Explore { id, .. } => Some((CatalogSlot::Explore, *id)),
+            Request::SetSession { .. } => None,
         }
     }
 }
@@ -152,7 +157,13 @@ fn run_worker(
     delivery: Delivery,
 ) {
     for request in requests {
-        let (slot, id) = request.slot_and_id();
+        if let Request::SetSession { cookie } = request {
+            source.set_session(cookie);
+            continue;
+        }
+        let Some((slot, id)) = request.slot_and_id() else {
+            continue;
+        };
         if !generations.is_current(slot, id) {
             continue;
         }
@@ -194,6 +205,7 @@ fn run_worker(
                     pages,
                 }),
             ),
+            Request::SetSession { .. } => continue,
         };
         delivery(event);
     }
@@ -384,6 +396,7 @@ pub fn wire_play_requests(shell: &MainShell, core: &Arc<Mutex<Playback>>) {
 pub struct Wiring {
     generations: Arc<Generations>,
     home: Arc<HomeSlot>,
+    requests: Sender<Request>,
 }
 
 impl Wiring {
@@ -393,6 +406,10 @@ impl Wiring {
 
     pub fn home(&self) -> Arc<HomeSlot> {
         Arc::clone(&self.home)
+    }
+
+    pub fn set_session(&self, cookie: Option<String>) {
+        let _ = self.requests.send(Request::SetSession { cookie });
     }
 }
 
@@ -476,7 +493,11 @@ fn wire_shared(
         country: content.content_country.clone(),
     });
 
-    Ok(Wiring { generations, home })
+    Ok(Wiring {
+        generations,
+        home,
+        requests,
+    })
 }
 
 fn register_callbacks(shell: &MainShell, link: &Link) {
@@ -548,6 +569,7 @@ fn register_callbacks(shell: &MainShell, link: &Link) {
 struct LiveSource {
     runtime: tokio::runtime::Runtime,
     client: Option<CatalogClient>,
+    auth: Option<AuthCatalogClient>,
 }
 
 impl LiveSource {
@@ -559,6 +581,7 @@ impl LiveSource {
         Ok(Self {
             runtime,
             client: None,
+            auth: None,
         })
     }
 
@@ -571,6 +594,11 @@ impl LiveSource {
             .as_ref()
             .ok_or_else(|| InnertubeError::Fixture("catalog client missing".to_owned()))?;
         Ok((&self.runtime, client))
+    }
+
+    fn anon_home(&mut self) -> Result<HomeFeed, InnertubeError> {
+        let (runtime, client) = self.parts()?;
+        runtime.block_on(client.get_home())
     }
 }
 
@@ -586,13 +614,42 @@ async fn fetch_explore(
     })
 }
 
+async fn fetch_explore_auth(
+    client: &AuthCatalogClient,
+    country: &str,
+) -> Result<ExplorePages, InnertubeError> {
+    Ok(ExplorePages {
+        moods: client.mood_listing().await?,
+        releases: client.new_releases().await?,
+        browse: client.browse(EXPLORE_BROWSE_ID, None).await?,
+        charts: client.charts(country).await?,
+    })
+}
+
 impl CatalogSource for LiveSource {
+    fn set_session(&mut self, cookie: Option<String>) {
+        self.auth = cookie
+            .as_deref()
+            .and_then(|cookie| CatalogClient::with_cookies(cookie).ok());
+    }
+
     fn home(&mut self) -> Result<HomeFeed, InnertubeError> {
-        let (runtime, client) = self.parts()?;
-        runtime.block_on(client.get_home())
+        if let Some(auth) = &self.auth {
+            let result = self.runtime.block_on(auth.get_home());
+            if result.is_ok() {
+                return result;
+            }
+        }
+        self.anon_home()
     }
 
     fn suggestions(&mut self, query: &str) -> Result<Vec<String>, InnertubeError> {
+        if let Some(auth) = &self.auth {
+            let result = self.runtime.block_on(auth.suggestions(query));
+            if result.is_ok() {
+                return result;
+            }
+        }
         let (runtime, client) = self.parts()?;
         runtime.block_on(client.suggestions(query))
     }
@@ -602,11 +659,23 @@ impl CatalogSource for LiveSource {
         query: &str,
         filter: SearchFilter,
     ) -> Result<SearchOutcome, InnertubeError> {
+        if let Some(auth) = &self.auth {
+            let result = self.runtime.block_on(auth.search(query, filter));
+            if result.is_ok() {
+                return result;
+            }
+        }
         let (runtime, client) = self.parts()?;
         runtime.block_on(client.search(query, filter))
     }
 
     fn explore(&mut self, country: &str) -> Result<ExplorePages, InnertubeError> {
+        if let Some(auth) = &self.auth {
+            let result = self.runtime.block_on(fetch_explore_auth(auth, country));
+            if result.is_ok() {
+                return result;
+            }
+        }
         let (runtime, client) = self.parts()?;
         runtime.block_on(fetch_explore(client, country))
     }

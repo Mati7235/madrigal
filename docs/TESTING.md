@@ -125,6 +125,7 @@ Without `cargo` available the check is FAIL.
 | `app_library` | offline | Library worker over real innertube fixture songs: query filter, playlists, selection, likes, play recording threshold, history clear, stats years, tags |
 | `app_downloads` | offline | Download service over a loopback HTTP server: page rows, progress/speed, queued ordering, pause/resume, retry, cancel and quarantine |
 | `desktop` | offline | Peripherals wiring: settings persistence of volume/repeat/shuffle, session keeper, single-instance file handoff, notification action mapping, scrobble eligibility and outcome merge, D-Bus skip without a session bus, bounded D-Bus setup and shutdown against a silent socket |
+| `app_account` | offline | Firefox login wiring: session stored with cookies only via secret backend, success reports connected, failure sets the mapped error, handler returns without blocking |
 
 ## Visual verification
 

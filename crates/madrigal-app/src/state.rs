@@ -10,7 +10,7 @@ use madrigal_ui::{
 };
 use slint::ComponentHandle;
 
-use crate::catalog::{self, Wiring};
+use crate::catalog;
 use crate::downloads::Downloads;
 use crate::desktop::Desktop;
 use crate::playback::{engine_config, Playback, PlaybackService, Snapshot, POLL_INTERVAL};
@@ -24,7 +24,8 @@ pub struct AppState {
     _library: crate::library::LibraryService,
     _downloads: Downloads,
     _poll: slint::Timer,
-    _catalog: Wiring,
+    _catalog: Arc<catalog::Wiring>,
+    _account_timer: slint::Timer,
     _desktop: Desktop,
 }
 
@@ -66,7 +67,9 @@ impl AppState {
         let downloads = crate::downloads::register(&ui.shell, settings, streams);
         let desktop = Desktop::start(&ui.shell, Arc::clone(&core), settings);
         let poll = start_poll(&ui.shell, Rc::clone(&service));
-        let catalog = catalog::wire_catalog(&ui.shell, &settings.content)?;
+        let catalog = Arc::new(catalog::wire_catalog(&ui.shell, &settings.content)?);
+        let account_timer =
+            crate::account::wire_account(&ui.shell, ui.presenter.clone(), Arc::clone(&catalog));
 
         Ok(Self {
             store,
@@ -76,6 +79,7 @@ impl AppState {
             _downloads: downloads,
             _poll: poll,
             _catalog: catalog,
+            _account_timer: account_timer,
             _desktop: desktop,
         })
     }

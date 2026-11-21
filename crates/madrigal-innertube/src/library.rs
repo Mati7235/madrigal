@@ -4,13 +4,22 @@ use ytmapi_rs::parse::{
     HistoryItem, HistoryPeriod as NativePeriod, LibraryPlaylist as NativePlaylist, ParseFrom,
     TableListSong,
 };
-use ytmapi_rs::query::{GetHistoryQuery, GetLibraryPlaylistsQuery, GetLibrarySongsQuery};
+use ytmapi_rs::query::search::{AlbumsFilter, ArtistsFilter, SongsFilter};
+use ytmapi_rs::query::{
+    GetHistoryQuery, GetLibraryPlaylistsQuery, GetLibrarySongsQuery, GetSearchSuggestionsQuery,
+    Query, SearchQuery,
+};
 use ytmapi_rs::{ProcessedResult, YtMusic};
 
 use madrigal_core::{Playlist, PlaylistId, PlaylistKind, Track, TrackIdentity, parse_duration};
 
+use crate::browse::{BrowsePage, GetBrowseQuery};
+use crate::charts::{ChartsPage, GetChartsQuery, GetNewReleasesQuery, NewReleases};
+use crate::client::{SearchFilter, SearchOutcome};
 use crate::error::Error;
+use crate::home::{GetHomeQuery, HomeFeed};
 use crate::mapping;
+use crate::pages::MoodListing;
 use crate::CatalogClient;
 
 pub struct AuthCatalogClient {
@@ -81,6 +90,74 @@ impl AuthCatalogClient {
 
     pub async fn history(&self) -> Result<HistoryFeed, Error> {
         Ok(history_from_native(&self.yt.get_history().await?))
+    }
+
+    async fn raw_json<Q>(&self, query: Q) -> Result<serde_json::Value, Error>
+    where
+        Q: Query<BrowserToken>,
+    {
+        Ok(self.yt.json_query(query).await?.into_inner())
+    }
+
+    pub async fn get_home(&self) -> Result<HomeFeed, Error> {
+        let value = self.raw_json(GetHomeQuery).await?;
+        HomeFeed::from_value(&value)
+    }
+
+    pub async fn suggestions(&self, query: &str) -> Result<Vec<String>, Error> {
+        let raw = self
+            .yt
+            .raw_json_query(GetSearchSuggestionsQuery::new(query))
+            .await?;
+        CatalogClient::parse_suggestions(&raw)
+    }
+
+    pub async fn search(&self, query: &str, filter: SearchFilter) -> Result<SearchOutcome, Error> {
+        let raw = match filter {
+            SearchFilter::Songs => {
+                self.yt
+                    .raw_json_query(SearchQuery::new_filtered(query, SongsFilter))
+                    .await?
+            }
+            SearchFilter::Artists => {
+                self.yt
+                    .raw_json_query(SearchQuery::new_filtered(query, ArtistsFilter))
+                    .await?
+            }
+            SearchFilter::Albums => {
+                self.yt
+                    .raw_json_query(SearchQuery::new_filtered(query, AlbumsFilter))
+                    .await?
+            }
+        };
+        CatalogClient::parse_search(filter, &raw)
+    }
+
+    pub async fn mood_listing(&self) -> Result<MoodListing, Error> {
+        let raw = self
+            .yt
+            .raw_json_query(ytmapi_rs::query::GetMoodCategoriesQuery)
+            .await?;
+        CatalogClient::parse_mood_listing(&raw)
+    }
+
+    pub async fn browse(&self, browse_id: &str, params: Option<&str>) -> Result<BrowsePage, Error> {
+        let query = match params {
+            Some(params) => GetBrowseQuery::with_params(browse_id, params),
+            None => GetBrowseQuery::new(browse_id),
+        };
+        let value = self.raw_json(query).await?;
+        CatalogClient::parse_browse(&value.to_string())
+    }
+
+    pub async fn charts(&self, country: &str) -> Result<ChartsPage, Error> {
+        let value = self.raw_json(GetChartsQuery::new(country)).await?;
+        CatalogClient::parse_charts(&value.to_string())
+    }
+
+    pub async fn new_releases(&self) -> Result<NewReleases, Error> {
+        let value = self.raw_json(GetNewReleasesQuery).await?;
+        CatalogClient::parse_new_releases(&value.to_string())
     }
 
     pub fn parse_liked_songs(source: &str) -> Result<Vec<Track>, Error> {

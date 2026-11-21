@@ -16,6 +16,7 @@ name = "madrigal"
 path = "src/main.rs"
 
 [dependencies]
+madrigal-account = { path = "../madrigal-account" }
 madrigal-core = { path = "../madrigal-core" }
 madrigal-db = { path = "../madrigal-db" }
 madrigal-downloads = { path = "../madrigal-downloads" }
@@ -83,3 +84,7 @@ path = "tests/checks/check_desktop.rs"
 [[test]]
 name = "check_app_streams"
 path = "tests/checks/check_app_streams.rs"
+
+[[test]]
+name = "check_app_account"
+path = "tests/checks/check_app_account.rs"

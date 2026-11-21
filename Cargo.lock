@@ -3626,6 +3626,7 @@ dependencies = [
 name = "madrigal-app"
 version = "0.1.0"
 dependencies = [
+ "madrigal-account",
  "madrigal-core",
  "madrigal-db",
  "madrigal-downloads",
