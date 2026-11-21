@@ -192,6 +192,15 @@ fn ui_shell() {
     assert_eq!(shell.get_overlay(), 0);
     assert_eq!(shell.get_prompt_result().as_str(), "");
 
+    shell.invoke_lib_sort_opened();
+    assert!(shell.get_lib_sort_open());
+    assert!(dispatch_key(&shell, "Escape"));
+    assert!(!shell.get_lib_sort_open());
+    shell.invoke_lib_tags_opened();
+    assert!(shell.get_lib_tags_open());
+    assert!(dispatch_key(&shell, "Escape"));
+    assert!(!shell.get_lib_tags_open());
+
     let missing = kit::click_by_id(&shell, "SideNav::no-existe");
     assert!(matches!(missing, Err(kit::Error::ElementNotFound(_))));
 

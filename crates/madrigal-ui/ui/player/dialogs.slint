@@ -18,6 +18,20 @@ export component SleepTimerDialog inherits Rectangle {
 
     property<string> status-text: root.mode == 0 ? I18n.trl(I18n.lang, "player.sleep_off_status") : root.mode == 1 ? I18n.trl(I18n.lang, "player.sleep_status_minutes") + " " + root.minutes + " min" : I18n.trl(I18n.lang, "player.sleep_end");
 
+    key-focus := FocusScope {
+        width: 100%;
+        height: 100%;
+        visible: root.visible;
+        changed visible => { if (self.visible) { self.focus(); } }
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                root.dismissed();
+                return accept;
+            }
+            return reject;
+        }
+    }
+
     HorizontalLayout {
         alignment: center;
         VerticalLayout {
@@ -139,6 +153,20 @@ export component TempoPitchDialog inherits Rectangle {
     accessible-role: AccessibleRole.region;
     accessible-label: I18n.trl(I18n.lang, "player.tempoPitch");
 
+    key-focus := FocusScope {
+        width: 100%;
+        height: 100%;
+        visible: root.visible;
+        changed visible => { if (self.visible) { self.focus(); } }
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                root.dismissed();
+                return accept;
+            }
+            return reject;
+        }
+    }
+
     property<float> semi01: (root.semitones + 12) / 24;
     property<float> mult01: (root.mult - 0.5) / 1.5;
 
@@ -236,6 +264,20 @@ export component EqualizerDialog inherits Rectangle {
 
     accessible-role: AccessibleRole.region;
     accessible-label: I18n.trl(I18n.lang, "audio.equalizer");
+
+    key-focus := FocusScope {
+        width: 100%;
+        height: 100%;
+        visible: root.visible;
+        changed visible => { if (self.visible) { self.focus(); } }
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                root.dismissed();
+                return accept;
+            }
+            return reject;
+        }
+    }
 
     HorizontalLayout {
         alignment: center;
@@ -381,6 +423,20 @@ export component PlaybackErrorDialog inherits Rectangle {
     accessible-role: AccessibleRole.region;
     accessible-label: I18n.trl(I18n.lang, "player.playbackError");
 
+    key-focus := FocusScope {
+        width: 100%;
+        height: 100%;
+        visible: root.visible;
+        changed visible => { if (self.visible) { self.focus(); } }
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                root.dismissed();
+                return accept;
+            }
+            return reject;
+        }
+    }
+
     HorizontalLayout {
         alignment: center;
         VerticalLayout {
@@ -489,6 +545,20 @@ export component StreamInfoPanel inherits Rectangle {
 
     accessible-role: AccessibleRole.region;
     accessible-label: I18n.trl(I18n.lang, "stream.title");
+
+    key-focus := FocusScope {
+        width: 100%;
+        height: 100%;
+        visible: root.visible;
+        changed visible => { if (self.visible) { self.focus(); } }
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                root.dismissed();
+                return accept;
+            }
+            return reject;
+        }
+    }
 
     HorizontalLayout {
         alignment: center;

@@ -452,6 +452,7 @@ export component FullPlayer inherits Rectangle {
     in property<string> lyrics-error: "";
 
     callback close-clicked();
+    callback escape-pressed();
     callback play-clicked();
     callback prev-clicked();
     callback next-clicked();
@@ -484,6 +485,27 @@ export component FullPlayer inherits Rectangle {
     property<string> dur-text: Math.floor(root.dur-s / 60) + ":" + (Math.mod(root.dur-s, 60) < 10 ? "0" : "") + Math.mod(root.dur-s, 60);
     property<bool> compact: root.width < 1100px || root.height < 840px;
     property<length> head-h: root.compact ? 56px : 64px;
+
+    public function take-focus() {
+        player-focus.focus();
+    }
+
+    player-focus := FocusScope {
+        x: 0px;
+        y: 0px;
+        width: 0px;
+        height: 0px;
+        visible: root.visible;
+        changed visible => { if (self.visible) { self.focus(); } }
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                root.escape-pressed();
+                return accept;
+            }
+            return reject;
+        }
+    }
+
     property<length> left-w: max(520px, root.width * 0.4);
     property<length> art-size: min(420px, root.left-w - Spacing.s48);
     property<length> compact-art: min(160px, root.height * 0.28);

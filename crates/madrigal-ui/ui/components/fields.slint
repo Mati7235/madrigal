@@ -94,6 +94,7 @@ export component M3SearchBar inherits Rectangle {
     callback accepted(string);
     callback cleared();
     callback nav-key(string) -> bool;
+    callback escape-pressed();
 
     accessible-label: root.hint;
     accessible-role: AccessibleRole.combobox;
@@ -153,6 +154,10 @@ export component M3SearchBar inherits Rectangle {
                     height: 100%;
                     accepted => { root.accepted(root.value); }
                     key-pressed(event) => {
+                        if (event.text == Key.Escape) {
+                            root.escape-pressed();
+                            return accept;
+                        }
                         if (event.text == Key.UpArrow || event.text == Key.DownArrow || event.text == "\n") {
                             if (root.nav-key(event.text)) {
                                 return accept;

@@ -575,6 +575,16 @@ export component MainShell inherits Window {
         }
     }
 
+    function dismiss-player-dialog() {
+        root.player-dialog = 0;
+        root.player-dialog-dismissed();
+        if (root.full-player-open) {
+            full-layer.take-focus();
+        } else {
+            key-bridge.focus();
+        }
+    }
+
     open-confirm(t, b) => {
         root.confirm-title = t;
         root.confirm-body = b;
@@ -626,39 +636,62 @@ export component MainShell inherits Window {
         root.detail-stack = 0;
     }
 
-    handle-key(key) => {
+    public function process-key(key: string) -> bool {
         if (root.track-menu-open) {
             root.menu-key(key);
             return true;
         }
         if (key == "Escape" || key == Key.Escape) {
             if (root.player-dialog != 0) {
-                root.player-dialog = 0;
-                root.player-dialog-dismissed();
+                root.dismiss-player-dialog();
                 return true;
             }
             if (root.queue-open) {
                 root.queue-open = false;
                 root.queue-closed();
+                if (root.full-player-open) {
+                    full-layer.take-focus();
+                } else {
+                    key-bridge.focus();
+                }
                 return true;
             }
             if (root.full-player-open) {
                 root.full-player-open = false;
                 root.player-dialog = 0;
                 root.full-player-closed();
+                key-bridge.focus();
                 return true;
             }
             if (root.overlay == 1) {
                 root.confirm-dismissed();
+                key-bridge.focus();
                 return true;
             }
             if (root.overlay == 2) {
                 root.prompt-dismissed();
+                key-bridge.focus();
+                return true;
+            }
+            if (root.lib-sort-open) {
+                root.lib-sort-closed();
+                key-bridge.focus();
+                return true;
+            }
+            if (root.lib-tags-open) {
+                root.lib-tags-closed();
+                key-bridge.focus();
+                return true;
+            }
+            if (root.lib-chip-edit) {
+                root.lib-chip-edit-toggled();
+                key-bridge.focus();
                 return true;
             }
             if (root.detail-stack == 1) {
                 root.detail-stack = 0;
                 root.detail-closed();
+                key-bridge.focus();
                 return true;
             }
             root.sidebar-focused = true;
@@ -754,6 +787,26 @@ export component MainShell inherits Window {
         return false;
     }
 
+    handle-key(key) => {
+        return root.process-key(key);
+    }
+
+    forward-focus: key-bridge;
+
+    key-bridge := FocusScope {
+        x: 0px;
+        y: 0px;
+        width: 0px;
+        height: 0px;
+
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                return root.process-key("Escape") ? accept : reject;
+            }
+            return reject;
+        }
+    }
+
     title: "madrigal-shell";
     preferred-width: 1280px;
     preferred-height: 800px;
@@ -833,6 +886,7 @@ export component MainShell inherits Window {
                         }
                         return false;
                     }
+                    escape-pressed => { root.process-key("Escape"); }
                 }
             }
             localbar-row := Rectangle {
@@ -855,6 +909,7 @@ export component MainShell inherits Window {
                     state-on-surface: root.palette.on-surface;
                     clear-label: I18n.trl(I18n.lang, "detail.clear");
                     accepted(text) => { root.local-query = text; }
+                    escape-pressed => { root.process-key("Escape"); }
                 }
             }
             host := PageHost {
@@ -1107,7 +1162,8 @@ export component MainShell inherits Window {
         lyrics-state: root.lyrics-state;
         lyrics-synced: root.lyrics-synced;
         lyrics-error: root.lyrics-error;
-        close-clicked => { root.full-player-open = false; root.player-dialog = 0; root.full-player-closed(); }
+        close-clicked => { root.full-player-open = false; root.player-dialog = 0; root.full-player-closed(); key-bridge.focus(); }
+        escape-pressed => { root.process-key("Escape"); }
         play-clicked => { root.play-toggle-count += 1; root.play-pause-toggled(); }
         prev-clicked => { root.prev-count += 1; root.prev-requested(); }
         next-clicked => { root.next-count += 1; root.next-requested(); }
@@ -1191,7 +1247,7 @@ export component MainShell inherits Window {
         minutes-selected(m) => { root.sleep-selected(1, m); }
         end-of-song-selected => { root.sleep-selected(2, 0); }
         off-selected => { root.sleep-selected(0, 0); }
-        dismissed => { root.player-dialog = 0; root.player-dialog-dismissed(); }
+        dismissed => { root.dismiss-player-dialog(); }
     }
 
     tempo-layer := TempoPitchDialog {
@@ -1203,7 +1259,7 @@ export component MainShell inherits Window {
         mult <=> root.tempo-mult;
         commit => { root.tempo-committed(); }
         reset => { root.tempo-reset(); }
-        dismissed => { root.player-dialog = 0; root.player-dialog-dismissed(); }
+        dismissed => { root.dismiss-player-dialog(); }
     }
 
     eq-layer := EqualizerDialog {
@@ -1219,7 +1275,7 @@ export component MainShell inherits Window {
         band-changed(i, v) => { root.eq-band-changed(i, v); }
         preset-selected(p) => { root.eq-preset-selected(p); }
         applied => { root.player-dialog = 0; root.player-dialog-dismissed(); }
-        dismissed => { root.player-dialog = 0; root.player-dialog-dismissed(); }
+        dismissed => { root.dismiss-player-dialog(); }
     }
 
     error-layer := PlaybackErrorDialog {
@@ -1230,7 +1286,7 @@ export component MainShell inherits Window {
         code: root.error-code;
         message: root.error-message;
         retry => { root.error-retried(); }
-        dismissed => { root.player-dialog = 0; root.player-dialog-dismissed(); }
+        dismissed => { root.dismiss-player-dialog(); }
     }
 
     info-layer := StreamInfoPanel {
@@ -1245,7 +1301,7 @@ export component MainShell inherits Window {
         quality: root.stream-quality;
         origin: root.stream-origin;
         resolution: root.stream-resolution;
-        dismissed => { root.player-dialog = 0; root.player-dialog-dismissed(); }
+        dismissed => { root.dismiss-player-dialog(); }
     }
 
     track-menu := TrackMenu {

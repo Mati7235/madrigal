@@ -649,7 +649,9 @@ fn ui_player() {
     kit::click_by_id(&shell, "TempoPitchDialog::tempo-reset-btn").unwrap();
     assert_eq!(shell.get_tempo_semitones(), 0.0);
     assert_eq!(shell.get_tempo_mult(), 1.0);
-    assert!(dispatch_key(&shell, "Escape"));
+    shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
+        text: slint::platform::Key::Escape.into(),
+    });
     assert_eq!(shell.get_player_dialog(), 0);
 
     shell.invoke_player_dialog_requested(3);
@@ -780,7 +782,9 @@ fn ui_player() {
     assert!(dispatch_key(&shell, "Escape"));
     assert!(!shell.get_queue_open());
     assert!(shell.get_full_player_open());
-    assert!(dispatch_key(&shell, "Escape"));
+    shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
+        text: slint::platform::Key::Escape.into(),
+    });
     assert!(!shell.get_full_player_open());
     assert_eq!(shell.get_player_dismiss_count(), 1);
 
