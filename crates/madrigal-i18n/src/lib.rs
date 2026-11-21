@@ -164,6 +164,7 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("downloads.done", "Completada", "Done"),
     ("downloads.downloaded", "Descargada", "Downloaded"),
     ("downloads.empty", "Sin descargas", "No downloads"),
+    ("downloads.emptyHint", "Usá el menú de una canción y elegí Descargar.", "Use a song menu and choose Download."),
     ("downloads.failed", "Fallidas", "Failed"),
     ("error.no_internet", "Sin conexión de red", "No network connection"),
     ("error.no_stream", "Sin stream disponible", "No stream available"),

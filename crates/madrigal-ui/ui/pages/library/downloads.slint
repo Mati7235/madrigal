@@ -126,10 +126,21 @@ export component DownloadsPage inherits Rectangle {
                 dl-empty := Text {
                     width: 100%;
                     text: I18n.trl(I18n.lang, "downloads.empty");
+                    color: root.palette.on-surface;
+                    font-size: Type.title-medium.size;
+                    font-family: Type.title-medium.family;
+                    font-weight: Type.title-medium.weight;
+                    horizontal-alignment: center;
+                }
+
+                dl-empty-hint := Text {
+                    width: 100%;
+                    text: I18n.trl(I18n.lang, "downloads.emptyHint");
                     color: root.palette.on-surface-variant;
                     font-size: Type.body-medium.size;
                     font-family: Type.body-medium.family;
                     horizontal-alignment: center;
+                    wrap: word-wrap;
                 }
             }
         }
