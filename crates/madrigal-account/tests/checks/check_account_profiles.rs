@@ -90,6 +90,28 @@ fn profiles_coexist_isolated() {
 }
 
 #[test]
+fn channel_identity_survives_reload() {
+    let (_guard, _root) = isolate();
+    let store = SessionStore::default();
+    let session = Session {
+        cookie: "LOGIN_INFO=a; __Secure-3PAPISID=b".to_owned(),
+        account_name: "Cuenta".to_owned(),
+        account_email: "cuenta@example.com".to_owned(),
+        channel_handle: "@cuenta".to_owned(),
+        channel_id: "UC00000000000000000000".to_owned(),
+        avatar_url: "https://example.com/avatar.png".to_owned(),
+        ..Session::default()
+    };
+    store.save(&session, Some("default")).expect("save");
+    let back = store.load("default");
+    assert_eq!(back.account_name, "Cuenta");
+    assert_eq!(back.account_email, "cuenta@example.com");
+    assert_eq!(back.channel_handle, "@cuenta");
+    assert_eq!(back.channel_id, "UC00000000000000000000");
+    assert_eq!(back.avatar_url, "https://example.com/avatar.png");
+}
+
+#[test]
 fn active_pointer_flips_settings_only() {
     let (_guard, _root) = isolate();
     let store = SessionStore::default();
