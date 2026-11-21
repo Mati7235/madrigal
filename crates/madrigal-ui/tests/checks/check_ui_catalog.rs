@@ -337,10 +337,14 @@ fn ui_catalog() {
     });
     assert_eq!(accepted.borrow().last().unwrap().as_str(), "beat it");
     assert_eq!(shell.get_search_query().as_str(), "beat it");
+    assert_eq!(shell.get_search_submit_count(), 1);
+    assert_eq!(shell.get_search_last_submitted().as_str(), "beat it");
     click_nth(&shell, "SearchPage::sug-row", 1);
     assert_eq!(accepted.borrow().last().unwrap().as_str(), "beatles");
     assert_eq!(shell.get_search_query().as_str(), "beatles");
     assert_eq!(shell.get_search_suggestion_index(), 1);
+    assert_eq!(shell.get_search_submit_count(), 2);
+    assert_eq!(shell.get_search_last_submitted().as_str(), "beatles");
 
     click_nth(&shell, "SearchPage::filter-chip", 2);
     assert_eq!(shell.get_search_filter_tab(), 2);
@@ -494,7 +498,7 @@ fn ui_catalog() {
     assert_eq!(shell.get_search_clear_count(), 1);
     click_nth(&shell, "SearchPage::recent-row", 1);
     assert_eq!(shell.get_search_query().as_str(), "beatles");
-    assert_eq!(shell.get_search_submit_count(), 2);
+    assert_eq!(shell.get_search_submit_count(), 3);
     assert_eq!(shell.get_search_last_submitted().as_str(), "beatles");
     shell.set_search_recent(
         Rc::new(VecModel::from_slice(&[] as &[slint::SharedString])).into(),

@@ -482,9 +482,9 @@ export component MainShell inherits Window {
     dl-play(id) => { root.dl-record("dl-play"); root.dl-last-arg = id; }
     recent-accepted(t) => {
         root.search-query = t;
-        root.query-changed(t);
         root.search-submit-count += 1;
         root.search-last-submitted = t;
+        root.query-changed(t);
     }
     recent-removed(t) => {
         root.search-remove-count += 1;
@@ -870,13 +870,15 @@ export component MainShell inherits Window {
                     accepted(text) => {
                         if (root.page == 1 && root.search-suggestion-index >= 0 && root.search-suggestion-index < root.search-suggestions.length) {
                             root.search-query = root.search-suggestions[root.search-suggestion-index];
+                            root.search-submit-count += 1;
+                            root.search-last-submitted = root.search-query;
                             root.suggestion-accepted(root.search-query);
                         } else {
                             root.search-query = text;
+                            root.search-submit-count += 1;
+                            root.search-last-submitted = text;
                             root.query-changed(text);
                         }
-                        root.search-submit-count += 1;
-                        root.search-last-submitted = root.search-query;
                         root.page = 1;
                     }
                     cleared => { root.query-changed(""); }
@@ -1018,7 +1020,11 @@ export component MainShell inherits Window {
                 detail-sections: root.detail-sections;
                 detail-tab <=> root.detail-tab;
                 chip-selected(i) => { root.chip-selected(i); }
-                suggestion-accepted(text) => { root.suggestion-accepted(text); }
+                suggestion-accepted(text) => {
+                    root.search-submit-count += 1;
+                    root.search-last-submitted = text;
+                    root.suggestion-accepted(text);
+                }
                 filter-selected(i) => { root.filter-selected(i); }
                 source-selected(i) => { root.source-selected(i); }
                 search-retry() => { root.search-retry(); }

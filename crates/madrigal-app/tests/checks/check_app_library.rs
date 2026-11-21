@@ -1,10 +1,12 @@
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::sync::{Mutex, MutexGuard};
 
 use madrigal_app::library::{Observed, Worker};
 use madrigal_innertube::CatalogClient;
 use madrigal_library::{DuplicatePolicy, Library};
 use madrigal_settings::Settings;
+use slint::{ComponentHandle, Model, VecModel};
 
 const HISTORY_TAB: i32 = 5;
 const PLAYLISTS_TAB: i32 = 1;
@@ -236,4 +238,93 @@ fn history_records_playing_track_with_metadata() {
     let models = worker.handle(obs).expect("second track");
     assert_eq!(models.history.len(), 2);
     assert_eq!(models.history[0].title.as_str(), next.title.as_str());
+}
+
+#[test]
+fn submissions_land_in_recent_searches() {
+    let _guard = lock_profile();
+    let root = tempfile::tempdir().expect("tempdir");
+    std::env::set_var(madrigal_paths::PROFILE_ROOT_ENV, root.path());
+    std::env::set_var("XDG_DATA_HOME", root.path().join("data"));
+    std::env::set_var("XDG_CONFIG_HOME", root.path().join("config"));
+    std::env::set_var("XDG_CACHE_HOME", root.path().join("cache"));
+    madrigal_paths::ensure_dirs().expect("dirs");
+    madrigal_testkit::init_headless();
+    let ui = madrigal_app::ui::boot_ui().expect("boot_ui");
+    let store = madrigal_app::store::Store::open().expect("store");
+    let service = madrigal_app::library::wire_library(&ui.shell, &store);
+    madrigal_testkit::mock_advance(std::time::Duration::from_millis(400));
+    ui.shell.set_page(1);
+    madrigal_testkit::mock_advance(std::time::Duration::from_millis(50));
+    madrigal_testkit::click_by_id(&ui.shell, "MainShell::top-bar").expect("top bar");
+    ui.shell.set_search_query("fito paez".into());
+    ui.shell
+        .window()
+        .dispatch_event(slint::platform::WindowEvent::KeyPressed {
+            text: slint::platform::Key::Return.into(),
+        });
+    assert_eq!(ui.shell.get_search_submit_count(), 1);
+    assert_eq!(ui.shell.get_search_last_submitted().as_str(), "fito paez");
+    madrigal_testkit::mock_advance(std::time::Duration::from_millis(600));
+    let conn = madrigal_db::open(&madrigal_paths::db_path()).expect("reopen");
+    let lib = Library::new(&conn, Settings::default());
+    let recent = lib.search_history(10).expect("history");
+    assert_eq!(
+        recent.first().map(|item| item.query.as_str()),
+        Some("fito paez")
+    );
+
+    ui.shell.set_search_suggestions(
+        Rc::new(VecModel::from(vec![
+            slint::SharedString::from("fito paez y los extraterrestres"),
+            slint::SharedString::from("fito paez"),
+        ]))
+        .into(),
+    );
+    madrigal_testkit::mock_advance(std::time::Duration::from_millis(50));
+    click_nth(&ui.shell, "SearchPage::sug-row", 0);
+    assert_eq!(ui.shell.get_search_submit_count(), 2);
+    assert_eq!(
+        ui.shell.get_search_last_submitted().as_str(),
+        "fito paez y los extraterrestres"
+    );
+    madrigal_testkit::mock_advance(std::time::Duration::from_millis(600));
+
+    let conn = madrigal_db::open(&madrigal_paths::db_path()).expect("reopen");
+    let lib = Library::new(&conn, Settings::default());
+    let recent = lib.search_history(10).expect("history");
+    assert_eq!(
+        recent.iter().map(|item| item.query.as_str()).collect::<Vec<_>>(),
+        vec!["fito paez y los extraterrestres", "fito paez"]
+    );
+    ui.shell.set_search_query("".into());
+    ui.shell.set_search_recent(
+        Rc::new(VecModel::from(
+            recent
+                .iter()
+                .map(|item| slint::SharedString::from(item.query.as_str()))
+                .collect::<Vec<_>>(),
+        ))
+        .into(),
+    );
+    madrigal_testkit::mock_advance(std::time::Duration::from_millis(50));
+    assert_eq!(ui.shell.get_search_recent().row_count(), 2);
+    click_nth(&ui.shell, "SearchPage::recent-row", 1);
+    assert_eq!(ui.shell.get_search_submit_count(), 3);
+    assert_eq!(ui.shell.get_search_last_submitted().as_str(), "fito paez");
+    madrigal_testkit::mock_advance(std::time::Duration::from_millis(600));
+    let conn = madrigal_db::open(&madrigal_paths::db_path()).expect("reopen");
+    let lib = Library::new(&conn, Settings::default());
+    let recent = lib.search_history(10).expect("history");
+    assert_eq!(
+        recent.iter().map(|item| item.query.as_str()).collect::<Vec<_>>(),
+        vec!["fito paez", "fito paez y los extraterrestres"]
+    );
+    drop(service);
+}
+
+fn click_nth(shell: &madrigal_ui::MainShell, id: &str, n: usize) {
+    let mut found = madrigal_testkit::ElementHandle::find_by_element_id(shell, id);
+    let handle = found.nth(n).unwrap_or_else(|| panic!("element {id} #{n} missing"));
+    madrigal_testkit::click(&handle);
 }
