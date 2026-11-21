@@ -214,4 +214,40 @@ fn ui_shell() {
     let bytes = std::fs::read(&shot).unwrap();
     assert_eq!(&bytes[0..8], &[137, 80, 78, 71, 13, 10, 26, 10]);
     assert!(bytes.len() > 4096, "snapshot too small: {}", bytes.len());
+
+    kit::resize(&shell, 683.0, 768.0);
+    assert!(dispatch_key(&shell, "/"));
+    assert!(dispatch_key(&shell, "Escape"));
+    let home_label = kit::find_by_id(&shell, "SideNav::home-focus").unwrap();
+    assert_eq!(home_label.accessible_label().unwrap().as_str(), "Inicio");
+    assert!(
+        kit::find_by_id(&shell, "SideNav::home-focus-ring").is_ok(),
+        "focused nav item has no ring"
+    );
+    shell
+        .window()
+        .dispatch_event(slint::platform::WindowEvent::KeyPressed { text: "\t".into() });
+    assert!(kit::find_by_id(&shell, "SideNav::home-focus-ring").is_err());
+    assert!(kit::find_by_id(&shell, "SideNav::search-focus-ring").is_ok());
+    shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
+        text: slint::platform::Key::Return.into(),
+    });
+    assert_eq!(shell.get_page(), 1);
+
+    shell.set_search_query("".into());
+    let mut chip_focused = false;
+    for _ in 0..20 {
+        shell
+            .window()
+            .dispatch_event(slint::platform::WindowEvent::KeyPressed { text: "\t".into() });
+        if kit::ElementHandle::find_by_element_id(&shell, "M3Chip::focus-ring").count() == 1 {
+            chip_focused = true;
+            break;
+        }
+    }
+    assert!(chip_focused, "chip focus ring after Tab");
+    shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
+        text: slint::platform::Key::Return.into(),
+    });
+    assert_eq!(shell.get_search_source(), 0, "Return activates the focused chip");
 }

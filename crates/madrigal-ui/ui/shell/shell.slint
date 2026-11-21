@@ -657,6 +657,7 @@ export component MainShell inherits Window {
                 return true;
             }
             root.sidebar-focused = true;
+            nav.focus-current();
             return true;
         }
         if (root.overlay != 0) {
@@ -772,7 +773,6 @@ export component MainShell inherits Window {
             expanded: root.nav-expanded;
             palette: root.palette;
             page: root.page;
-            focused: root.sidebar-focused;
             navigate(p) => { root.navigate(p); }
         }
         content-col := VerticalLayout {

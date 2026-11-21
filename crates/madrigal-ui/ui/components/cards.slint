@@ -97,6 +97,29 @@ export component M3Card inherits Rectangle {
         mouse-cursor: pointer;
         clicked => { root.clicked(); }
     }
+
+    card-focus := FocusScope {
+        focus-on-click: false;
+        width: 100%;
+        height: 100%;
+        key-pressed(event) => {
+            if (event.text == Key.Space || event.text == Key.Return) {
+                root.clicked();
+                return EventResult.accept;
+            }
+            return EventResult.reject;
+        }
+    }
+
+    if (card-focus.has-focus) : focus-ring := Rectangle {
+        x: 2px;
+        y: 2px;
+        width: parent.width - 4px;
+        height: parent.height - 4px;
+        border-radius: root.border-radius - 2px;
+        border-width: 2px;
+        border-color: root.title-color;
+    }
 }
 
 export component M3Chip inherits Rectangle {
@@ -162,6 +185,29 @@ export component M3Chip inherits Rectangle {
         mouse-cursor: pointer;
         clicked => { root.clicked(); }
     }
+
+    chip-focus := FocusScope {
+        focus-on-click: false;
+        width: 100%;
+        height: 100%;
+        key-pressed(event) => {
+            if (event.text == Key.Space || event.text == Key.Return) {
+                root.clicked();
+                return EventResult.accept;
+            }
+            return EventResult.reject;
+        }
+    }
+
+    if (chip-focus.has-focus) : focus-ring := Rectangle {
+        x: 2px;
+        y: 2px;
+        width: parent.width - 4px;
+        height: parent.height - 4px;
+        border-radius: root.border-radius - 2px;
+        border-width: 2px;
+        border-color: root.selected ? root.selected-content : root.unselected-content;
+    }
 }
 
 export component M3MoodTile inherits Rectangle {
@@ -181,13 +227,13 @@ export component M3MoodTile inherits Rectangle {
     border-width: 1px;
     border-color: root.line;
 
-    focus-ring := Rectangle {
+    if (tile-focus.has-focus) : focus-ring := Rectangle {
         x: 2px;
         y: 2px;
         width: parent.width - 4px;
         height: parent.height - 4px;
         border-radius: Shape.small;
-        border-width: tile-focus.has-focus ? 2px : 0px;
+        border-width: 2px;
         border-color: root.focus-color;
     }
 
@@ -217,6 +263,7 @@ export component M3MoodTile inherits Rectangle {
     tile-focus := FocusScope {
         width: 100%;
         height: 100%;
+        focus-on-click: false;
         key-pressed(event) => {
             if (event.text == Key.Space || event.text == Key.Return) {
                 root.clicked();

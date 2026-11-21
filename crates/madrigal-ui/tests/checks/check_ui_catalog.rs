@@ -602,10 +602,18 @@ fn ui_catalog() {
     snapshot(&shell, &snapshot_dir, "search.png");
     shell.set_page(2);
     madrigal_ui::apply_moods(&shell, &listing);
-    kit::click_by_id(&shell, "MainShell::top-bar").unwrap();
-    shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
-        text: slint::platform::Key::Tab.into(),
-    });
+    assert!(dispatch_key(&shell, "/"));
+    let mut mood_focused = false;
+    for _ in 0..30 {
+        shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
+            text: slint::platform::Key::Tab.into(),
+        });
+        if kit::find_by_id(&shell, "M3MoodTile::focus-ring").is_ok() {
+            mood_focused = true;
+            break;
+        }
+    }
+    assert!(mood_focused, "mood tile never received keyboard focus");
     shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
         text: slint::platform::Key::Return.into(),
     });

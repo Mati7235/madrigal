@@ -86,6 +86,70 @@ fn ui_foundations() {
     kit::mock_advance(Duration::from_millis(600));
 
     gallery.show().unwrap();
+
+    let ring_ids = [
+        "M3Button::focus-ring",
+        "M3IconButton::focus-ring",
+        "M3Card::focus-ring",
+        "M3Chip::focus-ring",
+        "M3ListItem::focus-ring",
+        "M3Switch::focus-ring",
+        "M3Checkbox::focus-ring",
+        "M3Slider::focus-ring",
+    ];
+    for id in ring_ids {
+        assert_eq!(
+            kit::ElementHandle::find_by_element_id(&gallery, id).count(),
+            0,
+            "focus ring visible before Tab: {id}"
+        );
+    }
+    kit::click_by_id(&gallery, "DemoGallery::chip-songs").unwrap();
+    assert_eq!(
+        kit::ElementHandle::find_by_element_id(&gallery, "M3Chip::focus-ring").count(),
+        0,
+        "pointer click must not show a focus ring"
+    );
+
+    let mut seen = [false; 8];
+    let buttons_before = gallery.get_demo_clicks();
+    for _ in 0..40 {
+        gallery
+            .window()
+            .dispatch_event(slint::platform::WindowEvent::KeyPressed { text: "\t".into() });
+        let mut visible = 0;
+        for (index, id) in ring_ids.iter().enumerate() {
+            let count = kit::ElementHandle::find_by_element_id(&gallery, id).count();
+            if count > 0 {
+                seen[index] = true;
+            }
+            visible += count;
+        }
+        assert!(visible <= 1, "more than one focus ring visible");
+        if !seen[0] {
+            continue;
+        }
+        if gallery.get_demo_clicks() == buttons_before {
+            gallery.window().dispatch_event(
+                slint::platform::WindowEvent::KeyPressed {
+                    text: slint::platform::Key::Return.into(),
+                },
+            );
+        }
+        if seen.iter().all(|value| *value) {
+            break;
+        }
+    }
+    assert_eq!(
+        gallery.get_demo_clicks(),
+        buttons_before + 1,
+        "keyboard activation on a focused button"
+    );
+    assert!(
+        seen.iter().all(|value| *value),
+        "focus ring missing for {seen:?}"
+    );
+
     let shot = kit::snapshot_dir(tmp.path()).join("gallery.png");
     kit::snapshot_to(gallery.window(), &shot).unwrap();
     let bytes = std::fs::read(&shot).unwrap();
