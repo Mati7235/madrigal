@@ -130,6 +130,16 @@ fn testkit_selftest() {
         "{tight:?}"
     );
 
+    let nested = kit::LintNested::new().unwrap();
+    nested.show().unwrap();
+    let violations = kit::lint_layout(&nested, (240.0, 120.0));
+    assert_eq!(violations.len(), 1, "{violations:?}");
+    assert_eq!(
+        violations[0].kind,
+        kit::ViolationKind::Overlap("LintNested::nested-a".to_string())
+    );
+    assert_eq!(violations[0].id, "LintNested::nested-b");
+
     let clean = kit::LintClean::new().unwrap();
     clean.show().unwrap();
     let violations = kit::lint_layout(&clean, (240.0, 120.0));

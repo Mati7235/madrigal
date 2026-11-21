@@ -141,8 +141,9 @@ Harness contract (`madrigal-testkit`):
   `MADRIGAL_SNAPSHOT_DIR=<dir>` exports the UI checks' PNGs to `<dir>`.
 - Layout lint: `lint_layout(root, (w, h))` rebuilds the item tree from pre-order
   spans and returns `Violation { id, kind, rect }` for elements escaping the window
-  (scroll containers exempt) and for sibling Texts overlapping by more than 2 px in
-  both axes. Call it after `show()`, when the layout is current.
+  (scroll containers exempt) and for Texts overlapping by more than 2 px in both axes,
+  whether they are siblings or sit in different nested containers. Call it after
+  `show()`, when the layout is current.
 - Qualified `Component::id` ids; the crate compiles the `.slint` with forced
   debug info (`with_debug_info(true)`).
 - Crates compiling `.slint` do not inherit `unsafe_code = "forbid"` from the

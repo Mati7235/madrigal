@@ -70,6 +70,35 @@ export component LintClean inherits Window {
     }
 }
 
+export component LintNested inherits Window {
+    title: "lint-nested";
+    width: 240px;
+    height: 120px;
+    VerticalLayout {
+        spacing: 0px;
+        padding: 0px;
+        Rectangle {
+            height: 40px;
+            nested-a := Text {
+                x: 10px;
+                y: 12px;
+                width: 120px;
+                height: 24px;
+                text: "Alpha";
+            }
+        }
+        Rectangle {
+            nested-b := Text {
+                x: 20px;
+                y: -12px;
+                width: 120px;
+                height: 24px;
+                text: "Bravo";
+            }
+        }
+    }
+}
+
 export component LintOverlap inherits Window {
     title: "lint-overlap";
     width: 240px;

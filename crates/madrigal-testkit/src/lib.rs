@@ -227,7 +227,8 @@ pub fn lint_layout(root: &impl ElementRoot, window_size: (f32, f32)) -> Vec<Viol
     let nodes = build_tree(root);
     let mut violations = Vec::new();
     lint_window_bounds(&nodes, window_size, &mut violations);
-    lint_sibling_text(&nodes, &mut violations);
+    lint_text_pairs(&nodes, PairScope::Siblings, &mut violations);
+    lint_text_pairs(&nodes, PairScope::DistinctParents, &mut violations);
     violations
 }
 
@@ -263,14 +264,21 @@ fn lint_window_bounds(nodes: &[Node], window_size: (f32, f32), out: &mut Vec<Vio
     }
 }
 
-fn lint_sibling_text(nodes: &[Node], out: &mut Vec<Violation>) {
+#[derive(Clone, Copy, PartialEq)]
+enum PairScope {
+    Siblings,
+    DistinctParents,
+}
+
+fn lint_text_pairs(nodes: &[Node], scope: PairScope, out: &mut Vec<Violation>) {
     let texts: Vec<usize> = (0..nodes.len())
         .filter(|index| nodes[*index].text && !nodes[*index].rect.is_empty())
         .collect();
     let tolerance = 2.0;
     for left in 0..texts.len() {
         for right in (left + 1)..texts.len() {
-            if nodes[texts[left]].parent != nodes[texts[right]].parent {
+            let same_parent = nodes[texts[left]].parent == nodes[texts[right]].parent;
+            if same_parent != (scope == PairScope::Siblings) {
                 continue;
             }
             if nodes[texts[left]].rect.overlap_exceeds(&nodes[texts[right]].rect, tolerance) {
