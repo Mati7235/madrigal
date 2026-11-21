@@ -337,13 +337,13 @@ export component LibraryPage inherits Rectangle {
                             }
 
                             like-label := Icon {
-                                source: song.liked ? Icons.star-filled : Icons.heart;
+                                source: song.liked ? Icons.heart-filled : Icons.heart;
                                 colorize: song.liked ? root.palette.primary : root.palette.on-surface-variant;
                                 icon-size: 18px;
                             }
 
                             like-touch := TouchArea {
-                                accessible-label: I18n.trl(I18n.lang, "action.favorite");
+                                accessible-label: I18n.trl(I18n.lang, song.liked ? "action.favoriteOn" : "action.favoriteOff");
                                 accessible-role: button;
                                 mouse-cursor: pointer;
                                 clicked => { root.song-toggled(song.id); }

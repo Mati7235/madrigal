@@ -35,6 +35,8 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("action.download", "Descargar", "Download"),
     ("action.expandPlayer", "Expandir reproductor", "Expand player"),
     ("action.favorite", "Cambiar favorito", "Toggle favorite"),
+    ("action.favoriteOff", "Agregar a favoritos", "Add to favorites"),
+    ("action.favoriteOn", "Quitar de favoritos", "Remove from favorites"),
     ("action.moveDown", "Mover abajo", "Move down"),
     ("action.moveUp", "Mover arriba", "Move up"),
     ("action.nextTrack", "Pista siguiente", "Next track"),

@@ -6,6 +6,7 @@ import { Icon, Icons } from "../components/icons.slint";
 
 component BarMiniButton inherits Rectangle {
     in property<image> icon;
+    in property<string> label;
     in property<color> icon-color;
     in property<bool> selected: false;
     in property<color> fill;
@@ -14,6 +15,7 @@ component BarMiniButton inherits Rectangle {
     callback clicked();
 
     accessible-role: AccessibleRole.button;
+    accessible-label: root.label;
 
     width: 34px;
     height: 40px;
@@ -343,7 +345,8 @@ export component NowPlayingBar inherits Rectangle {
                 VerticalLayout {
                     alignment: center;
                     bar-like := BarMiniButton {
-                        icon: root.liked ? Icons.star-filled : Icons.heart;
+                        icon: root.liked ? Icons.heart-filled : Icons.heart;
+                        label: I18n.trl(I18n.lang, root.liked ? "action.favoriteOn" : "action.favoriteOff");
                         icon-color: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
                         selected: root.liked;
                         fill: root.liked ? root.palette.primary : transparent;
@@ -360,6 +363,7 @@ export component NowPlayingBar inherits Rectangle {
                     alignment: center;
                     bar-queue := BarMiniButton {
                         icon: Icons.list-music;
+                        label: I18n.trl(I18n.lang, "action.openQueue");
                         icon-color: root.palette.on-surface-variant;
                         fill: transparent;
                         content: root.palette.on-surface-variant;

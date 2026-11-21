@@ -592,13 +592,13 @@ export component FullPlayer inherits Rectangle {
                     alignment: center;
 
                     full-like := M3IconButton {
-                        icon: root.liked ? Icons.star-filled : Icons.heart;
+                        icon: root.liked ? Icons.heart-filled : Icons.heart;
                         icon-color: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
                         selected: root.liked;
                         fill: root.liked ? root.palette.primary : transparent;
                         content: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
                         state-on-surface: root.palette.on-surface;
-                        accessible-label: I18n.trl(I18n.lang, "action.favorite");
+                        accessible-label: I18n.trl(I18n.lang, root.liked ? "action.favoriteOn" : "action.favoriteOff");
                         clicked => { root.like-clicked(); }
                     }
                 }

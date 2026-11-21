@@ -197,6 +197,22 @@ fn drag_to(shell: &MainShell, id: &str, index: usize, frac: f32) {
 }
 
 #[test]
+fn liked_icons_are_filled_hearts() {
+    for source in [
+        include_str!("../../ui/player/full.slint"),
+        include_str!("../../ui/player/bar.slint"),
+        include_str!("../../ui/pages/library/library.slint"),
+    ] {
+        assert!(source.contains("Icons.heart-filled : Icons.heart"));
+        assert!(!source.contains("Icons.star-filled : Icons.heart"));
+    }
+    assert!(include_str!("../../ui/components/icons.slint").contains("heart-filled"));
+    let svg = include_str!("../../ui/icons/heart-filled.svg");
+    assert!(svg.contains("fill=\"#000000\""));
+    assert!(!svg.contains("fill=\"none\""));
+}
+
+#[test]
 fn ui_player() {
     let tmp = tempfile::tempdir().unwrap();
     std::env::set_var("XDG_DATA_HOME", tmp.path().join("data"));
@@ -283,9 +299,12 @@ fn ui_player() {
     kit::click_by_id(&shell, "NowPlayingBar::bar-prev").unwrap();
     assert_eq!(shell.get_next_count(), 1);
     assert_eq!(shell.get_prev_count(), 1);
+    let bar_like = kit::find_by_id(&shell, "NowPlayingBar::bar-like").unwrap();
+    assert_eq!(bar_like.accessible_label().unwrap().as_str(), "Agregar a favoritos");
     kit::click_by_id(&shell, "NowPlayingBar::bar-like").unwrap();
     assert!(shell.get_liked());
     assert_eq!(shell.get_like_count(), 1);
+    assert_eq!(bar_like.accessible_label().unwrap().as_str(), "Quitar de favoritos");
     kit::click_by_id(&shell, "NowPlayingBar::bar-queue").unwrap();
     assert!(shell.get_queue_open());
     assert_eq!(shell.get_queue_open_count(), 1);
@@ -295,6 +314,11 @@ fn ui_player() {
     assert!(dispatch_key(&shell, "f"));
     assert!(shell.get_full_player_open());
     assert_eq!(shell.get_full_player_count(), 1);
+    let full_like = kit::find_by_id(&shell, "FullPlayer::full-like").unwrap();
+    assert_eq!(full_like.accessible_label().unwrap().as_str(), "Quitar de favoritos");
+    shell.set_liked(false);
+    assert_eq!(full_like.accessible_label().unwrap().as_str(), "Agregar a favoritos");
+    shell.set_liked(true);
 
     for (bg, style) in [
         (madrigal_settings::PlayerBackground::Default, 0),
