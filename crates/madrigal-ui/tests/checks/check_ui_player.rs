@@ -228,6 +228,9 @@ fn ui_player() {
 
     for (key, es, en) in [
         ("player.sleep_timer", "Temporizador de apagado", "Sleep timer"),
+        ("player.sleep_off", "Desactivar", "Turn off"),
+        ("player.sleep_off_status", "Desactivado", "Off"),
+        ("player.sleep_status_minutes", "Se apaga en", "Turns off in"),
         ("player.tempoPitch", "Tempo y tono", "Tempo and pitch"),
         ("player.playbackError", "Error de reproducción", "Playback error"),
         ("player.shareLyrics", "Compartir letra", "Share lyrics"),
@@ -534,6 +537,14 @@ fn ui_player() {
 
     open_player_dialog(&shell, PlayerDialog::Sleep);
     assert_eq!(shell.get_player_dialog(), 1);
+    let sleep_buttons: Vec<_> =
+        kit::ElementHandle::find_by_element_id(&shell, "SleepTimerDialog::sleep-opt").collect();
+    assert_eq!(sleep_buttons.len(), 3);
+    for (button, label) in sleep_buttons.iter().zip(["15 min", "30 min", "60 min"]) {
+        assert_eq!(button.accessible_label().unwrap().as_str(), label);
+    }
+    let status = kit::find_by_id(&shell, "SleepTimerDialog::sleep-status").unwrap();
+    assert_eq!(status.accessible_label().unwrap().as_str(), "Desactivado");
     let sleep_opts: Vec<_> =
         kit::ElementHandle::find_by_element_id(&shell, "SleepTimerDialog::sleep-opt-touch").collect();
     assert_eq!(sleep_opts.len(), 3);
@@ -541,10 +552,21 @@ fn ui_player() {
     assert_eq!(shell.get_sleep_mode(), 1);
     assert_eq!(shell.get_sleep_minutes(), 15);
     assert_eq!(shell.get_sleep_count(), 1);
+    assert_eq!(status.accessible_label().unwrap().as_str(), "Se apaga en 15 min");
     kit::click_by_id(&shell, "SleepTimerDialog::sleep-eos").unwrap();
     assert_eq!(shell.get_sleep_mode(), 2);
+    assert_eq!(status.accessible_label().unwrap().as_str(), "Al final de la canción");
+    assert_eq!(
+        kit::find_by_id(&shell, "SleepTimerDialog::sleep-off-btn")
+            .unwrap()
+            .accessible_label()
+            .unwrap()
+            .as_str(),
+        "Desactivar"
+    );
     kit::click_by_id(&shell, "SleepTimerDialog::sleep-off-btn").unwrap();
     assert_eq!(shell.get_sleep_mode(), 0);
+    assert_eq!(status.accessible_label().unwrap().as_str(), "Desactivado");
     assert!(dispatch_key(&shell, "Escape"));
     assert_eq!(shell.get_player_dialog(), 0);
 

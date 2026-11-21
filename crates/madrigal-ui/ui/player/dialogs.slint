@@ -16,13 +16,15 @@ export component SleepTimerDialog inherits Rectangle {
     accessible-role: AccessibleRole.region;
     accessible-label: I18n.trl(I18n.lang, "player.sleep_timer");
 
+    property<string> status-text: root.mode == 0 ? I18n.trl(I18n.lang, "player.sleep_off_status") : root.mode == 1 ? I18n.trl(I18n.lang, "player.sleep_status_minutes") + " " + root.minutes + " min" : I18n.trl(I18n.lang, "player.sleep_end");
+
     HorizontalLayout {
         alignment: center;
         VerticalLayout {
             alignment: center;
             sleep-card := Rectangle {
                 width: 380px;
-                height: 340px;
+                height: 280px;
                 border-radius: 12px;
                 background: root.palette.surface-container-high;
                 VerticalLayout {
@@ -34,6 +36,14 @@ export component SleepTimerDialog inherits Rectangle {
                         font-size: Type.title-large.size;
                         font-family: Type.title-large.family;
                     }
+                    sleep-status := Text {
+                        text: root.status-text;
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.body-medium.size;
+                        font-family: Type.body-medium.family;
+                        accessible-role: AccessibleRole.text;
+                        accessible-label: self.text;
+                    }
                     sleep-modes := HorizontalLayout {
                         spacing: 8px;
                         for m in [15, 30, 60]: sleep-opt := Rectangle {
@@ -41,8 +51,10 @@ export component SleepTimerDialog inherits Rectangle {
                             height: 44px;
                             border-radius: 22px;
                             background: root.mode == 1 && root.minutes == m ? root.palette.primary : root.palette.surface-container-highest;
+                            accessible-role: AccessibleRole.button;
+                            accessible-label: m + " min";
                             sleep-opt-label := Text {
-                                text: m;
+                                text: m + " min";
                                 color: root.mode == 1 && root.minutes == m ? root.palette.on-primary : root.palette.on-surface;
                                 font-size: Type.label-large.size;
                                 font-family: Type.label-large.family;
