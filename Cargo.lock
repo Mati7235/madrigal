@@ -3527,8 +3527,10 @@ dependencies = [
 name = "madrigal-app"
 version = "0.1.0"
 dependencies = [
+ "madrigal-core",
  "madrigal-db",
  "madrigal-i18n",
+ "madrigal-localmedia",
  "madrigal-paths",
  "madrigal-player",
  "madrigal-settings",

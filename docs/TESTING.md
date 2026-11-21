@@ -114,6 +114,8 @@ Without `cargo` available the check is FAIL.
 | `ui_library` | offline | Library/History/Stats/Downloads pages via MainShell: chip order+tabs, tags, sorts, multiselect, history clear, tops, Year in Music, download rows; Es/En; PNG-sane |
 | `ui_settings` | offline | Settings screens: 11 groups with field parity, apply/toggle/dropdown/drag/mask/test, onboarding, diagnostics |
 | `app_startup` | offline | `boot_headless` under isolated XDG (settings+db+queue, no event loop): wall < 2000 ms and VmHWM delta < 150 MB |
+| `app_cli` | offline | CLI file arguments, tag/album/artist/duration mapping and title fallback over a real clip |
+| `app_playback` | native | app playback over libmpv ao=null: enqueue, position, pause, seek, volume, repeat, shell snapshot and lyrics clock; SKIP without ffmpeg/libmpv |
 
 ## Visual verification
 

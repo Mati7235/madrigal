@@ -16,8 +16,10 @@ name = "madrigal"
 path = "src/main.rs"
 
 [dependencies]
+madrigal-core = { path = "../madrigal-core" }
 madrigal-db = { path = "../madrigal-db" }
 madrigal-i18n = { path = "../madrigal-i18n" }
+madrigal-localmedia = { path = "../madrigal-localmedia" }
 madrigal-paths = { path = "../madrigal-paths" }
 madrigal-player = { path = "../madrigal-player" }
 madrigal-settings = { path = "../madrigal-settings" }
@@ -36,3 +38,11 @@ path = "tests/checks/check_app_startup.rs"
 [[test]]
 name = "check_app_shell"
 path = "tests/checks/check_app_shell.rs"
+
+[[test]]
+name = "check_app_cli"
+path = "tests/checks/check_app_cli.rs"
+
+[[test]]
+name = "check_app_playback"
+path = "tests/checks/check_app_playback.rs"

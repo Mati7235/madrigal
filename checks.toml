@@ -283,3 +283,11 @@ group = "offline"
 [[check]]
 name = "app_shell"
 group = "offline"
+
+[[check]]
+name = "app_cli"
+group = "offline"
+
+[[check]]
+name = "app_playback"
+group = "native"

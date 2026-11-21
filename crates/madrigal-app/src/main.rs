@@ -2,6 +2,7 @@ use std::process::ExitCode;
 use std::time::Duration;
 
 use madrigal_app::cli;
+use madrigal_app::state::AppState;
 use madrigal_player::single_instance::{acquire, InstanceRole};
 use slint::ComponentHandle;
 
@@ -34,13 +35,23 @@ fn main() -> ExitCode {
             return ExitCode::from(1);
         }
     };
-    let ui = match madrigal_app::ui::boot_ui() {
-        Ok(ui) => ui,
+    let app = match AppState::boot() {
+        Ok(app) => app,
         Err(err) => {
             eprintln!("arranque: {err}");
             return ExitCode::from(1);
         }
     };
+    if !opts.files.is_empty() {
+        let (added, errors) = app.open_files(&opts.files);
+        for err in &errors {
+            eprintln!("archivo: {err}");
+        }
+        if added == 0 {
+            eprintln!("no se pudo encolar ningún archivo");
+            return ExitCode::from(2);
+        }
+    }
     if let Some(ms) = opts.smoke_quit_after_ms {
         slint::Timer::single_shot(Duration::from_millis(ms), || {
             let _ = slint::quit_event_loop();
@@ -52,7 +63,7 @@ fn main() -> ExitCode {
         println!("READY");
         return ExitCode::SUCCESS;
     }
-    if let Err(err) = ui.shell.show() {
+    if let Err(err) = app.ui.shell.show() {
         eprintln!("ventana: {err}");
         return ExitCode::from(1);
     }

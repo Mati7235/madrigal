@@ -37,8 +37,9 @@ pub use player_ui::{
     background_index, chain_fetcher, clear_lyrics, dialog_index, eq_preset_gains,
     lyric_progress_at, lyrics_delivery, open_player_dialog, queue_tabs_from_queue,
     render_share_png, repeat_from_index, repeat_index, set_lyrics, set_queue_models,
-    set_stream_info, show_error, wire_lyrics_clock, wire_lyrics_fetch, wire_player_callbacks,
-    PlaybackUiState, PlayerBackgroundStyle, PlayerDialog, QueueRowData, QueueTabData,
+    set_stream_info, show_error, sync_lyrics_clock, track_source_index, wire_lyrics_clock,
+    wire_lyrics_fetch, wire_player_callbacks, PlaybackUiState, PlayerBackgroundStyle, PlayerDialog,
+    QueueRowData, QueueTabData,
 };
 pub use lyrics_clock::{LyricsClock, MAX_OFFSET_MS};
 pub use lyrics_fetch::{

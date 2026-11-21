@@ -4,6 +4,7 @@ use std::path::PathBuf;
 pub struct Options {
     pub smoke_quit_after_ms: Option<u64>,
     pub profile: Option<String>,
+    pub files: Vec<String>,
 }
 
 pub fn parse<I>(args: I) -> Result<Options, String>
@@ -36,8 +37,10 @@ where
                         return Err(format!("perfil inválido: {value:?}"));
                     }
                     opts.profile = Some(value.to_owned());
-                } else {
+                } else if other.starts_with("--") {
                     return Err(format!("argumento desconocido: {other}"));
+                } else {
+                    opts.files.push(other.to_owned());
                 }
             }
         }

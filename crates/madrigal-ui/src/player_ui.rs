@@ -296,6 +296,19 @@ pub fn wire_lyrics_clock(shell: &MainShell) {
     sync_clock(shell);
 }
 
+pub fn sync_lyrics_clock(shell: &MainShell, position_ms: i64, playing: bool) {
+    let now = Instant::now();
+    CLOCK.with(|slot| {
+        if let Some(wiring) = slot.borrow().as_ref() {
+            let mut clock = wiring.clock.borrow_mut();
+            clock.anchor(position_ms, now);
+            clock.set_playing(playing, now);
+        }
+    });
+    refresh_karaoke(shell, position_ms);
+    sync_clock(shell);
+}
+
 pub fn set_queue_models(shell: &MainShell, tabs: &QueueTabData) {
     shell.set_queue_all(to_model(&tabs.all));
     shell.set_queue_searched(to_model(&tabs.searched));

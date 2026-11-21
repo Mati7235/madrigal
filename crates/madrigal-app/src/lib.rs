@@ -1,4 +1,6 @@
 pub mod cli;
+pub mod playback;
+pub mod state;
 pub mod store;
 pub mod ui;
 
