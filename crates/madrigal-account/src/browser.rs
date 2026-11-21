@@ -3,24 +3,54 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::cookies::{
-    has_login_cookie, has_primary_sapisid, youtube_records, CookieRecord,
-};
+use crate::chromium;
+use crate::cookies::{has_login_cookie, has_primary_sapisid, youtube_records, CookieRecord};
 
-pub const BROWSERS: [(&str, &str); 7] = [
+pub const BROWSERS: [(&str, &str); 11] = [
     ("firefox", "Firefox"),
-    ("brave", "Brave"),
+    ("librewolf", "LibreWolf"),
+    ("zen", "Zen Browser"),
+    ("floorp", "Floorp"),
+    ("waterfox", "Waterfox"),
     ("chrome", "Google Chrome"),
     ("chromium", "Chromium"),
+    ("brave", "Brave"),
     ("edge", "Microsoft Edge"),
-    ("opera", "Opera"),
     ("vivaldi", "Vivaldi"),
+    ("opera", "Opera"),
 ];
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserCandidate {
+    pub key: String,
+    pub name: String,
+    pub profile: String,
+}
+
+impl BrowserCandidate {
+    pub fn label(&self) -> &str {
+        &self.name
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserChoice {
+    Single(BrowserCandidate),
+    Multiple(Vec<BrowserCandidate>),
+    None,
+}
+
+pub fn choose_browser(candidates: Vec<BrowserCandidate>) -> BrowserChoice {
+    match candidates.len() {
+        0 => BrowserChoice::None,
+        1 => BrowserChoice::Single(candidates.into_iter().next().expect("one candidate")),
+        _ => BrowserChoice::Multiple(candidates),
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserError {
     Unknown(String),
-    Unsupported(String),
     NotFound(String),
     ProfileNotFound(String),
     NoLogin(String),
@@ -31,11 +61,8 @@ impl fmt::Display for BrowserError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Unknown(browser) => write!(f, "unknown browser: {browser:?}"),
-            Self::Unsupported(browser) => {
-                write!(f, "browser cookie import not implemented: {browser:?}")
-            }
-            Self::NotFound(detail) => write!(f, "firefox not found: {detail}"),
-            Self::ProfileNotFound(detail) => write!(f, "firefox profile not found: {detail}"),
+            Self::NotFound(detail) => write!(f, "browser not found: {detail}"),
+            Self::ProfileNotFound(detail) => write!(f, "browser profile not found: {detail}"),
             Self::NoLogin(detail) => write!(f, "no youtube login in profile: {detail}"),
             Self::ReadFailed(detail) => write!(f, "could not read cookies: {detail}"),
         }
@@ -47,23 +74,56 @@ impl std::error::Error for BrowserError {}
 const MS_THRESHOLD: i64 = 100_000_000_000;
 
 fn home_dir() -> Option<PathBuf> {
-    env::var_os("HOME").map(PathBuf::from).filter(|dir| !dir.as_os_str().is_empty())
-}
-
-fn firefox_roots() -> Vec<PathBuf> {
-    let Some(home) = home_dir() else {
-        return Vec::new();
-    };
-    let config = env::var_os("XDG_CONFIG_HOME")
+    env::var_os("HOME")
         .map(PathBuf::from)
         .filter(|dir| !dir.as_os_str().is_empty())
-        .unwrap_or_else(|| home.join(".config"));
-    vec![
-        home.join(".mozilla/firefox"),
-        config.join("mozilla/firefox"),
-        home.join("snap/firefox/common/.mozilla/firefox"),
-        home.join(".var/app/org.mozilla.firefox/.mozilla/firefox"),
-    ]
+}
+
+fn config_dir() -> Option<PathBuf> {
+    let home = home_dir()?;
+    Some(
+        env::var_os("XDG_CONFIG_HOME")
+            .map(PathBuf::from)
+            .filter(|dir| !dir.as_os_str().is_empty())
+            .unwrap_or_else(|| home.join(".config")),
+    )
+}
+
+fn firefox_roots(browser: &str) -> Vec<PathBuf> {
+    let (Some(home), Some(config)) = (home_dir(), config_dir()) else {
+        return Vec::new();
+    };
+    match browser {
+        "librewolf" => vec![
+            home.join(".librewolf"),
+            home.join(".var/app/io.gitlab.librewolf-community/.librewolf"),
+        ],
+        "zen" => vec![
+            home.join(".zen"),
+            home.join(".var/app/app.zen_browser.zen/.zen"),
+        ],
+        "floorp" => vec![
+            home.join(".floorp"),
+            home.join(".var/app/one.ablaze.floorp/.floorp"),
+        ],
+        "waterfox" => vec![
+            home.join(".waterfox"),
+            home.join(".var/app/net.waterfox.waterfox/.waterfox"),
+        ],
+        _ => vec![
+            home.join(".mozilla/firefox"),
+            config.join("mozilla/firefox"),
+            home.join("snap/firefox/common/.mozilla/firefox"),
+            home.join(".var/app/org.mozilla.firefox/.mozilla/firefox"),
+        ],
+    }
+}
+
+fn is_firefox_family(browser: &str) -> bool {
+    matches!(
+        browser,
+        "firefox" | "librewolf" | "zen" | "floorp" | "waterfox"
+    )
 }
 
 #[derive(Default)]
@@ -128,38 +188,35 @@ fn resolve_ini_path(root: &Path, raw: &str, is_relative: bool) -> PathBuf {
     }
 }
 
-fn first_install_default(root: &Path, ini: &ProfilesIni) -> Option<PathBuf> {
-    ini.installs
-        .iter()
-        .map(|raw| resolve_ini_path(root, raw, true))
-        .find(|dir| dir.join("cookies.sqlite").is_file())
-}
-
-fn default_profile_dir(root: &Path, ini: &ProfilesIni) -> Option<PathBuf> {
-    if let Some(dir) = first_install_default(root, ini) {
-        return Some(dir);
+fn profile_dirs(root: &Path, ini: &ProfilesIni) -> Vec<PathBuf> {
+    let mut dirs: Vec<PathBuf> = Vec::new();
+    let mut push = |dir: PathBuf| {
+        if dir.join("cookies.sqlite").is_file() && !dirs.contains(&dir) {
+            dirs.push(dir);
+        }
+    };
+    for raw in &ini.installs {
+        push(resolve_ini_path(root, raw, true));
     }
-    if let Some(entry) = ini.profiles.iter().find(|entry| entry.is_default) {
+    for entry in ini.profiles.iter().filter(|entry| entry.is_default) {
+        push(resolve_ini_path(root, &entry.path_raw, entry.is_relative));
+    }
+    for entry in &ini.profiles {
+        push(resolve_ini_path(root, &entry.path_raw, entry.is_relative));
+    }
+    for entry in &ini.profiles {
         let dir = resolve_ini_path(root, &entry.path_raw, entry.is_relative);
-        if dir.join("cookies.sqlite").is_file() {
-            return Some(dir);
+        if dir.is_dir() && !dirs.contains(&dir) {
+            dirs.push(dir);
         }
     }
-    ini.profiles
-        .iter()
-        .map(|entry| resolve_ini_path(root, &entry.path_raw, entry.is_relative))
-        .find(|dir| dir.join("cookies.sqlite").is_file())
-        .or_else(|| {
-            ini.profiles
-                .first()
-                .map(|entry| resolve_ini_path(root, &entry.path_raw, entry.is_relative))
-        })
+    dirs
 }
 
-fn find_default_profile() -> Result<PathBuf, BrowserError> {
-    let roots = firefox_roots();
+fn find_default_profile(browser: &str) -> Result<PathBuf, BrowserError> {
+    let roots = firefox_roots(browser);
     if roots.is_empty() || !roots.iter().any(|root| root.is_dir()) {
-        return Err(BrowserError::NotFound("no firefox directory".to_owned()));
+        return Err(BrowserError::NotFound(format!("no {browser} directory")));
     }
     let mut saw_ini = false;
     for root in &roots {
@@ -172,23 +229,25 @@ fn find_default_profile() -> Result<PathBuf, BrowserError> {
         };
         saw_ini = true;
         let ini = parse_profiles_ini(&text);
-        if let Some(dir) = default_profile_dir(root, &ini) {
+        if let Some(dir) = profile_dirs(root, &ini).into_iter().next() {
             return Ok(dir);
         }
     }
     if saw_ini {
-        Err(BrowserError::ProfileNotFound("no usable profile".to_owned()))
+        Err(BrowserError::ProfileNotFound(
+            "no usable profile".to_owned(),
+        ))
     } else {
         Err(BrowserError::NotFound("no profiles.ini".to_owned()))
     }
 }
 
-fn profile_arg_dir(profile: &str) -> Result<PathBuf, BrowserError> {
+fn profile_arg_dir(browser: &str, profile: &str) -> Result<PathBuf, BrowserError> {
     let direct = Path::new(profile);
     if direct.is_dir() && direct.join("cookies.sqlite").is_file() {
         return Ok(direct.to_path_buf());
     }
-    for root in firefox_roots() {
+    for root in firefox_roots(browser) {
         let candidate = root.join(direct);
         if candidate.is_dir() && candidate.join("cookies.sqlite").is_file() {
             return Ok(candidate);
@@ -214,33 +273,28 @@ fn temp_copy(dir: &Path) -> Result<PathBuf, BrowserError> {
         .duration_since(UNIX_EPOCH)
         .map(|now| now.as_nanos())
         .unwrap_or(0);
-    let target = env::temp_dir().join(format!(
-        "madrigal-firefox-{}-{stamp}",
-        std::process::id()
-    ));
-    std::fs::create_dir_all(&target)
-        .map_err(|err| BrowserError::ReadFailed(err.to_string()))?;
+    let target = env::temp_dir().join(format!("madrigal-firefox-{}-{stamp}", std::process::id()));
+    std::fs::create_dir_all(&target).map_err(|err| BrowserError::ReadFailed(err.to_string()))?;
     for name in ["cookies.sqlite", "cookies.sqlite-wal"] {
         let from = dir.join(name);
         if from.is_file() {
             let to = target.join(name);
-            std::fs::copy(&from, &to)
-                .map_err(|err| BrowserError::ReadFailed(err.to_string()))?;
+            std::fs::copy(&from, &to).map_err(|err| BrowserError::ReadFailed(err.to_string()))?;
         }
     }
     if !target.join("cookies.sqlite").is_file() {
         let _ = std::fs::remove_dir_all(&target);
-        return Err(BrowserError::ProfileNotFound("cookies.sqlite missing".to_owned()));
+        return Err(BrowserError::ProfileNotFound(
+            "cookies.sqlite missing".to_owned(),
+        ));
     }
     Ok(target)
 }
 
 fn read_records(db_path: &Path) -> Result<Vec<CookieRecord>, BrowserError> {
-    let conn = rusqlite::Connection::open_with_flags(
-        db_path,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    )
-    .map_err(|err| BrowserError::ReadFailed(err.to_string()))?;
+    let conn =
+        rusqlite::Connection::open_with_flags(db_path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
+            .map_err(|err| BrowserError::ReadFailed(err.to_string()))?;
     let mut stmt = conn
         .prepare(
             "SELECT host, name, value, path, expiry, isSecure, isHttpOnly, originAttributes FROM moz_cookies",
@@ -273,7 +327,11 @@ fn read_records(db_path: &Path) -> Result<Vec<CookieRecord>, BrowserError> {
         if name.is_empty() || host.is_empty() {
             continue;
         }
-        let expires = if expiry > MS_THRESHOLD { expiry / 1000 } else { expiry };
+        let expires = if expiry > MS_THRESHOLD {
+            expiry / 1000
+        } else {
+            expiry
+        };
         let path = match path {
             Some(path) if !path.is_empty() => path,
             _ => "/".to_owned(),
@@ -299,20 +357,114 @@ fn read_records(db_path: &Path) -> Result<Vec<CookieRecord>, BrowserError> {
     Ok(youtube)
 }
 
-pub fn records_from_browser(browser: &str, profile: &str) -> Result<Vec<CookieRecord>, BrowserError> {
-    if !BROWSERS.iter().any(|(key, _)| *key == browser) {
-        return Err(BrowserError::Unknown(browser.to_owned()));
-    }
-    if browser != "firefox" {
-        return Err(BrowserError::Unsupported(browser.to_owned()));
-    }
-    let dir = if profile.trim().is_empty() {
-        find_default_profile()?
+fn firefox_profile(browser: &str, profile: &str) -> Result<PathBuf, BrowserError> {
+    if profile.trim().is_empty() {
+        find_default_profile(browser)
     } else {
-        profile_arg_dir(profile)?
-    };
+        profile_arg_dir(browser, profile)
+    }
+}
+
+fn read_firefox(browser: &str, profile: &str) -> Result<Vec<CookieRecord>, BrowserError> {
+    let dir = firefox_profile(browser, profile)?;
     let staged = temp_copy(&dir)?;
     let result = read_records(&staged.join("cookies.sqlite"));
     let _ = std::fs::remove_dir_all(&staged);
     result
+}
+
+fn chromium_profile(browser: &str, profile: &str) -> Result<PathBuf, BrowserError> {
+    if !profile.trim().is_empty() {
+        return chromium::resolve_profile(browser, profile);
+    }
+    let roots = chromium::roots(browser);
+    if roots.is_empty() || !roots.iter().any(|root| root.is_dir()) {
+        return Err(BrowserError::NotFound(format!("no {browser} directory")));
+    }
+    for root in &roots {
+        if !root.is_dir() {
+            continue;
+        }
+        if let Some(dir) = chromium::default_profile(root) {
+            return Ok(dir);
+        }
+    }
+    Err(BrowserError::ProfileNotFound(
+        "no usable profile".to_owned(),
+    ))
+}
+
+fn read_chromium(browser: &str, profile: &str) -> Result<Vec<CookieRecord>, BrowserError> {
+    let dir = chromium_profile(browser, profile)?;
+    chromium::read_profile(&dir, browser)
+}
+
+fn firefox_candidate(browser: &str, name: &str) -> Option<BrowserCandidate> {
+    for root in firefox_roots(browser) {
+        let ini_path = root.join("profiles.ini");
+        let Ok(text) = std::fs::read_to_string(&ini_path) else {
+            continue;
+        };
+        let ini = parse_profiles_ini(&text);
+        for dir in profile_dirs(&root, &ini) {
+            if read_records(&dir.join("cookies.sqlite")).is_ok() {
+                return Some(BrowserCandidate {
+                    key: browser.to_owned(),
+                    name: name.to_owned(),
+                    profile: dir.to_string_lossy().into_owned(),
+                });
+            }
+        }
+    }
+    None
+}
+
+fn chromium_candidate(browser: &str, name: &str) -> Option<BrowserCandidate> {
+    for root in chromium::roots(browser) {
+        for dir in chromium::profiles(&root) {
+            if chromium::read_profile(&dir, browser).is_ok() {
+                return Some(BrowserCandidate {
+                    key: browser.to_owned(),
+                    name: name.to_owned(),
+                    profile: dir.to_string_lossy().into_owned(),
+                });
+            }
+        }
+    }
+    None
+}
+
+pub fn detect_browsers() -> Vec<BrowserCandidate> {
+    BROWSERS
+        .iter()
+        .filter_map(|(key, name)| {
+            if chromium::is_chromium(key) {
+                chromium_candidate(key, name)
+            } else if is_firefox_family(key) {
+                firefox_candidate(key, name)
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+pub fn import_candidate(candidate: &BrowserCandidate) -> Result<Vec<CookieRecord>, BrowserError> {
+    records_from_browser(&candidate.key, &candidate.profile)
+}
+
+pub fn records_from_browser(
+    browser: &str,
+    profile: &str,
+) -> Result<Vec<CookieRecord>, BrowserError> {
+    if !BROWSERS.iter().any(|(key, _)| *key == browser) {
+        return Err(BrowserError::Unknown(browser.to_owned()));
+    }
+    if chromium::is_chromium(browser) {
+        return read_chromium(browser, profile);
+    }
+    if is_firefox_family(browser) {
+        return read_firefox(browser, profile);
+    }
+    Err(BrowserError::NotFound(browser.to_owned()))
 }

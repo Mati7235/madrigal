@@ -12,9 +12,16 @@ madrigal-core = { path = "../madrigal-core" }
 madrigal-paths = { path = "../madrigal-paths" }
 madrigal-secrets = { path = "../madrigal-secrets" }
 madrigal-settings = { path = "../madrigal-settings" }
+aes = "0.8"
+cbc = { version = "0.1", features = ["alloc"] }
+pbkdf2 = "0.12"
 rusqlite = { version = "0.41", features = ["bundled"] }
+secret-service = { version = "5", features = ["crypto-rust"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sha1 = "0.10"
+sha2 = "0.10"
+zbus = "5"
 
 [dev-dependencies]
 tempfile = "3"
@@ -34,3 +41,7 @@ path = "tests/checks/check_account_sapisid.rs"
 [[test]]
 name = "check_account_profiles"
 path = "tests/checks/check_account_profiles.rs"
+
+[[test]]
+name = "check_account_chromium"
+path = "tests/checks/check_account_chromium.rs"

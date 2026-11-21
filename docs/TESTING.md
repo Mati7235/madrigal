@@ -73,7 +73,8 @@ Without `cargo` available the check is FAIL.
 | `account_cookies` | offline | Netscape/header cookie parsing, YouTube domain filter, roundtrip serialize, expiry, 0600 writes |
 | `account_sapisid` | offline | SAPISIDHASH golden vectors and browser auth header assembly |
 | `account_profiles` | offline | Isolated account profiles, settings active pointer, delete, 0600 cookies, browser seam |
-| `account_firefox` | offline | Firefox cookie import: profiles.ini default selection, s/ms expiry, container skip, non-YouTube drop, no-login/not-found errors, WAL copy under lock |
+| `account_firefox` | offline | Firefox family cookie import: profiles.ini default selection, s/ms expiry, container skip, non-YouTube drop, no-login/not-found errors, WAL copy under lock, LibreWolf/Zen/Floorp/Waterfox roots |
+| `account_chromium` | offline | Chromium family cookie import: Local State profile order, v10/v11 AES decryption, v24 host hash, locked DB copy, browser detection/chooser, real headless Chromium DB |
 | `innertube_search` | offline | Fixture search songs/artists/albums map to core models, filter mapping, suggestions |
 | `innertube_pages` | offline | Fixture artist/album/playlist/watch pages map to models, moods via custom parse, malformed input errors |
 | `localmedia_scan` | native | Local folder scan (ffmpeg fixtures): tags/durations/artwork/lyrics, exclude/short/corrupt handling, Local db upserts, artwork prune |
@@ -126,7 +127,7 @@ Without `cargo` available the check is FAIL.
 | `app_library` | offline | Library worker over real innertube fixture songs: query filter, playlists, selection, likes, play recording threshold, history clear, stats years, tags |
 | `app_downloads` | offline | Download service over a loopback HTTP server: page rows, progress/speed, queued ordering, pause/resume, retry, cancel and quarantine |
 | `desktop` | offline | Peripherals wiring: settings persistence of volume/repeat/shuffle, session keeper, single-instance file handoff, notification action mapping, scrobble eligibility and outcome merge, D-Bus skip without a session bus, bounded D-Bus setup and shutdown against a silent socket |
-| `app_account` | offline | Firefox login wiring: account menu validation fills name, handle, channel and avatar into the session, success reports connected, logged-out or rejected cookies map to errAuth, failure sets the mapped error, login and boot restore stay off the UI thread |
+| `app_account` | offline | Browser login wiring: detection/chooser, manual cookie header, account menu validation fills name, handle, channel and avatar into the session, success reports connected, logged-out or rejected cookies map to errAuth, failure sets the mapped error, login and boot restore stay off the UI thread |
 
 ## Visual verification
 

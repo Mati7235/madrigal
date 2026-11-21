@@ -227,9 +227,12 @@ fn symlink_cookies_rejected() {
 }
 
 #[test]
-fn browser_seam_unsupported() {
+fn browser_seam_empty() {
     let (_guard, _root) = isolate();
-    for browser in ["firefox", "chrome", "chromium", "brave", "edge", "opera", "vivaldi"] {
+    for browser in [
+        "firefox", "librewolf", "zen", "floorp", "waterfox", "chrome", "chromium", "brave",
+        "edge", "vivaldi", "opera",
+    ] {
         assert!(records_from_browser(browser, "").is_err(), "{browser} seam");
     }
     assert!(records_from_browser("inventado", "").is_err());

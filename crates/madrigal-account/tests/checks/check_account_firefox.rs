@@ -100,6 +100,42 @@ fn value_of(records: &[madrigal_account::cookies::CookieRecord], name: &str) -> 
         .map(|record| record.value.clone())
 }
 
+fn family_layout(root: &Path, login: &str) {
+    let profile = root.join("rel.default-release");
+    std::fs::create_dir_all(&profile).expect("profile dir");
+    write_ini(root, "rel.default-release");
+    let conn = cookie_db(&profile, false);
+    insert(
+        &conn,
+        ("", "LOGIN_INFO", login, ".youtube.com", "/", 1_900_000_000, 1, 0),
+    );
+    insert(
+        &conn,
+        ("", "SAPISID", login, ".youtube.com", "/", 1_900_000_000, 1, 0),
+    );
+}
+
+#[test]
+fn firefox_family_roots() {
+    let (_guard, home, _config) = home();
+    family_layout(&home.path().join(".librewolf"), "librewolf-login");
+    let records = records_from_browser("librewolf", "").expect("librewolf import");
+    assert_eq!(value_of(&records, "LOGIN_INFO").as_deref(), Some("librewolf-login"));
+
+    let zen = home.path().join(".var/app/app.zen_browser.zen/.zen");
+    family_layout(&zen, "zen-login");
+    let records = records_from_browser("zen", "").expect("zen import");
+    assert_eq!(value_of(&records, "LOGIN_INFO").as_deref(), Some("zen-login"));
+
+    family_layout(&home.path().join(".floorp"), "floorp-login");
+    let records = records_from_browser("floorp", "").expect("floorp import");
+    assert_eq!(value_of(&records, "LOGIN_INFO").as_deref(), Some("floorp-login"));
+
+    family_layout(&home.path().join(".waterfox"), "waterfox-login");
+    let records = records_from_browser("waterfox", "").expect("waterfox import");
+    assert_eq!(value_of(&records, "LOGIN_INFO").as_deref(), Some("waterfox-login"));
+}
+
 #[test]
 fn firefox_default_profile_via_install_section() {
     let (_guard, home, _config) = home();
