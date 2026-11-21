@@ -245,6 +245,7 @@ export component SectionView inherits Rectangle {
                                         line: root.palette.outline-variant;
                                         focus-line: root.palette.primary;
                                         content: root.palette.on-surface;
+                                        support-color: root.palette.on-surface-variant;
                                         state-on-surface: root.palette.on-surface;
                                         accepted(t) => { root.setting-edited(row.key, t); }
                                     }
@@ -338,6 +339,7 @@ export component SectionView inherits Rectangle {
                                             line: root.palette.outline-variant;
                                             focus-line: root.palette.primary;
                                             content: root.palette.on-surface;
+                                            support-color: root.palette.on-surface-variant;
                                             state-on-surface: root.palette.on-surface;
                                             accepted(t) => { root.setting-edited(row.key, t); }
                                         }
