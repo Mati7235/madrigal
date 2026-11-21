@@ -246,8 +246,39 @@ pub fn song_results(tracks: &[Track]) -> Vec<CatalogItem> {
     tracks.iter().map(track_item).collect()
 }
 
-pub fn artist_results(artists: &[Artist]) -> Vec<CatalogItem> {
-    artists.iter().map(artist_item).collect()
+fn artist_search_item(artist: &Artist, lang: Lang) -> CatalogItem {
+    let subtitle = artist
+        .subscribers
+        .as_deref()
+        .and_then(|raw| subscriber_label(raw, lang))
+        .unwrap_or_default();
+    CatalogItem {
+        thumbnail: artist.thumbnail.as_deref().unwrap_or_default().into(),
+        ..item(
+            DetailKind::Artist,
+            artist.id.as_str(),
+            artist.name.as_str(),
+            subtitle.as_str(),
+            "",
+            false,
+        )
+    }
+}
+
+fn is_channel(artist: &Artist) -> bool {
+    artist
+        .subscribers
+        .as_deref()
+        .is_some_and(|raw| raw.ends_with("subscribers"))
+}
+
+pub fn artist_results(artists: &[Artist], lang: Lang) -> Vec<CatalogItem> {
+    let mut ordered: Vec<&Artist> = artists.iter().collect();
+    ordered.sort_by_key(|artist| is_channel(artist));
+    ordered
+        .into_iter()
+        .map(|artist| artist_search_item(artist, lang))
+        .collect()
 }
 
 pub const MIXED_PER_KIND: usize = 8;
@@ -430,25 +461,54 @@ pub fn apply_album_detail(shell: &MainShell, detail: &AlbumPage) {
     artwork::resolve_detail(shell);
 }
 
+fn localized_number(number: &str, lang: Lang) -> String {
+    let (integer, fraction) = match number.split_once('.') {
+        Some((integer, fraction)) => (integer, Some(fraction)),
+        None => (number, None),
+    };
+    let (group, decimal) = match lang {
+        Lang::Es => ('.', ','),
+        Lang::En => (',', '.'),
+    };
+    let mut grouped = String::new();
+    for (index, ch) in integer.chars().rev().enumerate() {
+        if index > 0 && index % 3 == 0 {
+            grouped.push(group);
+        }
+        grouped.push(ch);
+    }
+    let integer: String = grouped.chars().rev().collect();
+    match fraction {
+        Some(fraction) => format!("{integer}{decimal}{fraction}"),
+        None => integer,
+    }
+}
+
+fn audience_key(raw: &str) -> &'static str {
+    if raw.ends_with("monthly audience") {
+        "artist.monthly_audience"
+    } else {
+        "artist.subscribers"
+    }
+}
+
 pub fn subscriber_label(raw: &str, lang: Lang) -> Option<String> {
     let token = raw.split_whitespace().next()?.trim();
     if !token.chars().next().is_some_and(|c| c.is_ascii_digit()) {
         return None;
     }
+    let key = audience_key(raw);
     let (number, unit) = match token.chars().last() {
         Some('K' | 'M' | 'B') => token.split_at(token.len() - 1),
         _ => (token, ""),
     };
-    let number = match lang {
-        Lang::Es => number.replace('.', ","),
-        Lang::En => number.to_owned(),
-    };
+    let number = localized_number(number, lang);
     let value = match (lang, unit) {
         (Lang::Es, "") => number,
         (Lang::Es, unit) => format!("{number} {unit}"),
         (Lang::En, unit) => format!("{number}{unit}"),
     };
-    Some(madrigal_i18n::tr(lang, "artist.subscribers").replace("%1", &value))
+    Some(madrigal_i18n::tr(lang, key).replace("%1", &value))
 }
 
 pub fn apply_artist_detail(shell: &MainShell, detail: &ArtistPage) {

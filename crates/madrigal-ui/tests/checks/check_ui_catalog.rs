@@ -161,6 +161,7 @@ fn ui_catalog() {
                 2 => madrigal_ui::artist_results(
                     &madrigal_innertube::CatalogClient::parse_search_artists(&artists_src)
                         .unwrap(),
+                    madrigal_i18n::Lang::Es,
                 ),
                 3 => madrigal_ui::album_results(
                     &madrigal_innertube::CatalogClient::parse_search_albums(&albums_src)
@@ -588,6 +589,24 @@ fn ui_catalog() {
 
     shell.set_page(1);
     click_nth(&shell, "SearchPage::filter-chip", 2);
+    assert_eq!(
+        shell
+            .get_search_results()
+            .row_data(0)
+            .unwrap()
+            .subtitle
+            .as_str(),
+        "55,5 M oyentes mensuales"
+    );
+    assert_eq!(
+        shell
+            .get_search_results()
+            .row_data(6)
+            .unwrap()
+            .title
+            .as_str(),
+        "Re Beatles"
+    );
     click_nth(&shell, "SearchPage::hit-row", 0);
     assert_eq!(opened.borrow().last().unwrap().0, DetailKind::Artist);
     assert!(is_detail_open(&shell));
@@ -600,6 +619,39 @@ fn ui_catalog() {
         subscriber_label("5.48M subscribers", madrigal_i18n::Lang::En).as_deref(),
         Some("5.48M subscribers")
     );
+    assert_eq!(
+        subscriber_label("55.5M monthly audience", madrigal_i18n::Lang::Es).as_deref(),
+        Some("55,5 M oyentes mensuales")
+    );
+    assert_eq!(
+        subscriber_label("55.5M monthly audience", madrigal_i18n::Lang::En).as_deref(),
+        Some("55.5M monthly audience")
+    );
+    assert_eq!(
+        subscriber_label("2.28K subscribers", madrigal_i18n::Lang::Es).as_deref(),
+        Some("2,28 K suscriptores")
+    );
+    let artists =
+        madrigal_innertube::CatalogClient::parse_search_artists(&artists_src).unwrap();
+    let artist_items = madrigal_ui::artist_results(&artists, madrigal_i18n::Lang::Es);
+    assert_eq!(artist_items[0].title.as_str(), "The Beatles");
+    assert_eq!(artist_items[0].subtitle.as_str(), "55,5 M oyentes mensuales");
+    assert_eq!(artist_items[4].title.as_str(), "Not The Beatles");
+    assert_eq!(artist_items[4].subtitle.as_str(), "");
+    assert_eq!(artist_items[6].title.as_str(), "Re Beatles");
+    assert_eq!(artist_items[6].subtitle.as_str(), "2,28 K suscriptores");
+    assert_eq!(artist_items[18].subtitle.as_str(), "115 suscriptores");
+    let first_channel = artist_items
+        .iter()
+        .position(|item| item.subtitle.ends_with("suscriptores"))
+        .unwrap();
+    assert_eq!(first_channel, 6);
+    let artist_items_en = madrigal_ui::artist_results(&artists, madrigal_i18n::Lang::En);
+    assert_eq!(
+        artist_items_en[0].subtitle.as_str(),
+        "55.5M monthly audience"
+    );
+    assert_eq!(artist_items_en[6].subtitle.as_str(), "2.28K subscribers");
     assert_eq!(
         shell.get_detail_subtitle().as_str(),
         "9,8 M suscriptores"

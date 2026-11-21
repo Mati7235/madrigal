@@ -361,7 +361,10 @@ pub fn apply_catalog_event(
             match outcome {
                 SearchOutcome::Songs(tracks) => apply_search_results(shell, song_results(&tracks)),
                 SearchOutcome::Artists(artists) => {
-                    apply_search_results(shell, artist_results(&artists));
+                    let lang = madrigal_ui::lang_from_code(
+                        shell.global::<madrigal_ui::I18n>().get_lang().as_str(),
+                    );
+                    apply_search_results(shell, artist_results(&artists, lang));
                 }
                 SearchOutcome::Albums(albums) => {
                     apply_search_results(shell, album_results(&albums));
