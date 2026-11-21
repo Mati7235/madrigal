@@ -1,7 +1,6 @@
 import { Font, Palette, Spacing, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
-import { M3Button, M3IconButton } from "../components/buttons.slint";
-import { Icons } from "../components/icons.slint";
+import { M3Button } from "../components/buttons.slint";
 import { LyricLineRow } from "models.slint";
 
 export component LyricsView inherits Rectangle {
@@ -35,8 +34,9 @@ export component LyricsView inherits Rectangle {
     accessible-role: AccessibleRole.list;
     accessible-label: I18n.trl(I18n.lang, "player.tab.lyrics");
 
-    property<length> head-h: 64px + Spacing.s8;
+    property<length> head-h: 92px;
     property<length> tab-h: 36px;
+    property<string> decimal-sep: I18n.lang == "es" ? "," : ".";
     property<length> measure-w: min(self.width, 720px);
     property<float> type-scale: root.font-px / 16.0;
     property<length> active-size: Type.title-large-emphasized.size * root.type-scale;
@@ -44,9 +44,11 @@ export component LyricsView inherits Rectangle {
     property<length> line-anchor-y: 0px;
     property<duration> auto-duration: root.scroll-locked ? 0ms : 300ms;
 
-    property<int> offset-tenths: root.offset-ms / 100;
-    property<int> offset-abs: root.offset-ms < 0 ? -root.offset-ms / 100 : root.offset-ms / 100;
-    property<string> offset-text: (root.offset-tenths > 0 ? "+" : root.offset-tenths < 0 ? "-" : "") + (root.offset-abs / 10) + "." + (root.offset-abs - (root.offset-abs / 10) * 10) + " s";
+    property<int> offset-tenths: Math.floor(root.offset-ms / 100);
+    property<int> offset-abs: Math.abs(root.offset-tenths);
+    property<int> offset-whole: Math.floor(root.offset-abs / 10);
+    property<int> offset-frac: root.offset-abs - root.offset-whole * 10;
+    property<string> offset-text: (root.offset-tenths > 0 ? "+" : root.offset-tenths < 0 ? "−" : "") + root.offset-whole + root.decimal-sep + root.offset-frac + " s";
 
     public function reveal-line(y: length) {
         root.line-anchor-y = y;
@@ -97,14 +99,14 @@ export component LyricsView inherits Rectangle {
         width: 100%;
         height: root.head-h;
 
-        lyrics-share := M3IconButton {
-            x: parent.width - 40px;
+        lyrics-share := M3Button {
+            x: parent.width - 150px;
             y: Spacing.s24 + (root.tab-h - self.height) / 2;
-            icon: Icons.save;
-            icon-color: root.palette.on-surface-variant;
-            content: root.palette.on-surface-variant;
+            width: 150px;
+            text: I18n.trl(I18n.lang, "player.shareLyrics");
+            fill: root.palette.secondary-container;
+            content: root.palette.on-secondary-container;
             state-on-surface: root.palette.on-surface;
-            accessible-label: I18n.trl(I18n.lang, "player.shareLyrics");
             clicked => { root.share-requested(); }
         }
 
@@ -134,7 +136,7 @@ export component LyricsView inherits Rectangle {
         }
 
         offset-row := HorizontalLayout {
-            x: parent.width - 40px - Spacing.s8 - 220px;
+            x: parent.width - 150px - Spacing.s8 - 220px;
             y: Spacing.s24 + (root.tab-h - 40px) / 2;
             width: 220px;
             height: 40px;
@@ -143,7 +145,7 @@ export component LyricsView inherits Rectangle {
 
             offset-minus := M3Button {
                 width: 72px;
-                text: "-0.1s";
+                text: "−0" + root.decimal-sep + "1 s";
                 accessible-text: I18n.trl(I18n.lang, "player.lyricsOffsetMinus");
                 fill: transparent;
                 content: root.palette.on-surface-variant;
@@ -166,7 +168,7 @@ export component LyricsView inherits Rectangle {
 
             offset-plus := M3Button {
                 width: 72px;
-                text: "+0.1s";
+                text: "+0" + root.decimal-sep + "1 s";
                 accessible-text: I18n.trl(I18n.lang, "player.lyricsOffsetPlus");
                 fill: transparent;
                 content: root.palette.on-surface-variant;
@@ -174,6 +176,21 @@ export component LyricsView inherits Rectangle {
                 state-on-surface: root.palette.on-surface;
                 clicked => { root.offset-requested(100); }
             }
+        }
+
+        lyrics-offset-help := Text {
+            x: 0px;
+            y: 68px;
+            width: parent.width;
+            height: 18px;
+            text: I18n.trl(I18n.lang, "player.lyricsOffsetHelp");
+            color: root.palette.on-surface-variant;
+            font-size: Type.body-small.size;
+            font-family: Type.body-small.family;
+            horizontal-alignment: right;
+            vertical-alignment: center;
+            accessible-role: AccessibleRole.text;
+            accessible-label: self.text;
         }
     }
 

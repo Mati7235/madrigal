@@ -235,6 +235,8 @@ fn ui_player() {
         ("player.playbackError", "Error de reproducción", "Playback error"),
         ("player.shareLyrics", "Compartir letra", "Share lyrics"),
         ("player.lyricsBackToLine", "Volver a la línea actual", "Back to current line"),
+        ("player.lyricsOffsetHelp", "Ajustá el tiempo si la letra va adelantada o atrasada", "Adjust the timing if the lyrics run ahead or behind"),
+        ("player.lyricsOffsetMinus", "Desfase de la letra −0,1 s", "Lyrics offset −0.1 s"),
         ("player.lyricsOffsetPlus", "Desfase de la letra +0,1 s", "Lyrics offset +0.1 s"),
         ("player.lyricsSearching", "Buscando letra", "Searching lyrics"),
         ("player.lyricsNotFound", "No hay letra para esta canción", "No lyrics for this track"),
@@ -385,6 +387,30 @@ fn ui_player() {
 
     kit::click_by_id(&shell, "PlayerTools::full-lyrics-btn").unwrap();
     assert_eq!(shell.get_player_panel(), 1);
+    assert_eq!(
+        kit::find_by_id(&shell, "LyricsView::offset-minus")
+            .unwrap()
+            .accessible_label()
+            .unwrap()
+            .as_str(),
+        "Desfase de la letra −0,1 s"
+    );
+    assert_eq!(
+        kit::find_by_id(&shell, "LyricsView::lyrics-offset-help")
+            .unwrap()
+            .accessible_label()
+            .unwrap()
+            .as_str(),
+        "Ajustá el tiempo si la letra va adelantada o atrasada"
+    );
+    assert_eq!(
+        kit::find_by_id(&shell, "LyricsView::lyrics-share")
+            .unwrap()
+            .accessible_label()
+            .unwrap()
+            .as_str(),
+        "Compartir letra"
+    );
 
     let session = session_lyrics();
     set_lyrics(&shell, &session);
@@ -429,6 +455,14 @@ fn ui_player() {
     }
     assert_eq!(shell.get_lyrics_offset_ms(), 500);
     assert_eq!(shell.get_lyrics_offset_count(), 5);
+    assert_eq!(
+        kit::find_by_id(&shell, "LyricsView::offset-value")
+            .unwrap()
+            .accessible_label()
+            .unwrap()
+            .as_str(),
+        "Desfase de la letra +0,5 s"
+    );
     assert_eq!(shell.get_active_line(), 1, "offset did not move the line boundary");
     kit::click_by_id(&shell, "LyricsView::offset-minus").unwrap();
     assert_eq!(shell.get_lyrics_offset_ms(), 400);
