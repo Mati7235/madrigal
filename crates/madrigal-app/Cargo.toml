@@ -79,6 +79,10 @@ name = "check_app_downloads"
 path = "tests/checks/check_app_downloads.rs"
 
 [[test]]
+name = "check_app_actions"
+path = "tests/checks/check_app_actions.rs"
+
+[[test]]
 name = "check_desktop"
 path = "tests/checks/check_desktop.rs"
 

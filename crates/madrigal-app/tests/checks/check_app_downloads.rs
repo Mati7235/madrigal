@@ -1,17 +1,20 @@
+use std::cell::RefCell;
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
+use madrigal_app::actions::{wire_track_actions, TrackActions};
 use madrigal_app::downloads::{register_with, Downloads, MediaRequest, UrlResolver};
 use madrigal_core::{Track, TrackIdentity};
 use madrigal_downloads::{DownloadState, JobOptions, ManagerConfig};
-use madrigal_settings::Storage;
+use madrigal_settings::{Settings, Storage};
 use madrigal_testkit as kit;
-use madrigal_ui::MainShell;
+use madrigal_ui::{MainShell, TrackMenuRequest};
 use slint::{ComponentHandle, Model};
 
 const IDLE_TIMEOUT: Duration = Duration::from_secs(10);
@@ -163,7 +166,7 @@ fn serve(stream: &mut TcpStream, bytes: &[u8], mode: Mode, attempts: &AtomicUsiz
 struct Harness {
     root: tempfile::TempDir,
     shell: MainShell,
-    downloads: Downloads,
+    downloads: Rc<Downloads>,
     _server: TestServer,
 }
 
@@ -185,7 +188,7 @@ impl Harness {
         let resolver = Resolver {
             base: server.base(),
         };
-        let downloads = register_with(&shell, Arc::new(resolver), config);
+        let downloads = Rc::new(register_with(&shell, Arc::new(resolver), config));
         Self {
             root,
             shell,
@@ -294,6 +297,7 @@ fn app_downloads() {
     cancel_mid_run();
     pause_and_resume();
     quarantine_after_failure();
+    menu_download();
 
     println!("OK app_downloads");
 }
@@ -485,4 +489,61 @@ fn quarantine_after_failure() {
         assert!(Instant::now() < deadline, "partial file never quarantined");
         thread::sleep(Duration::from_millis(2));
     }
+}
+
+fn menu_download() {
+    let h = Harness::new(
+        Mode::Stream {
+            chunk: 256,
+            delay_ms: 2,
+        },
+        0,
+    );
+    let settings = Settings::default();
+    let conn = madrigal_db::open(&h.root.path().join("library.sqlite3")).expect("db");
+    wire_track_actions(
+        &h.shell,
+        TrackActions {
+            conn: Rc::new(RefCell::new(conn)),
+            settings,
+            downloads: Rc::clone(&h.downloads),
+            core: None,
+        },
+    );
+
+    let request = TrackMenuRequest {
+        id: "MENU1".into(),
+        title: "Menu Song".into(),
+        artist: "The Artist".into(),
+        album: "The Album".into(),
+        duration_secs: 200,
+        anchor_x: 300.0,
+        anchor_y: 200.0,
+    };
+    h.shell.invoke_track_menu_requested(request);
+    h.shell.invoke_track_menu_action("download".into(), "".into());
+    h.shell.invoke_track_menu_requested(TrackMenuRequest {
+        id: "MENU1".into(),
+        title: "Menu Song".into(),
+        artist: "The Artist".into(),
+        album: "The Album".into(),
+        duration_secs: 200,
+        anchor_x: 300.0,
+        anchor_y: 200.0,
+    });
+
+    let identity = TrackIdentity::youtube("MENU1");
+    h.wait_for(&identity, "menu download", |state| {
+        state == Some(DownloadState::Completed)
+    });
+    h.pump();
+    assert_eq!(row_state(&h.shell, "MENU1"), Some(3));
+    assert_eq!(h.shell.get_track_menu_download_state(), 3);
+    assert_eq!(h.shell.get_track_menu_download_progress(), 1.0);
+    let output = h.downloads.output_of(&identity).expect("output");
+    assert_eq!(std::fs::read(&output).expect("file"), fixture_bytes());
+
+    h.shell.set_page(0);
+    h.shell.invoke_track_menu_action("download".into(), "".into());
+    assert_eq!(h.shell.get_page(), 4);
 }
