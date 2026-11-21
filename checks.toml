@@ -105,6 +105,10 @@ name = "account_profiles"
 group = "offline"
 
 [[check]]
+name = "account_firefox"
+group = "offline"
+
+[[check]]
 name = "scrobble_thresholds"
 group = "offline"
 

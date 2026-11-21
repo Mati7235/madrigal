@@ -3601,6 +3601,7 @@ dependencies = [
  "madrigal-paths",
  "madrigal-secrets",
  "madrigal-settings",
+ "rusqlite",
  "serde",
  "serde_json",
  "tempfile",

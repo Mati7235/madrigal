@@ -10,8 +10,10 @@ static ENV_LOCK: Mutex<()> = Mutex::new(());
 fn isolate() -> (std::sync::MutexGuard<'static, ()>, tempfile::TempDir) {
     let guard = ENV_LOCK.lock().expect("env lock");
     let root = tempfile::tempdir().expect("tempdir");
+    let home = tempfile::tempdir().expect("home");
     std::env::set_var("MADRIGAL_PROFILE_ROOT", root.path());
     std::env::set_var("MADRIGAL_KEYRING", "0");
+    std::env::set_var("HOME", home.path());
     std::env::remove_var("XDG_CONFIG_HOME");
     std::env::remove_var("XDG_DATA_HOME");
     std::env::remove_var("XDG_CACHE_HOME");
