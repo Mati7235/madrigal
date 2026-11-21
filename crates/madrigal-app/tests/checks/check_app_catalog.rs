@@ -334,7 +334,10 @@ fn app_catalog() {
     apply(next_event(&rx));
     assert!(!shell.get_detail_loading(), "artist finished loading");
     assert_eq!(shell.get_detail_title().as_str(), "The Beatles");
-    assert_eq!(shell.get_detail_subtitle().as_str(), "9.8M");
+    assert_eq!(
+        shell.get_detail_subtitle().as_str(),
+        "9,8 M suscriptores"
+    );
     assert_eq!(shell.get_detail_tracks().row_count(), 5);
     assert_eq!(shell.get_detail_albums().row_count(), 10);
     assert_eq!(shell.get_detail_tab(), 0);
