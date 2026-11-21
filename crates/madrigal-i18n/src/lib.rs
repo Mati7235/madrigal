@@ -185,6 +185,8 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("home.section.forgotten", "Favoritos olvidados", "Forgotten favorites"),
     ("home.section.listenTogether", "Escuchar en compañía", "Listen together"),
     ("home.section.newReleases", "Novedades", "New releases"),
+    ("library.chips.done", "Listo", "Done"),
+    ("library.chips.edit", "Editar pestañas", "Edit tabs"),
     ("library.empty.history", "Sin historial todavía", "No history yet"),
     ("library.empty.playlists", "Sin listas todavía", "No playlists yet"),
     ("library.empty.songs", "Sin canciones todavía", "No songs yet"),

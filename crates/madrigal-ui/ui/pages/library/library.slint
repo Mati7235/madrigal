@@ -2,9 +2,11 @@ import { Palette, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { M3Chip, M3Card } from "../../components/cards.slint";
 import { M3Button } from "../../components/buttons.slint";
+import { M3IconButton } from "../../components/buttons.slint";
 import { M3TextField } from "../../components/fields.slint";
 import { Icon, Icons } from "../../components/icons.slint";
 import { M3ListItem } from "../../components/rows.slint";
+import { TrackMenuRequest } from "../../components/menu.slint";
 import { LibSongRow, LibPlaylistRow, LibCardRow, HistoryRow, StatRow } from "models.slint";
 
 export component LibraryPage inherits Rectangle {
@@ -54,6 +56,8 @@ export component LibraryPage inherits Rectangle {
     callback history-cleared();
     callback year-prev();
     callback year-next();
+    callback new-playlist();
+    callback track-menu-requested(TrackMenuRequest);
 
     property<string> current: root.chips[root.tab];
     property<string> year-label: root.years[root.year];
@@ -87,25 +91,6 @@ export component LibraryPage inherits Rectangle {
                 lib-chip-4 := M3Chip { text: root.chip-label(root.chips[4]); selected: root.tab == 4; selected-fill: root.palette.secondary-container; selected-content: root.palette.on-secondary-container; unselected-content: root.palette.on-surface-variant; unselected-line: root.palette.outline-variant; clicked => { root.chip-selected(4); } }
                 lib-chip-5 := M3Chip { text: root.chip-label(root.chips[5]); selected: root.tab == 5; selected-fill: root.palette.secondary-container; selected-content: root.palette.on-secondary-container; unselected-content: root.palette.on-surface-variant; unselected-line: root.palette.outline-variant; clicked => { root.chip-selected(5); } }
                 lib-chip-6 := M3Chip { text: root.chip-label(root.chips[6]); selected: root.tab == 6; selected-fill: root.palette.secondary-container; selected-content: root.palette.on-secondary-container; unselected-content: root.palette.on-surface-variant; unselected-line: root.palette.outline-variant; clicked => { root.chip-selected(6); } }
-
-                edit-wrap := Rectangle {
-                    width: 40px;
-                    height: 32px;
-                    visible: true;
-                    edit-label := Icon {
-                        source: Icons.ellipsis-vertical;
-                        colorize: root.palette.on-surface-variant;
-                        icon-size: 20px;
-                        x: (parent.width - self.width) / 2;
-                        y: (parent.height - self.height) / 2;
-                    }
-                    edit-touch := TouchArea {
-                        accessible-label: I18n.trl(I18n.lang, "action.reorder");
-                        accessible-role: button;
-                        mouse-cursor: pointer;
-                        clicked => { root.chip-edit-toggled(); }
-                    }
-                }
 
                 move-left-wrap := Rectangle {
                     width: 40px;
@@ -180,15 +165,35 @@ export component LibraryPage inherits Rectangle {
                 }
 
                 manage-wrap := Rectangle {
-                    width: 40px;
+                    width: 112px;
                     height: 32px;
-                    manage-label := Icon {
-                        source: Icons.list-plus;
-                        colorize: root.palette.on-surface-variant;
-                        icon-size: 20px;
-                        x: (parent.width - self.width) / 2;
-                        y: (parent.height - self.height) / 2;
+                    border-radius: 16px;
+                    border-width: 1px;
+                    border-color: manage-touch.has-hover ? root.palette.outline : root.palette.outline-variant;
+
+                    HorizontalLayout {
+                        padding-left: 10px;
+                        padding-right: 12px;
+                        spacing: 6px;
+                        alignment: center;
+
+                        manage-label := Icon {
+                            source: Icons.list-plus;
+                            colorize: root.palette.on-surface-variant;
+                            icon-size: 16px;
+                        }
+
+                        manage-text := Text {
+                            text: I18n.trl(I18n.lang, "library.tags.title");
+                            color: root.palette.on-surface-variant;
+                            font-size: Type.label-large.size;
+                            font-family: Type.label-large.family;
+                            font-weight: Type.label-large.weight;
+                            vertical-alignment: center;
+                            overflow: elide;
+                        }
                     }
+
                     manage-touch := TouchArea {
                         accessible-label: I18n.trl(I18n.lang, "library.tags.title");
                         accessible-role: button;
@@ -199,31 +204,56 @@ export component LibraryPage inherits Rectangle {
             }
         }
 
-        if (root.current == "songs" || root.current == "library" || root.current == "playlists") : tool-row := HorizontalLayout {
-            padding-left: 12px;
-            padding-right: 12px;
-            padding-bottom: 8px;
-            spacing: 8px;
-            alignment: start;
+        if (root.current == "songs" || root.current == "library" || root.current == "playlists") : tools-scroll := Flickable {
+            height: 48px;
+            content-width: tool-row.preferred-width;
+            content-height: self.height;
 
-            sort-touch := M3Button {
-                width: 200px;
-                text: I18n.trl(I18n.lang, "library.sort.title") + " · " + root.sort-label;
-                fill: transparent;
-                content: root.palette.on-surface;
-                line: root.palette.outline-variant;
-                state-on-surface: root.palette.on-surface;
-                clicked => { root.sort-opened(); }
-            }
+            tool-row := HorizontalLayout {
+                padding-left: 12px;
+                padding-right: 12px;
+                padding-bottom: 8px;
+                spacing: 8px;
+                alignment: start;
 
-            multi-touch := M3Button {
-                width: 140px;
-                text: I18n.trl(I18n.lang, "action.select");
-                fill: root.multiselect ? root.palette.secondary-container : transparent;
-                content: root.multiselect ? root.palette.on-secondary-container : root.palette.on-surface;
-                line: root.multiselect ? transparent : root.palette.outline-variant;
-                state-on-surface: root.palette.on-surface;
-                clicked => { root.multiselect-toggled(); }
+                sort-touch := M3Button {
+                    width: 200px;
+                    text: I18n.trl(I18n.lang, "library.sort.title") + " · " + root.sort-label;
+                    fill: transparent;
+                    content: root.palette.on-surface;
+                    line: root.palette.outline-variant;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.sort-opened(); }
+                }
+
+                multi-touch := M3Button {
+                    width: 140px;
+                    text: I18n.trl(I18n.lang, "action.select");
+                    fill: root.multiselect ? root.palette.secondary-container : transparent;
+                    content: root.multiselect ? root.palette.on-secondary-container : root.palette.on-surface;
+                    line: root.multiselect ? transparent : root.palette.outline-variant;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.multiselect-toggled(); }
+                }
+
+                edit-tabs := M3Button {
+                    width: 140px;
+                    text: root.chip-edit ? I18n.trl(I18n.lang, "library.chips.done") : I18n.trl(I18n.lang, "library.chips.edit");
+                    fill: root.chip-edit ? root.palette.secondary-container : transparent;
+                    content: root.chip-edit ? root.palette.on-secondary-container : root.palette.on-surface;
+                    line: root.chip-edit ? transparent : root.palette.outline-variant;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.chip-edit-toggled(); }
+                }
+
+                if (root.current == "playlists") : new-playlist := M3Button {
+                    width: 150px;
+                    text: I18n.trl(I18n.lang, "playlists.create");
+                    fill: root.palette.primary;
+                    content: root.palette.on-primary;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.new-playlist(); }
+                }
             }
         }
 
@@ -297,6 +327,24 @@ export component LibraryPage inherits Rectangle {
                         border-radius: 12px;
                         background: song-touch.has-hover ? root.palette.surface-container : transparent;
 
+                        song-touch := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.song-chosen(song.id); }
+                            pointer-event(e) => {
+                                if (e.kind == PointerEventKind.down && e.button == PointerEventButton.right) {
+                                    root.track-menu-requested({
+                                        id: song.id,
+                                        title: song.title,
+                                        artist: song.subtitle,
+                                        album: "",
+                                        duration-secs: 0,
+                                        anchor-x: self.absolute-position.x + self.mouse-x,
+                                        anchor-y: self.absolute-position.y + self.mouse-y,
+                                    });
+                                }
+                            }
+                        }
+
                         HorizontalLayout {
                             padding-left: 12px;
                             padding-right: 12px;
@@ -348,11 +396,55 @@ export component LibraryPage inherits Rectangle {
                                 mouse-cursor: pointer;
                                 clicked => { root.song-toggled(song.id); }
                             }
-                        }
 
-                        song-touch := TouchArea {
-                            mouse-cursor: pointer;
-                            clicked => { root.song-chosen(song.id); }
+                            song-menu := FocusScope {
+                                width: 40px;
+                                height: 40px;
+
+                                song-menu-ring := Rectangle {
+                                    width: 100%;
+                                    height: 100%;
+                                    border-radius: 20px;
+                                    border-width: song-menu.has-focus ? 2px : 0px;
+                                    border-color: root.palette.primary;
+                                }
+
+                                song-menu-button := M3IconButton {
+                                    icon: Icons.ellipsis-vertical;
+                                    icon-size: 18px;
+                                    fill: transparent;
+                                    content: root.palette.on-surface-variant;
+                                    state-on-surface: root.palette.on-surface;
+                                    accessible-label: I18n.trl(I18n.lang, "action.more");
+                                    clicked => {
+                                        root.track-menu-requested({
+                                            id: song.id,
+                                            title: song.title,
+                                            artist: song.subtitle,
+                                            album: "",
+                                            duration-secs: 0,
+                                            anchor-x: song-menu-button.absolute-position.x,
+                                            anchor-y: song-menu-button.absolute-position.y + song-menu-button.height,
+                                        });
+                                    }
+                                }
+
+                                key-pressed(event) => {
+                                    if (event.text == Key.Return || event.text == Key.Space) {
+                                        root.track-menu-requested({
+                                            id: song.id,
+                                            title: song.title,
+                                            artist: song.subtitle,
+                                            album: "",
+                                            duration-secs: 0,
+                                            anchor-x: song-menu-button.absolute-position.x,
+                                            anchor-y: song-menu-button.absolute-position.y + song-menu-button.height,
+                                        });
+                                        return EventResult.accept;
+                                    }
+                                    return EventResult.reject;
+                                }
+                            }
                         }
                     }
                 }
@@ -370,12 +462,42 @@ export component LibraryPage inherits Rectangle {
                     spacing: 2px;
                     padding: 12px;
 
-                    if (root.playlists.length == 0) : playlists-empty := Text {
-                        text: I18n.trl(I18n.lang, "library.empty.playlists");
-                        color: root.palette.on-surface-variant;
-                        font-size: Type.body-medium.size;
-                        font-family: Type.body-medium.family;
-                        horizontal-alignment: center;
+                    if (root.playlists.length == 0) : playlists-empty := VerticalLayout {
+                        width: 100%;
+                        height: 260px;
+                        alignment: center;
+                        spacing: 12px;
+
+                        HorizontalLayout {
+                            alignment: center;
+                            empty-icon := Icon {
+                                source: Icons.list-music;
+                                icon-size: 40px;
+                                colorize: root.palette.on-surface-variant;
+                            }
+                        }
+
+                        empty-title := Text {
+                            width: 100%;
+                            text: I18n.trl(I18n.lang, "library.empty.playlists");
+                            color: root.palette.on-surface;
+                            font-size: Type.title-medium.size;
+                            font-family: Type.title-medium.family;
+                            font-weight: Type.title-medium.weight;
+                            horizontal-alignment: center;
+                        }
+
+                        HorizontalLayout {
+                            alignment: center;
+                            empty-create := M3Button {
+                                width: 160px;
+                                text: I18n.trl(I18n.lang, "playlists.create");
+                                fill: root.palette.primary;
+                                content: root.palette.on-primary;
+                                state-on-surface: root.palette.on-surface;
+                                clicked => { root.new-playlist(); }
+                            }
+                        }
                     }
 
                     for pl in root.playlists : playlist-row := M3ListItem {
