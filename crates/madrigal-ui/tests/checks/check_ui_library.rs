@@ -183,6 +183,12 @@ fn ui_library() {
 
     kit::click_by_id(&shell, "LibraryPage::sort-touch").unwrap();
     assert!(shell.get_lib_sort_open());
+    shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
+        text: slint::platform::Key::Escape.into(),
+    });
+    assert!(!shell.get_lib_sort_open());
+    kit::click_by_id(&shell, "LibraryPage::sort-touch").unwrap();
+    assert!(shell.get_lib_sort_open());
     shell.invoke_lib_sort_selected(1);
     assert_eq!(shell.get_lib_sort(), 1);
     assert!(!shell.get_lib_sort_open());
@@ -297,7 +303,10 @@ fn ui_library() {
     shell.invoke_lib_chip_selected(2);
     kit::click_by_id(&shell, "LibraryPage::manage-touch").unwrap();
     assert!(shell.get_lib_tags_open());
-    shell.invoke_lib_tags_closed();
+    shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
+        text: slint::platform::Key::Escape.into(),
+    });
+    assert!(!shell.get_lib_tags_open());
 
     let items = load_downloads_fixture();
     let (active, done, failed) = download_models(&items);

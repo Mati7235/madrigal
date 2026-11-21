@@ -824,6 +824,20 @@ export component LibraryPage inherits Rectangle {
         }
     }
 
+    sort-focus := FocusScope {
+        width: 100%;
+        height: 100%;
+        visible: root.sort-open;
+        changed visible => { if (self.visible) { self.focus(); } else { self.clear-focus(); } }
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                root.sort-closed();
+                return accept;
+            }
+            return reject;
+        }
+    }
+
     if (root.sort-open) : sort-layer := Rectangle {
         x: 0px;
         y: 0px;
@@ -877,6 +891,20 @@ export component LibraryPage inherits Rectangle {
                     }
                 }
             }
+        }
+    }
+
+    tags-focus := FocusScope {
+        width: 100%;
+        height: 100%;
+        visible: root.tags-open;
+        changed visible => { if (self.visible) { self.focus(); } else { self.clear-focus(); } }
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                root.tags-closed();
+                return accept;
+            }
+            return reject;
         }
     }
 

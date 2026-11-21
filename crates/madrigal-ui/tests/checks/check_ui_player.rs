@@ -195,16 +195,7 @@ fn fixture_queue() -> madrigal_player::queue::Queue {
     queue
 }
 
-#[test]
-fn ui_i18n_formats_args() {
-    let tmp = tempfile::tempdir().unwrap();
-    std::env::set_var("XDG_DATA_HOME", tmp.path().join("data"));
-    std::env::set_var("XDG_CONFIG_HOME", tmp.path().join("config"));
-    std::env::set_var("XDG_CACHE_HOME", tmp.path().join("cache"));
-    std::env::set_var("XDG_STATE_HOME", tmp.path().join("state"));
-    kit::init_headless();
-    let shell = MainShell::new().unwrap();
-    wire_shell_i18n(&shell, madrigal_i18n::Lang::Es);
+fn i18n_formats_args(shell: &MainShell) {
     let args = slint::ModelRc::new(slint::VecModel::from(vec![
         slint::SharedString::from("2.5"),
     ]));
@@ -301,6 +292,7 @@ fn ui_player() {
         assert_eq!(es_hit.as_str(), es, "es {key}");
         assert_eq!(en_hit.as_str(), en, "en {key}");
     }
+    i18n_formats_args(&shell);
 
     let queue = fixture_queue();
     let tabs = queue_tabs_from_queue(&queue, "song-a");

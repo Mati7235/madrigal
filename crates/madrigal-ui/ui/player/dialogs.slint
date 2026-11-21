@@ -22,7 +22,7 @@ export component SleepTimerDialog inherits Rectangle {
         width: 100%;
         height: 100%;
         visible: root.visible;
-        changed visible => { if (self.visible) { self.focus(); } }
+        changed visible => { if (self.visible) { self.focus(); } else { self.clear-focus(); } }
         key-pressed(event) => {
             if (event.text == Key.Escape) {
                 root.dismissed();
@@ -157,7 +157,7 @@ export component TempoPitchDialog inherits Rectangle {
         width: 100%;
         height: 100%;
         visible: root.visible;
-        changed visible => { if (self.visible) { self.focus(); } }
+        changed visible => { if (self.visible) { self.focus(); } else { self.clear-focus(); } }
         key-pressed(event) => {
             if (event.text == Key.Escape) {
                 root.dismissed();
@@ -196,6 +196,7 @@ export component TempoPitchDialog inherits Rectangle {
                     }
                     tempo-semi := M3Slider {
                         value: root.semi01;
+                        show-value: false;
                         active-track: root.palette.primary;
                         inactive-track: root.palette.surface-container-highest;
                         handle-color: root.palette.primary;
@@ -213,6 +214,7 @@ export component TempoPitchDialog inherits Rectangle {
                     }
                     tempo-mult := M3Slider {
                         value: root.mult01;
+                        show-value: false;
                         active-track: root.palette.primary;
                         inactive-track: root.palette.surface-container-highest;
                         handle-color: root.palette.primary;
@@ -269,7 +271,7 @@ export component EqualizerDialog inherits Rectangle {
         width: 100%;
         height: 100%;
         visible: root.visible;
-        changed visible => { if (self.visible) { self.focus(); } }
+        changed visible => { if (self.visible) { self.focus(); } else { self.clear-focus(); } }
         key-pressed(event) => {
             if (event.text == Key.Escape) {
                 root.dismissed();
@@ -427,7 +429,7 @@ export component PlaybackErrorDialog inherits Rectangle {
         width: 100%;
         height: 100%;
         visible: root.visible;
-        changed visible => { if (self.visible) { self.focus(); } }
+        changed visible => { if (self.visible) { self.focus(); } else { self.clear-focus(); } }
         key-pressed(event) => {
             if (event.text == Key.Escape) {
                 root.dismissed();
@@ -550,7 +552,7 @@ export component StreamInfoPanel inherits Rectangle {
         width: 100%;
         height: 100%;
         visible: root.visible;
-        changed visible => { if (self.visible) { self.focus(); } }
+        changed visible => { if (self.visible) { self.focus(); } else { self.clear-focus(); } }
         key-pressed(event) => {
             if (event.text == Key.Escape) {
                 root.dismissed();

@@ -564,8 +564,16 @@ export component MainShell inherits Window {
     }
 
     changed paused => { root.player-state-changed(); }
-    changed full-player-open => { root.player-state-changed(); }
+    changed full-player-open => {
+        root.player-state-changed();
+        if (root.full-player-open) {
+            key-capture.focus();
+        }
+    }
     changed has-track => { root.player-state-changed(); }
+    changed queue-open => { if (root.queue-open) { key-capture.focus(); } }
+    changed lib-sort-open => { if (root.lib-sort-open) { key-capture.focus(); } }
+    changed lib-tags-open => { if (root.lib-tags-open) { key-capture.focus(); } }
 
     navigate(p) => {
         root.page = p;
@@ -581,7 +589,7 @@ export component MainShell inherits Window {
         if (root.full-player-open) {
             full-layer.take-focus();
         } else {
-            key-bridge.focus();
+            key-capture.focus();
         }
     }
 
@@ -590,6 +598,7 @@ export component MainShell inherits Window {
         root.confirm-body = b;
         root.confirm-result = -1;
         root.overlay = 1;
+        key-capture.focus();
     }
 
     open-prompt(t) => {
@@ -597,6 +606,7 @@ export component MainShell inherits Window {
         root.prompt-input = "";
         root.prompt-result = "";
         root.overlay = 2;
+        key-capture.focus();
     }
 
     close-overlay() => {
@@ -652,7 +662,7 @@ export component MainShell inherits Window {
                 if (root.full-player-open) {
                     full-layer.take-focus();
                 } else {
-                    key-bridge.focus();
+                    key-capture.focus();
                 }
                 return true;
             }
@@ -660,38 +670,38 @@ export component MainShell inherits Window {
                 root.full-player-open = false;
                 root.player-dialog = 0;
                 root.full-player-closed();
-                key-bridge.focus();
+                key-capture.focus();
                 return true;
             }
             if (root.overlay == 1) {
                 root.confirm-dismissed();
-                key-bridge.focus();
+                key-capture.focus();
                 return true;
             }
             if (root.overlay == 2) {
                 root.prompt-dismissed();
-                key-bridge.focus();
+                key-capture.focus();
                 return true;
             }
             if (root.lib-sort-open) {
                 root.lib-sort-closed();
-                key-bridge.focus();
+                key-capture.focus();
                 return true;
             }
             if (root.lib-tags-open) {
                 root.lib-tags-closed();
-                key-bridge.focus();
+                key-capture.focus();
                 return true;
             }
             if (root.lib-chip-edit) {
                 root.lib-chip-edit-toggled();
-                key-bridge.focus();
+                key-capture.focus();
                 return true;
             }
             if (root.detail-stack == 1) {
                 root.detail-stack = 0;
                 root.detail-closed();
-                key-bridge.focus();
+                key-capture.focus();
                 return true;
             }
             root.sidebar-focused = true;
@@ -791,21 +801,7 @@ export component MainShell inherits Window {
         return root.process-key(key);
     }
 
-    forward-focus: key-bridge;
-
-    key-bridge := FocusScope {
-        x: 0px;
-        y: 0px;
-        width: 0px;
-        height: 0px;
-
-        key-pressed(event) => {
-            if (event.text == Key.Escape) {
-                return root.process-key("Escape") ? accept : reject;
-            }
-            return reject;
-        }
-    }
+    forward-focus: key-capture;
 
     title: "madrigal-shell";
     preferred-width: 1280px;
@@ -822,6 +818,19 @@ export component MainShell inherits Window {
 
     out property<length> nowbar-width: nowbar.width;
     out property<length> nowbar-bottom: nowbar.y + nowbar.height;
+
+    key-capture := FocusScope {
+        x: 0px;
+        y: 0px;
+        width: 100%;
+        height: 100%;
+
+        key-pressed(event) => {
+            if (event.text == Key.Escape) {
+                return root.process-key("Escape") ? accept : reject;
+            }
+            return reject;
+        }
 
     main-row := HorizontalLayout {
         y: 0px;
@@ -1162,7 +1171,7 @@ export component MainShell inherits Window {
         lyrics-state: root.lyrics-state;
         lyrics-synced: root.lyrics-synced;
         lyrics-error: root.lyrics-error;
-        close-clicked => { root.full-player-open = false; root.player-dialog = 0; root.full-player-closed(); key-bridge.focus(); }
+        close-clicked => { root.full-player-open = false; root.player-dialog = 0; root.full-player-closed(); key-capture.focus(); }
         escape-pressed => { root.process-key("Escape"); }
         play-clicked => { root.play-toggle-count += 1; root.play-pause-toggled(); }
         prev-clicked => { root.prev-count += 1; root.prev-requested(); }
@@ -1320,5 +1329,6 @@ export component MainShell inherits Window {
         activated(action, arg) => { root.menu-command(action, arg); }
         closed => { root.menu-close(); }
         key-command(key) => { return root.menu-key(key); }
+    }
     }
 }
