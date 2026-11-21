@@ -554,6 +554,13 @@ fn ui_catalog() {
     close_detail(&shell);
     assert!(!is_detail_open(&shell));
 
+    load_album_fixture(&shell, ALBUM_ID, &album_src).unwrap();
+    shell.set_detail_stack(1);
+    assert!(is_detail_open(&shell));
+    click_nth(&shell, "SideNav::nav-explore", 0);
+    assert!(!is_detail_open(&shell), "side menu closes the detail page");
+    assert_eq!(shell.get_page(), 2);
+
     begin_detail_load(
         &shell,
         &DetailRef {

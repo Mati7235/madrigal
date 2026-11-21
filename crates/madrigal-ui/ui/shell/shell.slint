@@ -421,6 +421,10 @@ export component MainShell inherits Window {
 
     navigate(p) => {
         root.page = p;
+        if (root.detail-stack == 1) {
+            root.detail-stack = 0;
+            root.detail-closed();
+        }
     }
 
     open-confirm(t, b) => {

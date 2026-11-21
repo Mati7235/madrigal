@@ -421,8 +421,9 @@ fn app_catalog() {
     shell.invoke_detail_requested(reference(DetailKind::Artist, ARTIST_ID, "Nav artist"));
     let pending = next_event(&rx);
     assert_eq!(shell.get_detail_stack(), 1);
-    shell.set_detail_stack(0);
-    shell.invoke_detail_closed();
+    click_nth(&shell, "SideNav::nav-home", 0);
+    assert_eq!(shell.get_detail_stack(), 0, "nav closes the detail page");
+    assert_eq!(shell.get_page(), 0);
     apply(pending);
     assert_eq!(
         shell.get_detail_tracks().row_count(),
