@@ -17,4 +17,9 @@
 - UI work uses the targeted check loop, never the full gate.
 - Builds use all cores (`CARGO_BUILD_JOBS=12`) and serialize with
   `flock /tmp/opencode/madrigal-build.lock`; concurrent builds wait.
+- Waiting for the lock is one blocking command: run `flock ... cargo ...` in the
+  foreground with a long timeout and read its output when it returns. Never
+  background a build and poll it with sleep/grep loops. Agents that support
+  background commands with a completion notice may use that instead, and stay
+  idle until the notice arrives.
 - Document map: `docs/README.md`.
