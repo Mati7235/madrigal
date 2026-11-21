@@ -86,12 +86,12 @@ fn channel_id(menu: &Value, header: &Value) -> Option<String> {
 fn your_channel_id(value: &Value) -> Option<String> {
     match value {
         Value::Object(map) => {
-            let is_your_channel = runs_text(map.get("title")).as_deref() == Some("Your channel");
-            if is_your_channel {
+            if map.contains_key("title") {
                 if let Some(id) = map
                     .get("navigationEndpoint")
                     .and_then(|endpoint| endpoint.pointer("/browseEndpoint/browseId"))
                     .and_then(Value::as_str)
+                    .filter(|id| id.starts_with("UC"))
                 {
                     return Some(id.to_owned());
                 }
