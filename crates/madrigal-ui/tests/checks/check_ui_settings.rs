@@ -518,6 +518,58 @@ fn ui_settings() {
     let bytes = std::fs::read(&shot).unwrap();
     assert_eq!(&bytes[0..8], &[137, 80, 78, 71, 13, 10, 26, 10]);
     assert!(bytes.len() > 4096, "snapshot too small: {}", bytes.len());
+
+    kit::resize(&shell, 1366.0, 743.0);
+    shell.set_settings_test_result("".into());
+    let lyrics_tabs = handles(&shell, "SettingsPage::group-touch");
+    kit::click(&lyrics_tabs[group_index(SettingsGroup::Lyrics) as usize]);
+    kit::mock_advance(Duration::from_millis(50));
+    let flicks = handles(&shell, "SectionView::rows-flick");
+    assert_eq!(flicks.len(), 1);
+    let view = flicks[0].absolute_position();
+    let view_size = flicks[0].size();
+    flicks[0].scroll(0.0, -600.0);
+    kit::mock_advance(Duration::from_millis(100));
+    let mut providers = handles(&shell, "SectionView::prov-row");
+    assert!(providers.len() > 5, "lyrics providers missing");
+    let mut visible = false;
+    for _ in 0..20 {
+        let last = providers.last().unwrap();
+        let position = last.absolute_position();
+        let size = last.size();
+        if position.y >= view.y - 1.0 && position.y + size.height <= view.y + view_size.height + 1.0
+        {
+            visible = true;
+            break;
+        }
+        flicks[0].scroll(0.0, -54.0);
+        kit::mock_advance(Duration::from_millis(20));
+        providers = handles(&shell, "SectionView::prov-row");
+    }
+    assert!(visible, "last lyrics provider cannot be scrolled fully into view");
+
+    for _ in 0..20 {
+        flicks[0].scroll(0.0, -320.0);
+        kit::mock_advance(Duration::from_millis(100));
+    }
+    kit::mock_advance(Duration::from_millis(500));
+    let rows = handles(&shell, "SectionView::row-frame");
+    let last_row = rows.last().unwrap();
+    let position = last_row.absolute_position();
+    let size = last_row.size();
+    let gap = view.y + view_size.height - (position.y + size.height);
+    assert!(gap >= 94.0, "settings scroll bottom gap {gap}");
+
+    for (width, height) in kit::WINDOW_SIZES {
+        kit::resize(&shell, width, height);
+        kit::mock_advance(Duration::from_millis(50));
+        let clearance = kit::bottom_text_clearance(&shell, "SectionView::rows-flick");
+        assert!(
+            clearance >= 90.0,
+            "settings bottom clearance {clearance} at {width}x{height}"
+        );
+    }
+    kit::resize(&shell, 1366.0, 743.0);
 }
 
 fn provider_names(order: &[madrigal_settings::LyricsProvider]) -> Vec<String> {
