@@ -158,3 +158,70 @@ export component M3Chip inherits Rectangle {
         clicked => { root.clicked(); }
     }
 }
+
+export component M3MoodTile inherits Rectangle {
+    in property<string> text;
+    in property<color> fill;
+    in property<color> content;
+    in property<color> line;
+    in property<color> focus-color;
+    callback clicked();
+
+    accessible-label: root.text;
+    accessible-role: AccessibleRole.button;
+
+    height: 56px;
+    border-radius: Shape.medium;
+    background: root.fill;
+    border-width: 1px;
+    border-color: root.line;
+
+    focus-ring := Rectangle {
+        x: 2px;
+        y: 2px;
+        width: parent.width - 4px;
+        height: parent.height - 4px;
+        border-radius: Shape.small;
+        border-width: tile-focus.has-focus ? 2px : 0px;
+        border-color: root.focus-color;
+    }
+
+    state-layer := Rectangle {
+        width: 100%;
+        height: 100%;
+        border-radius: root.border-radius;
+        background: root.content;
+        opacity: tile-touch.has-hover ? 0.08 : 0;
+        animate opacity { duration: 100ms; easing: ease-in-out; }
+    }
+
+    label := Text {
+        x: 16px;
+        width: parent.width - 32px;
+        height: 100%;
+        text: root.text;
+        color: root.content;
+        font-size: Type.label-large.size;
+        font-weight: Type.label-large.weight;
+        letter-spacing: Type.label-large.tracking;
+        vertical-alignment: center;
+        overflow: elide;
+    }
+
+    tile-focus := FocusScope {
+        width: 100%;
+        height: 100%;
+        key-pressed(event) => {
+            if (event.text == Key.Space || event.text == Key.Return) {
+                root.clicked();
+                return EventResult.accept;
+            }
+            return EventResult.reject;
+        }
+    }
+
+    tile-touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}

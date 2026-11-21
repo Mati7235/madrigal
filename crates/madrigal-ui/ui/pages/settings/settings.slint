@@ -53,10 +53,12 @@ export component SettingsPage inherits Rectangle {
             background: root.palette.surface-container-low;
 
             nav-list := VerticalLayout {
-                padding: 12px;
-                spacing: 4px;
+                padding: 16px;
+                spacing: 2px;
+                alignment: start;
 
                 for title[i] in root.group-titles: group-touch := TouchArea {
+                    height: 44px;
                     accessible-label: I18n.trl(I18n.lang, title);
                     accessible-role: button;
                     mouse-cursor: pointer;
@@ -82,6 +84,7 @@ export component SettingsPage inherits Rectangle {
                 }
 
                 diag-touch := TouchArea {
+                    height: 44px;
                     accessible-label: I18n.trl(I18n.lang, "settings.diagnostics");
                     accessible-role: button;
                     mouse-cursor: pointer;
@@ -115,20 +118,20 @@ export component SettingsPage inherits Rectangle {
             section-title := Text {
                 text: root.show-diag ? I18n.trl(I18n.lang, "settings.diagnostics") : I18n.trl(I18n.lang, root.group-titles[root.group]);
                 color: root.palette.on-surface;
-                font-size: Type.headline-small.size;
-                font-weight: Type.headline-small.weight;
+                font-size: Type.title-medium.size;
+                font-weight: Type.title-medium.weight;
                 x: 16px;
-                y: 8px;
+                y: 16px;
                 width: parent.width - 32px;
-                height: 40px;
+                height: 24px;
                 vertical-alignment: center;
                 overflow: elide;
             }
 
             section-host := Rectangle {
-                y: 52px;
+                y: 64px;
                 width: 100%;
-                height: parent.height - 52px;
+                height: parent.height - 64px;
 
                 if (!root.show-diag && root.group == 0) : appearance-sec := AppearanceSection {
                     width: 100%;

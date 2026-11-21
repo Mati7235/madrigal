@@ -8,6 +8,7 @@ export component M3TextField inherits Rectangle {
     in property<string> support;
     in property<bool> error: false;
     in property<bool> enabled: true;
+    in property<bool> dense: false;
     in property<color> field-bg;
     in property<color> line;
     in property<color> focus-line;
@@ -22,12 +23,12 @@ export component M3TextField inherits Rectangle {
 
     property<bool> focused: input.has-focus;
 
-    height: 88px;
+    height: root.dense ? 40px : 88px;
     background: transparent;
 
     box := Rectangle {
         width: 100%;
-        height: 56px;
+        height: root.dense ? 40px : 56px;
         border-radius: Shape.extra-small;
         background: root.enabled ? root.field-bg : root.state-on-surface.with-alpha(0.04);
         border-width: root.focused && root.enabled ? 2px : 1px;
@@ -37,6 +38,7 @@ export component M3TextField inherits Rectangle {
 
         floating := Text {
             text: root.label;
+            visible: !root.dense;
             color: !root.enabled ? root.state-on-surface.with-alpha(0.38) : root.error ? root.error-color : root.focused || root.text != "" ? root.focus-line : root.support-color;
             font-size: root.focused || root.text != "" ? Type.body-small.size : Type.body-large.size;
             x: 16px;
@@ -53,7 +55,7 @@ export component M3TextField inherits Rectangle {
             color: root.enabled ? root.content : root.state-on-surface.with-alpha(0.38);
             font-size: Type.body-large.size;
             x: 16px;
-            y: 22px;
+            y: root.dense ? 6px : 22px;
             width: parent.width - 32px;
             height: 28px;
             accepted => { root.accepted(root.text); }
@@ -62,6 +64,7 @@ export component M3TextField inherits Rectangle {
 
     support-text := Text {
         text: root.support;
+        visible: !root.dense;
         color: root.error ? root.error-color : root.support-color;
         font-size: Type.body-small.size;
         x: 16px;

@@ -1,6 +1,7 @@
 import { Palette, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { M3Button, M3IconButton } from "../../components/buttons.slint";
+import { M3Chip } from "../../components/cards.slint";
 import { Icons } from "../../components/icons.slint";
 import { M3TextField } from "../../components/fields.slint";
 import { M3Switch, M3Slider } from "../../components/selection.slint";
@@ -27,6 +28,9 @@ export component SectionView inherits Rectangle {
 
     background: root.palette.surface;
 
+    property<length> field-width: 420px;
+    property<length> secret-width: 320px;
+
     rows-flick := Flickable {
         width: 100%;
         height: 100%;
@@ -35,208 +39,335 @@ export component SectionView inherits Rectangle {
 
         rows-col := VerticalLayout {
             width: 100%;
-            spacing: 8px;
-            padding: 16px;
+            padding-left: 16px;
+            padding-right: 16px;
+            padding-bottom: 24px;
+            spacing: 0px;
 
-            for row[i] in root.rows: row-block := VerticalLayout {
-                spacing: 4px;
+            rows-block := VerticalLayout {
+                width: 100%;
+                spacing: 0px;
 
-                row-label := Text {
-                    text: I18n.trl(I18n.lang, row.label);
-                    color: root.palette.on-surface;
-                    font-size: Type.label-large.size;
-                    font-weight: Type.label-large.weight;
+                for row[i] in root.rows: row-block := VerticalLayout {
                     width: 100%;
-                    wrap: word-wrap;
-                }
+                    spacing: 0px;
 
-                if (row.kind == "switch") : row-toggle := M3Switch {
-                    label: I18n.trl(I18n.lang, row.label);
-                    checked: row.val-bool;
-                    on-track: root.palette.primary;
-                    on-thumb: root.palette.on-primary;
-                    off-track: root.palette.surface-container-highest;
-                    off-line: root.palette.outline-variant;
-                    off-thumb: root.palette.outline-variant;
-                    state-on-surface: root.palette.on-surface;
-                    toggled(v) => { root.setting-toggled(row.key, v); }
-                }
+                    if (row.kind == "providers") : prov-col := VerticalLayout {
+                        padding-top: 24px;
+                        padding-bottom: 24px;
+                        spacing: 8px;
 
-                if (row.kind == "text") : row-field := M3TextField {
-                    label: I18n.trl(I18n.lang, row.label);
-                    text: row.display;
-                    field-bg: root.palette.surface-container-highest;
-                    line: root.palette.outline-variant;
-                    focus-line: root.palette.primary;
-                    content: root.palette.on-surface;
-                    support-color: root.palette.on-surface-variant;
-                    state-on-surface: root.palette.on-surface;
-                    accepted(t) => { root.setting-edited(row.key, t); }
-                }
-
-                if (row.kind == "slider") : row-slider := M3Slider {
-                    label: I18n.trl(I18n.lang, row.label);
-                    value: (row.val-num - row.val-min) / (row.val-max - row.val-min);
-                    active-track: root.palette.primary;
-                    inactive-track: root.palette.surface-container-highest;
-                    handle-color: root.palette.primary;
-                    state-on-surface: root.palette.on-surface;
-                    changed(v) => { root.setting-stepped(row.key, row.val-min + v * (row.val-max - row.val-min)); }
-                }
-
-                if (row.kind == "choice") : choice-col := VerticalLayout {
-                    spacing: 4px;
-
-                    row-choice-cycle := M3Button {
-                        text: row.val-text + " ▾";
-                        fill: root.palette.secondary-container;
-                        content: root.palette.on-secondary-container;
-                        state-on-surface: root.palette.on-surface;
-                        clicked => { root.setting-cycled(row.key); }
-                    }
-
-                    choice-opts := VerticalLayout {
-                        spacing: 6px;
-                        for opt in row.options: row-option := M3Button {
-                            text: opt;
-                            fill: opt == row.val-text ? root.palette.primary : root.palette.secondary-container;
-                            content: opt == row.val-text ? root.palette.on-primary : root.palette.on-secondary-container;
-                            state-on-surface: root.palette.on-surface;
-                            clicked => { root.setting-chosen(row.key, opt); }
+                        prov-label := Text {
+                            text: I18n.trl(I18n.lang, row.label);
+                            color: root.palette.on-surface;
+                            font-size: Type.body-medium.size;
+                            font-weight: Type.label-large.weight;
                         }
-                    }
-                }
 
-                if (row.kind == "apikey") : apikey-col := HorizontalLayout {
-                    spacing: 8px;
-                    alignment: start;
+                        prov-list := VerticalLayout {
+                            spacing: 4px;
 
-                    if (!row.secret) : apikey-masked := Text {
-                        text: row.display;
-                        color: root.palette.on-surface-variant;
-                        font-size: Type.body-large.size;
-                        vertical-alignment: center;
-                        height: 40px;
-                    }
+                            for prov[j] in row.options: prov-row := Rectangle {
+                                height: 54px;
+                                background: root.palette.surface-container;
+                                border-radius: 8px;
 
-                    if (row.secret) : row-secret-field := M3TextField {
-                        label: I18n.trl(I18n.lang, row.label);
-                        text: row.display;
-                        horizontal-stretch: 1;
-                        field-bg: root.palette.surface-container-highest;
-                        line: root.palette.outline-variant;
-                        focus-line: root.palette.primary;
-                        content: root.palette.on-surface;
-                        support-color: root.palette.on-surface-variant;
-                        state-on-surface: root.palette.on-surface;
-                        accepted(t) => { root.setting-edited(row.key, t); }
-                    }
+                                prov-drag := TouchArea {
+                                    property<length> press-y: 0px;
+                                    property<bool> committed: false;
+                                    width: 100%;
+                                    height: 100%;
+                                    mouse-cursor: grab;
+                                    moved => {
+                                        if (self.pressed && !self.committed) {
+                                            if (self.mouse-y - self.press-y > 4px) {
+                                                self.committed = true;
+                                                root.provider-moved(row.key, j, 52.0);
+                                            } else if (self.press-y - self.mouse-y > 4px) {
+                                                self.committed = true;
+                                                root.provider-moved(row.key, j, -52.0);
+                                            }
+                                        }
+                                    }
+                                    pointer-event(e) => {
+                                        if (e.kind == PointerEventKind.down) {
+                                            self.committed = false;
+                                            self.press-y = self.mouse-y;
+                                        }
+                                        if (e.kind == PointerEventKind.up) {
+                                            self.committed = false;
+                                        }
+                                    }
+                                }
 
-                    row-reveal := M3Button {
-                        width: 120px;
-                        text: row.secret ? I18n.trl(I18n.lang, "settings.hideSecret") : I18n.trl(I18n.lang, "settings.showSecret");
-                        fill: root.palette.secondary-container;
-                        content: root.palette.on-secondary-container;
-                        state-on-surface: root.palette.on-surface;
-                        clicked => { root.secret-toggled(row.key); }
-                    }
-                }
+                                HorizontalLayout {
+                                    width: 100%;
+                                    height: 100%;
+                                    padding-left: 16px;
+                                    padding-right: 16px;
+                                    spacing: 8px;
 
-                if (row.kind == "providers") : prov-col := VerticalLayout {
-                    spacing: 4px;
+                                    prov-toggle-frame := Rectangle {
+                                        width: 52px;
 
-                    for prov[j] in row.options: prov-row := Rectangle {
-                        height: 52px;
-                        background: root.palette.surface-container;
-                        border-radius: 8px;
+                                        VerticalLayout {
+                                            alignment: center;
 
-                        prov-drag := TouchArea {
-                            property<length> press-y: 0px;
-                            property<bool> committed: false;
-                            width: 100%;
-                            height: 100%;
-                            mouse-cursor: grab;
-                            moved => {
-                                if (self.pressed && !self.committed) {
-                                    if (self.mouse-y - self.press-y > 4px) {
-                                        self.committed = true;
-                                        root.provider-moved(row.key, j, 52.0);
-                                    } else if (self.press-y - self.mouse-y > 4px) {
-                                        self.committed = true;
-                                        root.provider-moved(row.key, j, -52.0);
+                                            prov-toggle := M3Switch {
+                                                label: prov;
+                                                checked: row.flags[j] == "1";
+                                                on-track: root.palette.primary;
+                                                on-thumb: root.palette.on-primary;
+                                                off-track: root.palette.surface-container-highest;
+                                                off-line: root.palette.outline-variant;
+                                                off-thumb: root.palette.outline-variant;
+                                                state-on-surface: root.palette.on-surface;
+                                                toggled(v) => { root.provider-toggled(row.key, prov, v); }
+                                            }
+                                        }
+                                    }
+
+                                    prov-name := Text {
+                                        text: I18n.trl(I18n.lang, "lyrics.provider." + prov);
+                                        color: root.palette.on-surface;
+                                        font-size: Type.body-medium.size;
+                                        height: 100%;
+                                        horizontal-stretch: 1;
+                                        vertical-alignment: center;
+                                        overflow: elide;
+                                    }
+
+                                    prov-up-frame := Rectangle {
+                                        width: 40px;
+
+                                        VerticalLayout {
+                                            alignment: center;
+
+                                            prov-up := M3IconButton {
+                                                icon: Icons.chevron-up;
+                                                icon-color: root.palette.on-surface-variant;
+                                                content: root.palette.on-surface-variant;
+                                                state-on-surface: root.palette.on-surface;
+                                                clicked => { root.provider-moved(row.key, j, -52.0); }
+                                            }
+                                        }
+                                    }
+
+                                    prov-down-frame := Rectangle {
+                                        width: 40px;
+
+                                        VerticalLayout {
+                                            alignment: center;
+
+                                            prov-down := M3IconButton {
+                                                icon: Icons.chevron-down;
+                                                icon-color: root.palette.on-surface-variant;
+                                                content: root.palette.on-surface-variant;
+                                                state-on-surface: root.palette.on-surface;
+                                                clicked => { root.provider-moved(row.key, j, 52.0); }
+                                            }
+                                        }
                                     }
                                 }
                             }
-                            pointer-event(e) => {
-                                if (e.kind == PointerEventKind.down) {
-                                    self.committed = false;
-                                    self.press-y = self.mouse-y;
-                                }
-                                if (e.kind == PointerEventKind.up) {
-                                    self.committed = false;
-                                }
-                            }
                         }
+                    }
+
+                    if (row.kind != "providers") : row-frame := Rectangle {
+                        height: 54px;
 
                         HorizontalLayout {
                             width: 100%;
                             height: 100%;
-                            padding-left: 8px;
-                            padding-right: 8px;
-                            spacing: 8px;
-                            alignment: center;
+                            spacing: 16px;
 
-                            prov-toggle := M3Switch {
-                                label: prov;
-                                checked: row.flags[j] == "1";
-                                on-track: root.palette.primary;
-                                on-thumb: root.palette.on-primary;
-                                off-track: root.palette.surface-container-highest;
-                                off-line: root.palette.outline-variant;
-                                off-thumb: root.palette.outline-variant;
-                                state-on-surface: root.palette.on-surface;
-                                toggled(v) => { root.provider-toggled(row.key, prov, v); }
-                            }
-
-                            prov-name := Text {
-                                text: I18n.trl(I18n.lang, "lyrics.provider." + prov);
-                                color: root.palette.on-surface;
-                                font-size: Type.body-medium.size;
+                            label-frame := Rectangle {
                                 horizontal-stretch: 1;
-                                vertical-alignment: center;
-                                overflow: elide;
+
+                                VerticalLayout {
+                                    alignment: center;
+
+                                    row-label := Text {
+                                        text: I18n.trl(I18n.lang, row.label);
+                                        color: root.palette.on-surface;
+                                        font-size: Type.body-medium.size;
+                                        font-weight: Type.label-large.weight;
+                                        width: 100%;
+                                        vertical-alignment: center;
+                                        overflow: elide;
+                                    }
+                                }
                             }
 
-                            prov-up := M3IconButton {
-                                icon: Icons.chevron-up;
-                                icon-color: root.palette.on-surface-variant;
-                                content: root.palette.on-surface-variant;
-                                state-on-surface: root.palette.on-surface;
-                                clicked => { root.provider-moved(row.key, j, -52.0); }
+                            if (row.kind == "switch") : switch-frame := Rectangle {
+                                width: 52px;
+
+                                VerticalLayout {
+                                    alignment: center;
+
+                                    row-toggle := M3Switch {
+                                        label: I18n.trl(I18n.lang, row.label);
+                                        checked: row.val-bool;
+                                        on-track: root.palette.primary;
+                                        on-thumb: root.palette.on-primary;
+                                        off-track: root.palette.surface-container-highest;
+                                        off-line: root.palette.outline-variant;
+                                        off-thumb: root.palette.outline-variant;
+                                        state-on-surface: root.palette.on-surface;
+                                        toggled(v) => { root.setting-toggled(row.key, v); }
+                                    }
+                                }
                             }
 
-                            prov-down := M3IconButton {
-                                icon: Icons.chevron-down;
-                                icon-color: root.palette.on-surface-variant;
-                                content: root.palette.on-surface-variant;
-                                state-on-surface: root.palette.on-surface;
-                                clicked => { root.provider-moved(row.key, j, 52.0); }
+                            if (row.kind == "text") : field-frame := Rectangle {
+                                width: root.field-width;
+
+                                VerticalLayout {
+                                    alignment: center;
+
+                                    row-field := M3TextField {
+                                        width: 100%;
+                                        dense: true;
+                                        label: I18n.trl(I18n.lang, row.label);
+                                        text: row.display;
+                                        field-bg: root.palette.surface-container-highest;
+                                        line: root.palette.outline-variant;
+                                        focus-line: root.palette.primary;
+                                        content: root.palette.on-surface;
+                                        support-color: root.palette.on-surface-variant;
+                                        state-on-surface: root.palette.on-surface;
+                                        accepted(t) => { root.setting-edited(row.key, t); }
+                                    }
+                                }
+                            }
+
+                            if (row.kind == "slider") : slider-frame := Rectangle {
+                                width: 280px;
+
+                                VerticalLayout {
+                                    alignment: center;
+
+                                    slider-shift := Rectangle {
+                                        width: 280px;
+                                        height: 44px;
+
+                                        row-slider := M3Slider {
+                                            x: -16px;
+                                            width: 312px;
+                                            height: 44px;
+                                            label: I18n.trl(I18n.lang, row.label);
+                                            value: (row.val-num - row.val-min) / (row.val-max - row.val-min);
+                                            active-track: root.palette.primary;
+                                            inactive-track: root.palette.surface-container-highest;
+                                            handle-color: root.palette.primary;
+                                            state-on-surface: root.palette.on-surface;
+                                            changed(v) => { root.setting-stepped(row.key, row.val-min + v * (row.val-max - row.val-min)); }
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (row.kind == "choice") : choice-frame := Rectangle {
+                                horizontal-stretch: 0;
+
+                                VerticalLayout {
+                                    alignment: center;
+
+                                    choice-cluster := HorizontalLayout {
+                                        spacing: 6px;
+
+                                        for opt in row.options: row-option := M3Chip {
+                                            text: opt == "" ? I18n.trl(I18n.lang, "settings.none") : opt;
+                                            selected: opt == row.val-text;
+                                            selected-fill: root.palette.primary;
+                                            selected-content: root.palette.on-primary;
+                                            unselected-content: root.palette.on-surface-variant;
+                                            unselected-line: root.palette.outline-variant;
+                                            clicked => { root.setting-chosen(row.key, opt); }
+                                        }
+
+                                        row-choice-cycle := M3IconButton {
+                                            accessible-label: I18n.trl(I18n.lang, row.label);
+                                            icon: Icons.chevron-right;
+                                            icon-color: root.palette.on-surface-variant;
+                                            content: root.palette.on-surface-variant;
+                                            state-on-surface: root.palette.on-surface;
+                                            clicked => { root.setting-cycled(row.key); }
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (row.kind == "apikey") : apikey-frame := Rectangle {
+                                horizontal-stretch: 0;
+
+                                VerticalLayout {
+                                    alignment: center;
+
+                                    apikey-col := HorizontalLayout {
+                                        spacing: 8px;
+
+                                        if (!row.secret) : apikey-masked := Text {
+                                            text: row.display;
+                                            color: root.palette.on-surface-variant;
+                                            font-size: Type.body-medium.size;
+                                            width: root.secret-width;
+                                            height: 100%;
+                                            horizontal-alignment: right;
+                                            vertical-alignment: center;
+                                            overflow: elide;
+                                        }
+
+                                        if (row.secret) : row-secret-field := M3TextField {
+                                            width: root.secret-width;
+                                            dense: true;
+                                            label: I18n.trl(I18n.lang, row.label);
+                                            text: row.display;
+                                            field-bg: root.palette.surface-container-highest;
+                                            line: root.palette.outline-variant;
+                                            focus-line: root.palette.primary;
+                                            content: root.palette.on-surface;
+                                            support-color: root.palette.on-surface-variant;
+                                            state-on-surface: root.palette.on-surface;
+                                            accepted(t) => { root.setting-edited(row.key, t); }
+                                        }
+
+                                        row-reveal := M3Button {
+                                            width: 112px;
+                                            text: row.secret ? I18n.trl(I18n.lang, "settings.hideSecret") : I18n.trl(I18n.lang, "settings.showSecret");
+                                            fill: root.palette.secondary-container;
+                                            content: root.palette.on-secondary-container;
+                                            state-on-surface: root.palette.on-surface;
+                                            clicked => { root.secret-toggled(row.key); }
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (row.test != "") : test-frame := Rectangle {
+                                width: 168px;
+
+                                VerticalLayout {
+                                    alignment: center;
+
+                                    row-test := M3Button {
+                                        width: 100%;
+                                        text: I18n.trl(I18n.lang, "settings.malojaTest");
+                                        fill: root.palette.secondary-container;
+                                        content: root.palette.on-secondary-container;
+                                        state-on-surface: root.palette.on-surface;
+                                        clicked => { root.test-connection(row.test); }
+                                    }
+                                }
                             }
                         }
                     }
                 }
-
-                if (row.test != "") : row-test := M3Button {
-                    text: I18n.trl(I18n.lang, "settings.malojaTest");
-                    fill: root.palette.secondary-container;
-                    content: root.palette.on-secondary-container;
-                    state-on-surface: root.palette.on-surface;
-                    clicked => { root.test-connection(row.test); }
-                }
             }
 
             if (root.group == 3) : lyrics-help := VerticalLayout {
-                spacing: 4px;
+                padding-top: 24px;
+                spacing: 8px;
 
                 lyrics-help-text := Text {
                     text: I18n.trl(I18n.lang, "settings.lyricsProvidersHelp");
@@ -255,16 +386,22 @@ export component SectionView inherits Rectangle {
                 }
             }
 
-            if (root.group == 4 && root.po-done) : po-status := Text {
-                text: root.po-ok ? I18n.trl(I18n.lang, "settings.potOk") : I18n.trl(I18n.lang, "settings.potMissing");
-                color: root.po-ok ? root.palette.primary : root.palette.error;
-                font-size: Type.body-medium.size;
-                width: 100%;
-                wrap: word-wrap;
+            if (root.group == 4 && root.po-done) : po-status-frame := VerticalLayout {
+                padding-top: 24px;
+
+                po-status := Text {
+                    text: root.po-ok ? I18n.trl(I18n.lang, "settings.potOk") : I18n.trl(I18n.lang, "settings.potMissing");
+                    color: root.po-ok ? root.palette.primary : root.palette.error;
+                    font-size: Type.body-medium.size;
+                    width: 100%;
+                    wrap: word-wrap;
+                }
             }
 
             if (root.group == 7) : account-actions := HorizontalLayout {
+                padding-top: 24px;
                 spacing: 8px;
+                alignment: start;
 
                 acct-signin := M3Button {
                     width: 180px;
@@ -285,12 +422,16 @@ export component SectionView inherits Rectangle {
                 }
             }
 
-            if (root.test-result != "") : test-result-text := Text {
-                text: root.test-result;
-                color: root.palette.on-surface-variant;
-                font-size: Type.body-medium.size;
-                width: 100%;
-                wrap: word-wrap;
+            if (root.test-result != "") : test-result-frame := VerticalLayout {
+                padding-top: 24px;
+
+                test-result-text := Text {
+                    text: root.test-result;
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.body-medium.size;
+                    width: 100%;
+                    wrap: word-wrap;
+                }
             }
         }
     }

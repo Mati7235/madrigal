@@ -12,7 +12,8 @@ switches it at runtime. Rust `ThemeKind` maps from `madrigal-settings`
 Dark until the system/matugen seams land.
 
 Components in `ui/components/`: `M3Button` (filled/tonal/outlined/text/elevated
-via caller-supplied colors), `M3IconButton`, `M3TextField`, `M3SearchBar`,
+via caller-supplied colors), `M3IconButton`, `M3TextField` (`dense` 40px row
+variant, label supplied by the row), `M3SearchBar`,
 `M3Switch`, `M3Checkbox`, `M3Slider` (standard geometry), `M3Card`
 (elevated/filled), `M3Chip`, `M3ListItem` (active/download states). All take
 text via parameters and set `accessible-label` + `accessible-role`.
@@ -119,6 +120,14 @@ Search non-track results and explore charts/releases render as card rails;
 track rows stay 54px lists. Sidebar is 244px wide (padding 16, item spacing 6,
 item height 48).
 
+Explore moods and genres are an `M3MoodTile` grid: 4 equal columns across the
+workspace minus the 24px page padding and 12px gaps (398x56 at 1920), radius 12,
+1px `outline-variant`, label `Type.label-large` with a 16px left inset, hover
+state layer, Tab reachable with a 2px `primary` inner focus ring. `apply_moods`
+alternates entries between the left and right models, so `moods-left` fills
+columns 0 and 2 and `moods-right` fills columns 1 and 3; that keeps row-major
+reading order (Chill, Christmas, Commute, Energize ...) on a 4-column grid.
+
 ## Files by task
 
 | Area | Task | Files |
@@ -151,6 +160,13 @@ select outlined button, 8px gaps), then 54px playlist rows: cover 36px, name,
 Downloads: header row (title, count), 54px rows full width: cover 36px, title,
 subtitle, state or progress on the right, action icon buttons. Empty state is
 an icon and one line, centered in the workspace.
+
+Settings: group list column 232px (16px padding, 44px items), page title at the
+16px margin in `Type.title-medium`, the section pane fills the rest. Every row
+is 54px: label left, one control right aligned at the 16px inset (switch, dense
+field, slider, choice chips, test/reveal button). Providers are a 54px reorder
+list with 24px around the block; section gaps are 24px and Diagnostics has no
+second title.
 
 Media cards (`M3Card`): 150x190, no border artifacts, no clipped shadow, hover
 veil only. Rails use 12px spacing and start at the page margin.

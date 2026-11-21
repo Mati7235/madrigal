@@ -401,6 +401,8 @@ fn ui_settings() {
     assert_eq!(shell.get_settings_diag_entry_count(), 3);
     kit::click_by_id(&shell, "DiagnosticsPanel::diag-export-btn").unwrap();
     assert!(shell.get_settings_diag_exported());
+    kit::snapshot_to(shell.window(), &kit::snapshot_dir(tmp.path()).join("settings-diagnostics.png"))
+        .unwrap();
     let exported = std::fs::read_to_string(state.borrow().diag_export_path.clone()).unwrap();
     assert!(exported.contains("first-entry"));
     assert!(exported.contains("third-entry"));
@@ -410,6 +412,44 @@ fn ui_settings() {
         .global::<madrigal_ui::I18n>()
         .invoke_trl("en".into(), single_key);
     assert!(single.as_str().contains("Primary"), "single status: {single}");
+
+    shell.set_settings_show_diag(false);
+    let snapshot_dir = kit::snapshot_dir(tmp.path());
+    for group in all_groups() {
+        let tabs = handles(&shell, "SettingsPage::group-touch");
+        kit::click(&tabs[group_index(group) as usize]);
+        kit::mock_advance(Duration::from_millis(50));
+
+        let page = kit::find_by_id(&shell, "PageHost::settings-page").unwrap();
+        let title = kit::find_by_id(&shell, "SettingsPage::section-title").unwrap();
+        let page_pos = page.absolute_position();
+        let page_size = page.size();
+        let frames = handles(&shell, "SectionView::row-frame");
+        assert!(!frames.is_empty(), "rows missing for {group:?}");
+        for frame in &frames {
+            let pos = frame.absolute_position();
+            let size = frame.size();
+            assert_eq!(size.height, 54.0, "row height for {group:?}");
+            assert!((pos.x - title.absolute_position().x).abs() < 1.0, "row left inset for {group:?}");
+            assert!(
+                (pos.x + size.width - (page_pos.x + page_size.width - 16.0)).abs() < 1.0,
+                "row right inset for {group:?}"
+            );
+        }
+        for pair in frames.windows(2) {
+            let first = pair[0].absolute_position();
+            let second = pair[1].absolute_position();
+            assert!(
+                second.y + 1.0 >= first.y + pair[0].size().height,
+                "row overlap for {group:?}"
+            );
+        }
+
+        let violations = kit::lint_layout(&shell, (1920.0, 1080.0));
+        assert!(violations.is_empty(), "layout violations {group:?}: {violations:#?}");
+        let name = format!("settings-{:?}.png", group).to_lowercase();
+        kit::snapshot_to(shell.window(), &snapshot_dir.join(name)).unwrap();
+    }
 
     kit::mock_advance(Duration::from_millis(600));
     let shot = tmp.path().join("settings.png");

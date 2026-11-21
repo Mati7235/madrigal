@@ -564,6 +564,7 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("settings.noBrowsers", "No encontré perfiles de navegador en esta máquina.", "No browser profiles found on this machine."),
     ("settings.noFolders", "Todavía no escaneaste ninguna carpeta.", "You haven't scanned any folder yet."),
     ("settings.noSession", "Sin sesión: se reproduce igual, pero no se ve tu biblioteca y YouTube trata las peticiones como anónimas.", "No session: playback works the same, but your library is hidden and YouTube treats requests as anonymous."),
+    ("settings.none", "Ninguno", "None"),
     ("settings.normalization", "Normalización", "Normalization"),
     ("settings.notify", "Avisar la pista actual con una notificación", "Notify the current track"),
     ("settings.offline_mode", "Modo sin conexión", "Offline mode"),

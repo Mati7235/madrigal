@@ -1,6 +1,6 @@
 import { Palette, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
-import { M3Chip, M3Card } from "../../components/cards.slint";
+import { M3Chip, M3Card, M3MoodTile } from "../../components/cards.slint";
 import { CatalogItem, CatalogSection, DetailKind, DetailRef, MoodEntry } from "refs.slint";
 import { SectionView } from "section.slint";
 
@@ -14,6 +14,7 @@ export component ExplorePage inherits Rectangle {
     in property<[CatalogItem]> releases-videos;
     in property<[CatalogSection]> browse-sections;
     property<int> releases-count: root.releases-tab == 0 ? root.releases-albums.length : root.releases-videos.length;
+    property<length> mood-tile-width: (root.width - 2 * 24px - 3 * 12px) / 4;
 
     callback detail-requested(DetailRef);
     callback play-requested(string);
@@ -49,37 +50,33 @@ export component ExplorePage inherits Rectangle {
             moods-title := Text {
                 text: I18n.trl(I18n.lang, "catalog.moods");
                 color: root.palette.on-surface;
-                font-size: 18px;
-                font-weight: 700;
+                font-size: Type.title-medium.size;
+                font-weight: Type.title-medium.weight;
             }
 
-            moods-grid := HorizontalLayout {
+            moods-grid := GridLayout {
                 spacing: 12px;
-                moods-left := VerticalLayout {
-                    spacing: 8px;
-                    horizontal-stretch: 1;
-                    for mood in root.moods-left : mood-chip-l := M3Chip {
-                        text: mood.title;
-                        selected: false;
-                        selected-fill: root.palette.secondary-container;
-                        selected-content: root.palette.on-secondary-container;
-                        unselected-content: root.palette.on-surface-variant;
-                        unselected-line: root.palette.outline-variant;
-                        clicked => { root.detail-requested({ kind: DetailKind.browse, id: mood.params }); }
-                    }
+                for mood[i] in root.moods-left : mood-chip-l := M3MoodTile {
+                    width: root.mood-tile-width;
+                    row: i / 2;
+                    col: Math.mod(i, 2) * 2;
+                    text: mood.title;
+                    fill: root.palette.surface-container-low;
+                    content: root.palette.on-surface;
+                    line: root.palette.outline-variant;
+                    focus-color: root.palette.primary;
+                    clicked => { root.detail-requested({ kind: DetailKind.browse, id: mood.params }); }
                 }
-                moods-right := VerticalLayout {
-                    spacing: 8px;
-                    horizontal-stretch: 1;
-                    for mood in root.moods-right : mood-chip-r := M3Chip {
-                        text: mood.title;
-                        selected: false;
-                        selected-fill: root.palette.secondary-container;
-                        selected-content: root.palette.on-secondary-container;
-                        unselected-content: root.palette.on-surface-variant;
-                        unselected-line: root.palette.outline-variant;
-                        clicked => { root.detail-requested({ kind: DetailKind.browse, id: mood.params }); }
-                    }
+                for mood[i] in root.moods-right : mood-chip-r := M3MoodTile {
+                    width: root.mood-tile-width;
+                    row: i / 2;
+                    col: Math.mod(i, 2) * 2 + 1;
+                    text: mood.title;
+                    fill: root.palette.surface-container-low;
+                    content: root.palette.on-surface;
+                    line: root.palette.outline-variant;
+                    focus-color: root.palette.primary;
+                    clicked => { root.detail-requested({ kind: DetailKind.browse, id: mood.params }); }
                 }
             }
 

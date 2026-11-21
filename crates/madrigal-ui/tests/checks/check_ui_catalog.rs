@@ -543,6 +543,23 @@ fn ui_catalog() {
     assert_eq!(shell.get_search_results().row_count(), 0);
     snapshot(&shell, &snapshot_dir, "search.png");
     shell.set_page(2);
+    madrigal_ui::apply_moods(&shell, &listing);
+    kit::click_by_id(&shell, "MainShell::top-bar").unwrap();
+    shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
+        text: slint::platform::Key::Tab.into(),
+    });
+    shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
+        text: slint::platform::Key::Return.into(),
+    });
+    assert_eq!(
+        opened.borrow().last().unwrap().0,
+        DetailKind::Browse,
+        "mood tile is not reachable with Tab"
+    );
+    click_nth(&shell, "DetailPage::detail-back", 0);
+    assert!(!is_detail_open(&shell));
+    let violations = kit::lint_layout(&shell, (1920.0, 1080.0));
+    assert!(violations.is_empty(), "explore layout violations: {violations:#?}");
     snapshot(&shell, &snapshot_dir, "explore.png");
     load_album_fixture(&shell, ALBUM_ID, &album_src).unwrap();
     shell.set_detail_stack(1);
