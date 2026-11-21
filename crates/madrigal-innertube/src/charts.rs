@@ -2,10 +2,13 @@ use std::borrow::Cow;
 
 use madrigal_core::{Album, Artist, ArtistId, Playlist, Track};
 use ytmapi_rs::auth::AuthToken;
+use ytmapi_rs::json::Json;
 use ytmapi_rs::parse::{ParseFrom, ProcessedResult};
 use ytmapi_rs::query::{PostMethod, PostQuery, Query};
 
-use crate::browse::{mtrir_album, mtrir_playlist, mtrir_track, ptr};
+use crate::browse::{
+    mtrir_album, mtrir_playlist, mtrir_track, ptr, section_from_value, BrowsePage,
+};
 use crate::error::Error;
 use crate::CatalogClient;
 
@@ -121,9 +124,35 @@ impl CatalogClient {
         Self::parse_charts(&value.to_string())
     }
 
+    pub async fn charts_page(&self, country: &str) -> Result<BrowsePage, Error> {
+        let value = self.raw_json(GetChartsQuery::new(country)).await?;
+        Self::parse_charts_page(&value.to_string())
+    }
+
     pub fn parse_charts(source: &str) -> Result<ChartsPage, Error> {
         let query = GetChartsQuery::new("");
         offline_parse(&query, source)
+    }
+
+    pub fn parse_charts_page(source: &str) -> Result<BrowsePage, Error> {
+        let json: Json = serde_json::from_str(source)?;
+        let value = json.into_inner();
+        let list = ptr(
+            &value,
+            "/contents/singleColumnBrowseResultsRenderer/tabs/0/tabRenderer/content/sectionListRenderer/contents",
+        )?
+        .as_array()
+        .ok_or_else(|| Error::Fixture("charts contents is not an array".to_owned()))?;
+        let mut sections = Vec::new();
+        for section in list {
+            if section.get("musicShelfRenderer").is_some() {
+                continue;
+            }
+            if let Some(parsed) = section_from_value(section)? {
+                sections.push(parsed);
+            }
+        }
+        Ok(BrowsePage { sections })
     }
 
     pub async fn new_releases(&self) -> Result<NewReleases, Error> {

@@ -1,13 +1,14 @@
 use ytmapi_rs::auth::BrowserToken;
-use ytmapi_rs::common::YoutubeID;
+use ytmapi_rs::common::{AlbumID, ArtistChannelID, PlaylistID, YoutubeID};
 use ytmapi_rs::parse::{
     HistoryItem, HistoryPeriod as NativePeriod, LibraryPlaylist as NativePlaylist, ParseFrom,
     TableListSong,
 };
 use ytmapi_rs::query::search::{AlbumsFilter, ArtistsFilter, SongsFilter};
 use ytmapi_rs::query::{
-    GetHistoryQuery, GetLibraryPlaylistsQuery, GetLibrarySongsQuery, GetSearchSuggestionsQuery,
-    Query, SearchQuery,
+    GetAlbumQuery, GetArtistQuery, GetHistoryQuery, GetLibraryPlaylistsQuery,
+    GetLibrarySongsQuery, GetPlaylistDetailsQuery, GetPlaylistTracksQuery,
+    GetSearchSuggestionsQuery, Query, SearchQuery,
 };
 use ytmapi_rs::{ProcessedResult, YtMusic};
 
@@ -19,7 +20,7 @@ use crate::client::{SearchFilter, SearchOutcome};
 use crate::error::Error;
 use crate::home::{GetHomeQuery, HomeFeed};
 use crate::mapping;
-use crate::pages::MoodListing;
+use crate::pages::{AlbumPage, ArtistPage, MoodListing, PlaylistPage};
 use crate::CatalogClient;
 
 pub struct AuthCatalogClient {
@@ -153,6 +154,41 @@ impl AuthCatalogClient {
     pub async fn charts(&self, country: &str) -> Result<ChartsPage, Error> {
         let value = self.raw_json(GetChartsQuery::new(country)).await?;
         CatalogClient::parse_charts(&value.to_string())
+    }
+
+    pub async fn charts_page(&self, country: &str) -> Result<BrowsePage, Error> {
+        let value = self.raw_json(GetChartsQuery::new(country)).await?;
+        CatalogClient::parse_charts_page(&value.to_string())
+    }
+
+    pub async fn artist_page(&self, channel_id: &str) -> Result<ArtistPage, Error> {
+        let raw = self
+            .yt
+            .raw_json_query(GetArtistQuery::new(ArtistChannelID::from_raw(channel_id)))
+            .await?;
+        CatalogClient::parse_artist_page(channel_id, &raw)
+    }
+
+    pub async fn album_page(&self, browse_id: &str) -> Result<AlbumPage, Error> {
+        let raw = self
+            .yt
+            .raw_json_query(GetAlbumQuery::new(AlbumID::from_raw(browse_id)))
+            .await?;
+        CatalogClient::parse_album_page(browse_id, &raw)
+    }
+
+    pub async fn playlist_page(&self, playlist_id: &str) -> Result<PlaylistPage, Error> {
+        let details_raw = self
+            .yt
+            .raw_json_query(GetPlaylistDetailsQuery::new(PlaylistID::from_raw(
+                playlist_id,
+            )))
+            .await?;
+        let tracks_raw = self
+            .yt
+            .raw_json_query(GetPlaylistTracksQuery::new(PlaylistID::from_raw(playlist_id)))
+            .await?;
+        CatalogClient::parse_playlist_page(playlist_id, &details_raw, &tracks_raw)
     }
 
     pub async fn new_releases(&self) -> Result<NewReleases, Error> {

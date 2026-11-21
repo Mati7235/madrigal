@@ -36,6 +36,18 @@ fn charts_fixture_maps_exact_entries() {
 }
 
 #[test]
+fn charts_page_keeps_section_titles() {
+    let source = fixture("charts_ZZ.json");
+    let page = CatalogClient::parse_charts_page(&source).expect("parse charts page");
+    let titles: Vec<&str> = page.sections.iter().map(|s| s.title.as_str()).collect();
+    assert_eq!(titles, vec!["Video charts", "Top artists"]);
+    assert_eq!(page.sections[0].items.len(), 2);
+    assert!(matches!(page.sections[0].items[0], BrowseItem::Playlist(_)));
+    assert_eq!(page.sections[1].items.len(), 40);
+    assert!(matches!(page.sections[1].items[0], BrowseItem::Artist(_)));
+}
+
+#[test]
 fn new_releases_fixture_maps_tabs() {
     let source = fixture("explore.json");
     let releases = CatalogClient::parse_new_releases(&source).expect("parse new releases");

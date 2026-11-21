@@ -173,7 +173,7 @@ where
     Ok(O::parse_from(processed)?)
 }
 
-fn page_from_value(value: &serde_json::Value) -> Result<BrowsePage, Error> {
+pub(crate) fn page_from_value(value: &serde_json::Value) -> Result<BrowsePage, Error> {
     let sections = ptr(
         value,
         "/contents/singleColumnBrowseResultsRenderer/tabs/0/tabRenderer/content/sectionListRenderer/contents",
@@ -190,7 +190,7 @@ fn page_from_value(value: &serde_json::Value) -> Result<BrowsePage, Error> {
     Ok(BrowsePage { sections: out })
 }
 
-fn section_from_value(section: &serde_json::Value) -> Result<Option<BrowseSection>, Error> {
+pub(crate) fn section_from_value(section: &serde_json::Value) -> Result<Option<BrowseSection>, Error> {
     if let Ok(grid) = ptr(section, "/gridRenderer") {
         let Some(title) = ptr(grid, "/header/gridHeaderRenderer/title")
             .ok()
@@ -320,8 +320,14 @@ fn classify_list_item(item: &serde_json::Value) -> Result<BrowseItem, Error> {
             thumbs_list(renderer),
         )));
     }
-    let browse_id = ptr(head, "/navigationEndpoint/browseEndpoint/browseId")?
-        .as_str()
+    let browse_id = ptr(head, "/navigationEndpoint/browseEndpoint/browseId")
+        .ok()
+        .and_then(|value| value.as_str())
+        .or_else(|| {
+            ptr(renderer, "/navigationEndpoint/browseEndpoint/browseId")
+                .ok()
+                .and_then(|value| value.as_str())
+        })
         .ok_or_else(|| Error::Fixture("browse list id is not a string".to_owned()))?;
     if browse_id.starts_with("MPRE") {
         Ok(BrowseItem::Album(Album {
