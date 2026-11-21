@@ -13,3 +13,7 @@ tempfile = "3"
 [[test]]
 name = "check_paths_isolation"
 path = "tests/checks/check_paths_isolation.rs"
+
+[[test]]
+name = "check_paths_music"
+path = "tests/checks/check_paths_music.rs"
