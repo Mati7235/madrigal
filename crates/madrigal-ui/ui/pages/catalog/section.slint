@@ -38,7 +38,7 @@ export component SectionView inherits VerticalLayout {
                 if (item.playable) {
                     root.play-requested(item);
                 } else {
-                    root.detail-requested({ kind: item.kind, id: item.id });
+                    root.detail-requested({ kind: item.kind, id: item.id, title: item.title });
                 }
             }
         }
@@ -65,7 +65,7 @@ export component SectionView inherits VerticalLayout {
                     if (item.playable) {
                         root.play-requested(item);
                     } else {
-                        root.detail-requested({ kind: item.kind, id: item.id });
+                        root.detail-requested({ kind: item.kind, id: item.id, title: item.title });
                     }
                 }
             }

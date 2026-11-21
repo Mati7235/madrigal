@@ -3,27 +3,62 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 
+use madrigal_artwork::{ArtworkCache, Source as ArtworkSource};
 use madrigal_core::{Track, TrackIdentity};
 use madrigal_innertube::{
-    AuthCatalogClient, BrowsePage, CatalogClient, ChartsPage, Error as InnertubeError, HomeFeed,
-    MoodListing, NewReleases, SearchFilter, SearchOutcome,
+    AlbumPage, ArtistPage, AuthCatalogClient, BrowsePage, CatalogClient, ChartsPage,
+    Error as InnertubeError, HomeFeed, MoodListing, NewReleases, PlaylistPage, SearchFilter,
+    SearchOutcome,
 };
-use madrigal_settings::{Content, SearchSource};
+use madrigal_settings::{Content, SearchSource, Settings};
 use madrigal_ui::{
-    album_results, apply_browse, apply_charts_entry, apply_home, apply_home_chip, apply_moods,
-    apply_releases, apply_search_results, apply_suggestions, artist_results, home_chips,
-    song_results, CatalogItem, DetailKind, MainShell,
+    album_results, apply_album_detail, apply_artist_detail, apply_browse, apply_browse_detail,
+    apply_charts_entry, apply_detail_error, apply_home, apply_home_chip, apply_moods,
+    apply_playlist_detail, apply_releases, apply_search_results, apply_suggestions,
+    artist_results, begin_detail_load, home_chips, song_results, CatalogItem, DetailKind, DetailRef,
+    MainShell,
 };
 use slint::{ComponentHandle, ModelRc, VecModel};
 
 use crate::playback::Playback;
 
 const EXPLORE_BROWSE_ID: &str = "FEmusic_explore";
+const MOODS_BROWSE_ID: &str = "FEmusic_moods_and_genres_category";
 const SOURCE_LOCAL: i32 = 0;
 const SOURCE_ONLINE: i32 = 1;
 
 pub type HomeSlot = Mutex<Option<HomeFeed>>;
 pub type Delivery = Arc<dyn Fn(CatalogEvent) + Send + Sync>;
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DetailPage {
+    Album(AlbumPage),
+    Artist(ArtistPage),
+    Playlist(PlaylistPage),
+    Browse(BrowsePage),
+}
+
+impl DetailPage {
+    pub fn cover(&self) -> Option<&str> {
+        match self {
+            Self::Album(page) => page.album.thumbnail.as_deref(),
+            Self::Artist(page) => page.artist.thumbnail.as_deref(),
+            Self::Playlist(page) => page.playlist.thumbnail.as_deref(),
+            Self::Browse(page) => page
+                .sections
+                .iter()
+                .flat_map(|section| section.items.iter())
+                .find_map(|item| match item {
+                    madrigal_innertube::BrowseItem::Track(track) => track.thumbnail.as_deref(),
+                    madrigal_innertube::BrowseItem::Album(album) => album.thumbnail.as_deref(),
+                    madrigal_innertube::BrowseItem::Artist(artist) => artist.thumbnail.as_deref(),
+                    madrigal_innertube::BrowseItem::Playlist(playlist) => {
+                        playlist.thumbnail.as_deref()
+                    }
+                }),
+        }
+    }
+}
 
 pub trait CatalogSource {
     fn home(&mut self) -> Result<HomeFeed, InnertubeError>;
@@ -34,6 +69,7 @@ pub trait CatalogSource {
         filter: SearchFilter,
     ) -> Result<SearchOutcome, InnertubeError>;
     fn explore(&mut self, country: &str) -> Result<ExplorePages, InnertubeError>;
+    fn detail(&mut self, kind: DetailKind, id: &str) -> Result<DetailPage, InnertubeError>;
     fn set_session(&mut self, _cookie: Option<String>) {}
 }
 
@@ -50,6 +86,7 @@ pub enum CatalogSlot {
     Suggestions,
     Search,
     Explore,
+    Detail,
 }
 
 #[derive(Default)]
@@ -58,6 +95,7 @@ pub struct Generations {
     suggestions: AtomicU64,
     search: AtomicU64,
     explore: AtomicU64,
+    detail: AtomicU64,
 }
 
 impl Generations {
@@ -67,6 +105,7 @@ impl Generations {
             CatalogSlot::Suggestions => &self.suggestions,
             CatalogSlot::Search => &self.search,
             CatalogSlot::Explore => &self.explore,
+            CatalogSlot::Detail => &self.detail,
         }
     }
 
@@ -97,6 +136,11 @@ pub enum CatalogEvent {
         request_id: u64,
         pages: ExplorePages,
     },
+    Detail {
+        request_id: u64,
+        page: DetailPage,
+        title: String,
+    },
     Failed {
         slot: CatalogSlot,
         request_id: u64,
@@ -121,6 +165,10 @@ enum Request {
         id: u64,
         country: String,
     },
+    Detail {
+        id: u64,
+        reference: DetailRef,
+    },
     SetSession {
         cookie: Option<String>,
     },
@@ -133,6 +181,7 @@ impl Request {
             Request::Suggestions { id, .. } => Some((CatalogSlot::Suggestions, *id)),
             Request::Search { id, .. } => Some((CatalogSlot::Search, *id)),
             Request::Explore { id, .. } => Some((CatalogSlot::Explore, *id)),
+            Request::Detail { id, .. } => Some((CatalogSlot::Detail, *id)),
             Request::SetSession { .. } => None,
         }
     }
@@ -205,6 +254,17 @@ fn run_worker(
                     pages,
                 }),
             ),
+            Request::Detail { id, reference } => settle(
+                slot,
+                id,
+                source
+                    .detail(reference.kind, reference.id.as_str())
+                    .map(|page| CatalogEvent::Detail {
+                        request_id: id,
+                        page,
+                        title: reference.title.to_string(),
+                    }),
+            ),
             Request::SetSession { .. } => continue,
         };
         delivery(event);
@@ -276,6 +336,21 @@ pub fn apply_catalog_event(
             apply_browse(shell, &pages.browse);
             apply_charts_entry(shell, &pages.charts);
         }
+        CatalogEvent::Detail {
+            request_id,
+            page,
+            title,
+        } => {
+            if !generations.is_current(CatalogSlot::Detail, request_id) {
+                return;
+            }
+            match page {
+                DetailPage::Album(page) => apply_album_detail(shell, &page),
+                DetailPage::Artist(page) => apply_artist_detail(shell, &page),
+                DetailPage::Playlist(page) => apply_playlist_detail(shell, &page),
+                DetailPage::Browse(page) => apply_browse_detail(shell, &page, &title),
+            }
+        }
         CatalogEvent::Failed {
             slot,
             request_id,
@@ -287,6 +362,7 @@ pub fn apply_catalog_event(
             eprintln!("catalog {slot:?}: {message}");
             match slot {
                 CatalogSlot::Search | CatalogSlot::Suggestions => clear_search(shell),
+                CatalogSlot::Detail => apply_detail_error(shell, &message),
                 CatalogSlot::Home | CatalogSlot::Explore => {}
             }
         }
@@ -337,6 +413,17 @@ impl Link {
     fn invalidate_search(&self) {
         self.generations.begin(CatalogSlot::Search);
         self.generations.begin(CatalogSlot::Suggestions);
+    }
+
+    fn open_detail(&self, shell: &MainShell, reference: DetailRef) {
+        let id = self.generations.begin(CatalogSlot::Detail);
+        begin_detail_load(shell, &reference);
+        self.send(Request::Detail { id, reference });
+    }
+
+    fn retry_detail(&self, shell: &MainShell) {
+        let reference = shell.get_detail_ref();
+        self.open_detail(shell, reference);
     }
 }
 
@@ -413,21 +500,33 @@ impl Wiring {
     }
 }
 
-pub fn wire_catalog(shell: &MainShell, content: &Content) -> Result<Wiring, String> {
+pub fn wire_catalog(shell: &MainShell, settings: &Settings) -> Result<Wiring, String> {
     let generations = Arc::new(Generations::default());
     let home: Arc<HomeSlot> = Arc::new(Mutex::new(None));
-    let show_chips = content.show_home_category_chips;
+    let show_chips = settings.content.show_home_category_chips;
+    let artwork = Arc::new(ArtworkCache::new(
+        ArtworkCache::default_dir(),
+        (settings.storage.max_image_cache_mb.max(0) as usize) * 1024 * 1024,
+    ));
     let weak = shell.as_weak();
     let delivery: Delivery = {
         let generations = Arc::clone(&generations);
         let home = Arc::clone(&home);
+        let artwork = Arc::clone(&artwork);
         Arc::new(move |event| {
+            let cover = detail_cover(&event);
             let weak = weak.clone();
             let generations = Arc::clone(&generations);
             let home = Arc::clone(&home);
+            let artwork = Arc::clone(&artwork);
             let _ = slint::invoke_from_event_loop(move || {
                 if let Some(shell) = weak.upgrade() {
                     apply_catalog_event(&shell, event, &generations, &home, show_chips);
+                    if let Some((request_id, url)) = cover {
+                        if generations.is_current(CatalogSlot::Detail, request_id) {
+                            request_detail_cover(&shell, &artwork, request_id, url, &generations);
+                        }
+                    }
                 }
             });
         })
@@ -435,12 +534,52 @@ pub fn wire_catalog(shell: &MainShell, content: &Content) -> Result<Wiring, Stri
     let source = LiveSource::new()?;
     wire_shared(
         shell,
-        content,
+        &settings.content,
         Box::new(source),
         delivery,
         generations,
         home,
     )
+}
+
+fn detail_cover(event: &CatalogEvent) -> Option<(u64, String)> {
+    match event {
+        CatalogEvent::Detail {
+            request_id,
+            page,
+            ..
+        } => page.cover().map(|url| (*request_id, url.to_owned())),
+        _ => None,
+    }
+}
+
+fn request_detail_cover(
+    shell: &MainShell,
+    cache: &Arc<ArtworkCache>,
+    request_id: u64,
+    url: String,
+    generations: &Arc<Generations>,
+) {
+    let weak = shell.as_weak();
+    let cache = Arc::clone(cache);
+    let generations = Arc::clone(generations);
+    let _ = thread::Builder::new()
+        .name("madrigal-detail-art".to_owned())
+        .spawn(move || {
+            let Ok(image) = cache.get(&url, ArtworkSource::Url(url.clone()), 384) else {
+                return;
+            };
+            if !generations.is_current(CatalogSlot::Detail, request_id) {
+                return;
+            }
+            let _ = slint::invoke_from_event_loop(move || {
+                if let Some(shell) = weak.upgrade() {
+                    if generations.is_current(CatalogSlot::Detail, request_id) {
+                        shell.set_detail_cover(madrigal_ui::to_slint_image(&image));
+                    }
+                }
+            });
+        });
 }
 
 pub fn wire_catalog_with(
@@ -566,6 +705,33 @@ fn register_callbacks(shell: &MainShell, link: &Link) {
             }
         }
     });
+
+    shell.on_detail_opened({
+        let weak = shell.as_weak();
+        let link = link.clone();
+        move |reference| {
+            if let Some(shell) = weak.upgrade() {
+                link.open_detail(&shell, reference);
+            }
+        }
+    });
+
+    shell.on_detail_retried({
+        let weak = shell.as_weak();
+        let link = link.clone();
+        move || {
+            if let Some(shell) = weak.upgrade() {
+                link.retry_detail(&shell);
+            }
+        }
+    });
+
+    shell.on_detail_closed({
+        let link = link.clone();
+        move || {
+            link.generations.begin(CatalogSlot::Detail);
+        }
+    });
 }
 
 struct LiveSource {
@@ -628,6 +794,60 @@ async fn fetch_explore_auth(
     })
 }
 
+impl LiveSource {
+    fn album_detail(&mut self, id: &str) -> Result<AlbumPage, InnertubeError> {
+        if let Some(auth) = &self.auth {
+            if let Ok(page) = self.runtime.block_on(auth.album_page(id)) {
+                return Ok(page);
+            }
+        }
+        let (runtime, client) = self.parts()?;
+        runtime.block_on(client.album_page(id))
+    }
+
+    fn artist_detail(&mut self, id: &str) -> Result<ArtistPage, InnertubeError> {
+        if let Some(auth) = &self.auth {
+            if let Ok(page) = self.runtime.block_on(auth.artist_page(id)) {
+                return Ok(page);
+            }
+        }
+        let (runtime, client) = self.parts()?;
+        runtime.block_on(client.artist_page(id))
+    }
+
+    fn playlist_detail(&mut self, id: &str) -> Result<PlaylistPage, InnertubeError> {
+        if let Some(auth) = &self.auth {
+            if let Ok(page) = self.runtime.block_on(auth.playlist_page(id)) {
+                return Ok(page);
+            }
+        }
+        let (runtime, client) = self.parts()?;
+        runtime.block_on(client.playlist_page(id))
+    }
+
+    fn browse_detail(&mut self, id: &str) -> Result<BrowsePage, InnertubeError> {
+        if let Some(country) = id.strip_prefix("charts:") {
+            if let Some(auth) = &self.auth {
+                if let Ok(page) = self.runtime.block_on(auth.charts_page(country)) {
+                    return Ok(page);
+                }
+            }
+            let (runtime, client) = self.parts()?;
+            return runtime.block_on(client.charts_page(country));
+        }
+        if let Some(auth) = &self.auth {
+            if let Ok(page) = self
+                .runtime
+                .block_on(auth.browse(MOODS_BROWSE_ID, Some(id)))
+            {
+                return Ok(page);
+            }
+        }
+        let (runtime, client) = self.parts()?;
+        runtime.block_on(client.browse(MOODS_BROWSE_ID, Some(id)))
+    }
+}
+
 impl CatalogSource for LiveSource {
     fn set_session(&mut self, cookie: Option<String>) {
         self.auth = cookie
@@ -680,5 +900,17 @@ impl CatalogSource for LiveSource {
         }
         let (runtime, client) = self.parts()?;
         runtime.block_on(fetch_explore(client, country))
+    }
+
+    fn detail(&mut self, kind: DetailKind, id: &str) -> Result<DetailPage, InnertubeError> {
+        match kind {
+            DetailKind::Album => self.album_detail(id).map(DetailPage::Album),
+            DetailKind::Artist => self.artist_detail(id).map(DetailPage::Artist),
+            DetailKind::Playlist => self.playlist_detail(id).map(DetailPage::Playlist),
+            DetailKind::Browse => self.browse_detail(id).map(DetailPage::Browse),
+            DetailKind::Podcast => Err(InnertubeError::Fixture(
+                "podcast pages are not supported".to_owned(),
+            )),
+        }
     }
 }

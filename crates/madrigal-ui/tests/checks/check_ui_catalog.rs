@@ -1,10 +1,10 @@
 use madrigal_testkit as kit;
 use madrigal_ui::{
-    DetailKind, apply_browse_detail, apply_home, apply_home_chip, apply_home_chips,
-    apply_suggestions, close_detail, dispatch_key, is_detail_open, load_album_fixture,
-    load_artist_fixture, load_browse_fixture, load_explore_fixtures, load_home_fixture,
-    load_playlist_fixture, load_search_fixture, load_suggestions_fixture, playlist_item,
-    set_shell_lang, wire_shell_i18n, MainShell,
+    apply_browse_detail, apply_detail_error, apply_home, apply_home_chip, apply_home_chips,
+    apply_suggestions, begin_detail_load, close_detail, dispatch_key, is_detail_open,
+    load_album_fixture, load_artist_fixture, load_browse_fixture, load_explore_fixtures,
+    load_home_fixture, load_playlist_fixture, load_search_fixture, load_suggestions_fixture,
+    playlist_item, set_shell_lang, wire_shell_i18n, DetailKind, DetailRef, MainShell,
 };
 use slint::{ComponentHandle, Model, VecModel};
 use std::cell::RefCell;
@@ -551,6 +551,35 @@ fn ui_catalog() {
     apply_browse_detail(&shell, &madrigal_innertube::CatalogClient::parse_browse(&explore_src).unwrap(), "Browse");
     assert_eq!(shell.get_detail_sections().row_count(), 3);
 
+    close_detail(&shell);
+    assert!(!is_detail_open(&shell));
+
+    begin_detail_load(
+        &shell,
+        &DetailRef {
+            kind: DetailKind::Artist,
+            id: ARTIST_ID.into(),
+            title: "The Beatles".into(),
+        },
+    );
+    assert!(shell.get_detail_loading());
+    assert_eq!(shell.get_detail_title().as_str(), "The Beatles");
+    assert_eq!(shell.get_detail_tracks().row_count(), 0);
+    shell.set_detail_stack(1);
+    assert!(kit::find_by_id(&shell, "DetailPage::detail-loading").is_ok());
+    let retried = Rc::new(RefCell::new(0));
+    {
+        let retried = retried.clone();
+        shell.on_detail_retried(move || {
+            *retried.borrow_mut() += 1;
+        });
+    }
+    apply_detail_error(&shell, "boom");
+    assert!(!shell.get_detail_loading());
+    assert_eq!(shell.get_detail_error().as_str(), "boom");
+    assert!(kit::find_by_id(&shell, "DetailPage::detail-retry").is_ok());
+    kit::click_by_id(&shell, "DetailPage::detail-retry").unwrap();
+    assert_eq!(*retried.borrow(), 1);
     close_detail(&shell);
     assert!(!is_detail_open(&shell));
 

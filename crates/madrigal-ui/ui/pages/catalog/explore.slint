@@ -68,7 +68,7 @@ export component ExplorePage inherits Rectangle {
                     content: root.palette.on-surface;
                     line: root.palette.outline-variant;
                     focus-color: root.palette.primary;
-                    clicked => { root.detail-requested({ kind: DetailKind.browse, id: mood.params }); }
+                    clicked => { root.detail-requested({ kind: DetailKind.browse, id: mood.params, title: mood.title }); }
                 }
                 for mood[i] in root.moods-right : mood-chip-r := M3MoodTile {
                     width: root.mood-tile-width;
@@ -79,7 +79,7 @@ export component ExplorePage inherits Rectangle {
                     content: root.palette.on-surface;
                     line: root.palette.outline-variant;
                     focus-color: root.palette.primary;
-                    clicked => { root.detail-requested({ kind: DetailKind.browse, id: mood.params }); }
+                    clicked => { root.detail-requested({ kind: DetailKind.browse, id: mood.params, title: mood.title }); }
                 }
             }
 
@@ -94,7 +94,7 @@ export component ExplorePage inherits Rectangle {
                 title-color: root.palette.on-surface;
                 subtitle-color: root.palette.on-surface-variant;
                 shadow-color: root.palette.shadow;
-                clicked => { root.detail-requested({ kind: DetailKind.browse, id: root.charts-id }); }
+                clicked => { root.detail-requested({ kind: DetailKind.browse, id: root.charts-id, title: I18n.trl(I18n.lang, "catalog.charts") }); }
             }
 
             releases-head := HorizontalLayout {
@@ -139,7 +139,7 @@ export component ExplorePage inherits Rectangle {
                         title-color: root.palette.on-surface;
                         subtitle-color: root.palette.on-surface-variant;
                         shadow-color: root.palette.shadow;
-                        clicked => { root.detail-requested({ kind: album.kind, id: album.id }); }
+                        clicked => { root.detail-requested({ kind: album.kind, id: album.id, title: album.title }); }
                     }
                 }
             }

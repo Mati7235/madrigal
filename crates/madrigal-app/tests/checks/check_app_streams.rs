@@ -10,7 +10,7 @@ use std::time::{Duration, Instant};
 
 use madrigal_app::catalog::{
     apply_catalog_event, playable_track, wire_catalog_with, wire_play_requests, CatalogEvent,
-    CatalogSource, Delivery, ExplorePages,
+    CatalogSource, Delivery, DetailPage, ExplorePages,
 };
 use madrigal_app::downloads::{register_with, StreamResolver};
 use madrigal_app::playback::{Playback, PlaybackService};
@@ -270,6 +270,16 @@ impl CatalogSource for FixtureSource {
             browse: CatalogClient::parse_browse(&innertube_fixture("explore.json"))?,
             charts,
         })
+    }
+
+    fn detail(
+        &mut self,
+        _kind: madrigal_ui::DetailKind,
+        _id: &str,
+    ) -> Result<DetailPage, madrigal_innertube::Error> {
+        Err(madrigal_innertube::Error::Fixture(
+            "detail not used in this check".to_owned(),
+        ))
     }
 }
 

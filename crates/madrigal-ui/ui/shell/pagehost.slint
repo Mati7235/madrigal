@@ -68,7 +68,7 @@ export component PageHost inherits Rectangle {
     callback dl-retry(string);
     callback dl-retry-all();
     in-out property<int> detail-stack: 0;
-    in-out property<DetailRef> detail-ref: { kind: DetailKind.album, id: "" };
+    in-out property<DetailRef> detail-ref: { kind: DetailKind.album, id: "", title: "" };
 
     in property<[string]> home-chips;
     in-out property<int> home-current-chip: 0;
@@ -97,6 +97,9 @@ export component PageHost inherits Rectangle {
     in property<string> detail-title: "";
     in property<string> detail-subtitle: "";
     in property<string> detail-description: "";
+    in property<image> detail-cover;
+    in property<bool> detail-loading: false;
+    in property<string> detail-error: "";
     in property<[CatalogItem]> detail-tracks;
     in property<[CatalogItem]> detail-albums;
     in property<[CatalogSection]> detail-sections;
@@ -112,6 +115,7 @@ export component PageHost inherits Rectangle {
     callback detail-requested(DetailRef);
     callback play-requested(CatalogItem);
     callback detail-closed();
+    callback detail-retried();
     in-out property<int> settings-group;
     in property<[string]> settings-group-titles;
     in property<[SettingsRow]> settings-rows;
@@ -331,6 +335,9 @@ export component PageHost inherits Rectangle {
         title: root.detail-title;
         subtitle: root.detail-subtitle;
         description: root.detail-description;
+        cover: root.detail-cover;
+        loading: root.detail-loading;
+        error: root.detail-error;
         tracks: root.detail-tracks;
         albums: root.detail-albums;
         sections: root.detail-sections;
@@ -341,5 +348,6 @@ export component PageHost inherits Rectangle {
         }
         detail-requested(ref) => { root.detail-requested(ref); }
         play-requested(item) => { root.play-requested(item); }
+        retry-requested => { root.detail-retried(); }
     }
 }

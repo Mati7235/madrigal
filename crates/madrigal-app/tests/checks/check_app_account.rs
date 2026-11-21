@@ -74,6 +74,16 @@ impl CatalogSource for FixtureSource {
             charts,
         })
     }
+
+    fn detail(
+        &mut self,
+        _kind: madrigal_ui::DetailKind,
+        _id: &str,
+    ) -> Result<madrigal_app::catalog::DetailPage, madrigal_innertube::Error> {
+        Err(madrigal_innertube::Error::Fixture(
+            "detail not used in this check".to_owned(),
+        ))
+    }
 }
 
 fn isolate() -> (std::sync::MutexGuard<'static, ()>, tempfile::TempDir, tempfile::TempDir) {

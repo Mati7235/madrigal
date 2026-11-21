@@ -250,7 +250,7 @@ export component SearchPage inherits FocusScope {
                                 subtitle-color: root.palette.on-surface-variant;
                                 shadow-color: root.palette.shadow;
                                 clicked => {
-                                    root.detail-requested({ kind: hit.kind, id: hit.id });
+                                    root.detail-requested({ kind: hit.kind, id: hit.id, title: hit.title });
                                 }
                             }
                         }

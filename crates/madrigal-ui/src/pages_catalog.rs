@@ -352,23 +352,50 @@ pub fn load_explore_fixtures(
     Ok(())
 }
 
-fn clear_detail(shell: &MainShell, kind: DetailKind, id: &str) {
+fn clear_detail(shell: &MainShell, kind: DetailKind, id: &str, title: &str) {
     shell.set_detail_ref(DetailRef {
         kind,
         id: id.into(),
+        title: title.into(),
     });
-    shell.set_detail_title("".into());
+    shell.set_detail_title(title.into());
     shell.set_detail_subtitle("".into());
     shell.set_detail_description("".into());
+    shell.set_detail_cover(slint::Image::default());
+    shell.set_detail_loading(false);
+    shell.set_detail_error("".into());
     shell.set_detail_tracks(ModelRc::new(VecModel::from_slice(&[])));
     shell.set_detail_albums(ModelRc::new(VecModel::from_slice(&[])));
     shell.set_detail_sections(ModelRc::new(VecModel::from_slice(&[])));
     shell.set_detail_tab(0);
 }
 
+pub fn begin_detail_load(shell: &MainShell, reference: &DetailRef) {
+    shell.set_detail_ref(reference.clone());
+    shell.set_detail_title(reference.title.clone());
+    shell.set_detail_subtitle("".into());
+    shell.set_detail_description("".into());
+    shell.set_detail_cover(slint::Image::default());
+    shell.set_detail_loading(true);
+    shell.set_detail_error("".into());
+    shell.set_detail_tracks(ModelRc::new(VecModel::from_slice(&[])));
+    shell.set_detail_albums(ModelRc::new(VecModel::from_slice(&[])));
+    shell.set_detail_sections(ModelRc::new(VecModel::from_slice(&[])));
+    shell.set_detail_tab(0);
+}
+
+pub fn apply_detail_error(shell: &MainShell, message: &str) {
+    shell.set_detail_loading(false);
+    shell.set_detail_error(message.into());
+}
+
 pub fn apply_album_detail(shell: &MainShell, detail: &AlbumPage) {
-    clear_detail(shell, DetailKind::Album, detail.album.id.as_str());
-    shell.set_detail_title(detail.album.title.as_str().into());
+    clear_detail(
+        shell,
+        DetailKind::Album,
+        detail.album.id.as_str(),
+        detail.album.title.as_str(),
+    );
     shell.set_detail_subtitle(detail.album.artist_text().as_str().into());
     shell.set_detail_description(
         detail
@@ -384,8 +411,12 @@ pub fn apply_album_detail(shell: &MainShell, detail: &AlbumPage) {
 }
 
 pub fn apply_artist_detail(shell: &MainShell, detail: &ArtistPage) {
-    clear_detail(shell, DetailKind::Artist, detail.artist.id.as_str());
-    shell.set_detail_title(detail.artist.name.as_str().into());
+    clear_detail(
+        shell,
+        DetailKind::Artist,
+        detail.artist.id.as_str(),
+        detail.artist.name.as_str(),
+    );
     shell.set_detail_subtitle(
         detail
             .artist
@@ -415,16 +446,16 @@ pub fn apply_playlist_detail(shell: &MainShell, detail: &PlaylistPage) {
         shell,
         DetailKind::Playlist,
         detail.playlist.id.as_str(),
+        detail.playlist.title.as_str(),
     );
-    shell.set_detail_title(detail.playlist.title.as_str().into());
-    shell.set_detail_subtitle(
-        detail
-            .playlist
-            .author
-            .as_deref()
-            .unwrap_or_default()
-            .into(),
-    );
+    let mut subtitle = detail.playlist.author.clone().unwrap_or_default();
+    if let Some(count) = detail.playlist.track_count {
+        if !subtitle.is_empty() {
+            subtitle.push_str(" · ");
+        }
+        subtitle.push_str(&count.to_string());
+    }
+    shell.set_detail_subtitle(subtitle.into());
     shell.set_detail_description(
         detail
             .playlist
@@ -439,8 +470,12 @@ pub fn apply_playlist_detail(shell: &MainShell, detail: &PlaylistPage) {
 }
 
 pub fn apply_podcast_detail(shell: &MainShell, podcast: &Podcast, episodes: &[Episode]) {
-    clear_detail(shell, DetailKind::Podcast, podcast.id.as_str());
-    shell.set_detail_title(podcast.title.as_str().into());
+    clear_detail(
+        shell,
+        DetailKind::Podcast,
+        podcast.id.as_str(),
+        podcast.title.as_str(),
+    );
     shell.set_detail_subtitle(podcast.author.as_deref().unwrap_or_default().into());
     shell.set_detail_description(
         podcast.description.as_deref().unwrap_or_default().into(),
@@ -450,8 +485,7 @@ pub fn apply_podcast_detail(shell: &MainShell, podcast: &Podcast, episodes: &[Ep
 }
 
 pub fn apply_browse_detail(shell: &MainShell, browse: &BrowsePage, title: &str) {
-    clear_detail(shell, DetailKind::Browse, "browse");
-    shell.set_detail_title(title.into());
+    clear_detail(shell, DetailKind::Browse, "browse", title);
     let sections: Vec<CatalogSection> = browse
         .sections
         .iter()

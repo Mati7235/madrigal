@@ -3,6 +3,7 @@ export enum DetailKind { artist, album, playlist, podcast, browse }
 export struct DetailRef {
     kind: DetailKind,
     id: string,
+    title: string,
 }
 
 export struct CatalogItem {

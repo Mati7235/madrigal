@@ -150,7 +150,7 @@ export component MainShell inherits Window {
     in-out property<int> full-player-count: 0;
     in-out property<int> search-focus-count: 0;
     in-out property<int> detail-stack: 0;
-    in-out property<DetailRef> detail-ref: { kind: DetailKind.album, id: "" };
+    in-out property<DetailRef> detail-ref: { kind: DetailKind.album, id: "", title: "" };
 
     in property<[string]> home-chips;
     in-out property<int> home-current-chip: 0;
@@ -185,6 +185,9 @@ export component MainShell inherits Window {
     in property<string> detail-title: "";
     in property<string> detail-subtitle: "";
     in property<string> detail-description: "";
+    in property<image> detail-cover;
+    in property<bool> detail-loading: false;
+    in property<string> detail-error: "";
     in property<[CatalogItem]> detail-tracks;
     in property<[CatalogItem]> detail-albums;
     in property<[CatalogSection]> detail-sections;
@@ -382,6 +385,7 @@ export component MainShell inherits Window {
     callback detail-opened(DetailRef);
     callback play-requested(CatalogItem);
     callback detail-closed();
+    callback detail-retried();
     callback settings-group-selected(int);
     callback settings-toggled(string, bool);
     callback settings-edited(string, string);
@@ -774,6 +778,9 @@ export component MainShell inherits Window {
                 detail-title: root.detail-title;
                 detail-subtitle: root.detail-subtitle;
                 detail-description: root.detail-description;
+                detail-cover: root.detail-cover;
+                detail-loading: root.detail-loading;
+                detail-error: root.detail-error;
                 detail-tracks: root.detail-tracks;
                 detail-albums: root.detail-albums;
                 detail-sections: root.detail-sections;
@@ -788,6 +795,7 @@ export component MainShell inherits Window {
                 detail-requested(ref) => { root.detail-requested(ref); }
                 play-requested(item) => { root.play-requested(item); }
                 detail-closed() => { root.detail-closed(); }
+                detail-retried() => { root.detail-retried(); }
                 settings-group <=> root.settings-group;
                 settings-group-titles: root.settings-group-titles;
                 settings-rows: root.settings-rows;

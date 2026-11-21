@@ -15,15 +15,19 @@ export component DetailPage inherits Rectangle {
     in property<string> subtitle: "";
     in property<string> description: "";
     in property<image> cover;
+    in property<bool> loading: false;
+    in property<string> error: "";
     in property<[CatalogItem]> tracks;
     in property<[CatalogItem]> albums;
     in property<[CatalogSection]> sections;
     in-out property<int> detail-tab: 0;
-    property<bool> is-empty: root.tracks.length == 0 && root.albums.length == 0 && root.sections.length == 0;
+    property<bool> ready: !root.loading && root.error == "";
+    property<bool> is-empty: root.ready && root.tracks.length == 0 && root.albums.length == 0 && root.sections.length == 0;
 
     callback back-requested();
     callback detail-requested(DetailRef);
     callback play-requested(CatalogItem);
+    callback retry-requested();
 
     background: root.palette.surface;
     accessible-role: text;
@@ -89,7 +93,7 @@ export component DetailPage inherits Rectangle {
 
             detail-actions := HorizontalLayout {
                 spacing: 8px;
-                visible: root.detail.kind != DetailKind.browse && !root.is-empty;
+                visible: root.ready && root.detail.kind != DetailKind.browse && !root.is-empty;
                 detail-play := M3Button {
                     text: I18n.trl(I18n.lang, "detail.play");
                     fill: root.palette.primary;
@@ -103,7 +107,7 @@ export component DetailPage inherits Rectangle {
                 }
             }
 
-            if (root.detail.kind == DetailKind.artist) : artist-tabs := HorizontalLayout {
+            if (root.detail.kind == DetailKind.artist && root.ready) : artist-tabs := HorizontalLayout {
                 spacing: 8px;
                 for i in 2 : artist-chip := M3Chip {
                     text: i == 0 ? I18n.trl(I18n.lang, "catalog.songs") : I18n.trl(I18n.lang, "catalog.albums");
@@ -116,7 +120,7 @@ export component DetailPage inherits Rectangle {
                 }
             }
 
-            if (root.detail.kind == DetailKind.artist && root.detail-tab == 0) : artist-songs := VerticalLayout {
+            if (root.detail.kind == DetailKind.artist && root.detail-tab == 0 && root.ready) : artist-songs := VerticalLayout {
                 spacing: 2px;
                 for track[i] in root.tracks : song-row := M3ListItem {
                     title: track.title;
@@ -133,7 +137,7 @@ export component DetailPage inherits Rectangle {
                 }
             }
 
-            if (root.detail.kind == DetailKind.artist && root.detail-tab == 1) : artist-albums-rail := Flickable {
+            if (root.detail.kind == DetailKind.artist && root.detail-tab == 1 && root.ready) : artist-albums-rail := Flickable {
                 height: 140px;
 
                 artist-albums := HorizontalLayout {
@@ -192,13 +196,13 @@ export component DetailPage inherits Rectangle {
 
                     album-touch := TouchArea {
                         mouse-cursor: pointer;
-                        clicked => { root.detail-requested({ kind: album.kind, id: album.id }); }
+                        clicked => { root.detail-requested({ kind: album.kind, id: album.id, title: album.title }); }
                     }
                     }
                 }
             }
 
-            if (root.detail.kind != DetailKind.artist && root.detail.kind != DetailKind.browse) : detail-tracks := VerticalLayout {
+            if (root.detail.kind != DetailKind.artist && root.detail.kind != DetailKind.browse && root.ready) : detail-tracks := VerticalLayout {
                 spacing: 2px;
                 for track[i] in root.tracks : track-row := M3ListItem {
                     title: track.title;
@@ -215,13 +219,43 @@ export component DetailPage inherits Rectangle {
                 }
             }
 
-            if (root.detail.kind == DetailKind.browse) : detail-browse := VerticalLayout {
+            if (root.detail.kind == DetailKind.browse && root.ready) : detail-browse := VerticalLayout {
                 spacing: 16px;
                 for sec[s] in root.sections : browse-view := SectionView {
                     palette: root.palette;
                     section: sec;
                     detail-requested(ref) => { root.detail-requested(ref); }
                     play-requested(item) => { root.play-requested(item); }
+                }
+            }
+
+            if (root.loading) : detail-loading := Text {
+                text: I18n.trl(I18n.lang, "common.loading");
+                color: root.palette.on-surface-variant;
+                font-size: Type.body-large.size;
+                font-family: Type.body-large.family;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                height: 96px;
+            }
+
+            if (root.error != "") : detail-error-box := VerticalLayout {
+                spacing: 12px;
+                alignment: center;
+                detail-error-text := Text {
+                    text: I18n.trl(I18n.lang, "detail.error");
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.body-large.size;
+                    font-family: Type.body-large.family;
+                    horizontal-alignment: center;
+                    wrap: word-wrap;
+                }
+                detail-retry := M3Button {
+                    text: I18n.trl(I18n.lang, "common.retry");
+                    fill: root.palette.primary;
+                    content: root.palette.on-primary;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.retry-requested(); }
                 }
             }
 

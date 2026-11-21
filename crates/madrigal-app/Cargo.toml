@@ -17,6 +17,7 @@ path = "src/main.rs"
 
 [dependencies]
 madrigal-account = { path = "../madrigal-account" }
+madrigal-artwork = { path = "../madrigal-artwork" }
 madrigal-core = { path = "../madrigal-core" }
 madrigal-db = { path = "../madrigal-db" }
 madrigal-downloads = { path = "../madrigal-downloads" }
