@@ -333,10 +333,12 @@ fn resolve_queue_model(
     bucket: u32,
 ) {
     for (index, row) in rows.iter().enumerate() {
-        if row.thumbnail.is_empty() {
+        let Some(thumbnail) = row.thumbnail.clone() else {
+            continue;
+        };
+        if thumbnail.is_empty() {
             continue;
         }
-        let thumbnail = row.thumbnail.clone();
         let load = thumbnail.clone();
         let weak = shell.as_weak();
         request(
