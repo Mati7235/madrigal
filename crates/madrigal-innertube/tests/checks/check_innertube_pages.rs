@@ -22,6 +22,14 @@ fn artist_fixture_maps_to_page() {
     assert_eq!(page.songs.len(), 5);
     assert_eq!(page.albums.len(), 10);
     assert_eq!(page.songs[0].title, "Let It Be (Remastered 2009)");
+    assert_eq!(
+        page.songs[0].thumbnail.as_deref(),
+        Some("https://yt3.googleusercontent.com/octdAIhLRBSYd5JKOeTsF5zNhQ4C0L3JtOnjUYPvHLtJaxXr68NVW8gUfsE05aarfaDmZe_ibrVMxo-y4g=w120-h120-l90-rj")
+    );
+    assert!(page
+        .songs
+        .iter()
+        .all(|t| t.thumbnail.as_deref().is_some_and(|url| url.starts_with("https://"))));
     assert_eq!(page.albums[0].title, "Rubber Soul (Super Deluxe)");
     assert!(page.songs.iter().all(|t| t.is_valid()));
     assert!(page.albums.iter().all(|a| a.is_valid()));

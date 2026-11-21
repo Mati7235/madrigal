@@ -408,6 +408,7 @@ pub fn apply_album_detail(shell: &MainShell, detail: &AlbumPage) {
     shell.set_detail_tracks(ModelRc::new(VecModel::from_slice(&song_results(
         &detail.tracks,
     ))));
+    artwork::resolve_detail(shell);
 }
 
 pub fn apply_artist_detail(shell: &MainShell, detail: &ArtistPage) {
@@ -439,6 +440,7 @@ pub fn apply_artist_detail(shell: &MainShell, detail: &ArtistPage) {
     shell.set_detail_albums(ModelRc::new(VecModel::from_slice(&album_results(
         &detail.albums,
     ))));
+    artwork::resolve_detail(shell);
 }
 
 pub fn apply_playlist_detail(shell: &MainShell, detail: &PlaylistPage) {
@@ -467,6 +469,7 @@ pub fn apply_playlist_detail(shell: &MainShell, detail: &PlaylistPage) {
     shell.set_detail_tracks(ModelRc::new(VecModel::from_slice(&song_results(
         &detail.tracks,
     ))));
+    artwork::resolve_detail(shell);
 }
 
 pub fn apply_podcast_detail(shell: &MainShell, podcast: &Podcast, episodes: &[Episode]) {
@@ -482,6 +485,7 @@ pub fn apply_podcast_detail(shell: &MainShell, podcast: &Podcast, episodes: &[Ep
     );
     let items: Vec<CatalogItem> = episodes.iter().map(episode_item).collect();
     shell.set_detail_tracks(ModelRc::new(VecModel::from_slice(&items)));
+    artwork::resolve_detail(shell);
 }
 
 pub fn apply_browse_detail(shell: &MainShell, browse: &BrowsePage, title: &str) {
@@ -497,6 +501,7 @@ pub fn apply_browse_detail(shell: &MainShell, browse: &BrowsePage, title: &str) 
         })
         .collect();
     shell.set_detail_sections(ModelRc::new(VecModel::from_slice(&sections)));
+    artwork::resolve_detail(shell);
 }
 
 pub fn load_album_fixture(shell: &MainShell, id: &str, source: &str) -> CatalogResult<()> {

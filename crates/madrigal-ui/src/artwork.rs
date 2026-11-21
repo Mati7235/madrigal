@@ -277,6 +277,21 @@ pub fn resolve_search(shell: &MainShell) {
     );
 }
 
+pub fn resolve_detail(shell: &MainShell) {
+    let scale = scale(shell);
+    resolve_catalog_single(
+        shell,
+        MainShell::get_detail_tracks,
+        bucket_for(36.0, scale),
+    );
+    resolve_sections(
+        shell,
+        MainShell::get_detail_sections,
+        bucket_for(36.0, scale),
+        bucket_for(118.0, scale),
+    );
+}
+
 pub fn resolve_releases(shell: &MainShell) {
     let cards = bucket_for(118.0, scale(shell));
     resolve_catalog_single(shell, MainShell::get_explore_releases_albums, cards);

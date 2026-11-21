@@ -217,7 +217,14 @@ impl CatalogClient {
     pub fn parse_artist_page(channel_id: &str, source: &str) -> Result<ArtistPage, Error> {
         let query = GetArtistQuery::new(ArtistChannelID::from_raw(channel_id));
         let parsed = offline::<GetArtistQuery, GetArtist>(&query, source)?;
-        Ok(mapping::artist_page(&parsed))
+        let mut page = mapping::artist_page(&parsed);
+        let thumbnails = row_thumbnails(source);
+        for song in &mut page.songs {
+            if song.thumbnail.is_none() {
+                song.thumbnail = thumbnails.get(song.identity.id.as_str()).cloned();
+            }
+        }
+        Ok(page)
     }
 
     pub fn parse_album_page(browse_id: &str, source: &str) -> Result<AlbumPage, Error> {
@@ -253,6 +260,60 @@ impl CatalogClient {
         let query = GetMoodCategoriesQuery;
         offline::<GetMoodCategoriesQuery, MoodListing>(&query, source)
     }
+}
+
+fn row_thumbnails(source: &str) -> std::collections::HashMap<String, String> {
+    fn walk(value: &serde_json::Value, found: &mut std::collections::HashMap<String, String>) {
+        if let Some(renderer) = value.get("musicResponsiveListItemRenderer") {
+            let id = renderer
+                .pointer("/playlistItemData/videoId")
+                .and_then(serde_json::Value::as_str);
+            let best = renderer
+                .pointer("/thumbnail/musicThumbnailRenderer/thumbnail/thumbnails")
+                .and_then(serde_json::Value::as_array)
+                .and_then(|thumbnails| {
+                    thumbnails
+                        .iter()
+                        .filter_map(|thumb| {
+                            let url = thumb.get("url")?.as_str()?;
+                            let area = thumb
+                                .get("width")
+                                .and_then(serde_json::Value::as_u64)
+                                .unwrap_or(0)
+                                .saturating_mul(
+                                    thumb
+                                        .get("height")
+                                        .and_then(serde_json::Value::as_u64)
+                                        .unwrap_or(0),
+                                );
+                            Some((area, url))
+                        })
+                        .max_by_key(|(area, _)| *area)
+                        .map(|(_, url)| url)
+                });
+            if let (Some(id), Some(url)) = (id, best) {
+                found.insert(id.to_owned(), url.to_owned());
+            }
+        }
+        match value {
+            serde_json::Value::Object(entries) => {
+                for child in entries.values() {
+                    walk(child, found);
+                }
+            }
+            serde_json::Value::Array(items) => {
+                for child in items {
+                    walk(child, found);
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut found = std::collections::HashMap::new();
+    if let Ok(value) = serde_json::from_str(source) {
+        walk(&value, &mut found);
+    }
+    found
 }
 
 fn offline<Q, O>(query: &Q, source: &str) -> Result<O, Error>

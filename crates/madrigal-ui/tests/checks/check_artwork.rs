@@ -2,8 +2,8 @@ use image::{Rgba, RgbaImage};
 use madrigal_artwork::{bucket_for, sized_url, ArtworkCache, Source};
 use madrigal_testkit as kit;
 use madrigal_ui::{
-    apply_cover, init_artwork, resolve_search, set_now_playing_cover, to_slint_image, CatalogItem,
-    CoverTestWindow, DetailKind, MainShell,
+    apply_cover, init_artwork, resolve_detail, resolve_search, set_now_playing_cover,
+    to_slint_image, CatalogItem, CoverTestWindow, DetailKind, MainShell,
 };
 use slint::{ComponentHandle, Model, ModelRc, VecModel};
 use std::collections::HashSet;
@@ -131,6 +131,46 @@ fn artwork_ui_check() {
             break;
         }
         assert!(Instant::now() < deadline, "now playing cover never loaded");
+        std::thread::sleep(Duration::from_millis(10));
+    }
+
+    let row_bucket = bucket_for(36.0, shell.window().scale_factor());
+    let row_thumbnail = "https://yt3.googleusercontent.com/detail-row=w120-h120-l90-rj";
+    let row_url = sized_url(row_thumbnail, row_bucket);
+    let row = CatalogItem {
+        kind: DetailKind::Album,
+        id: "row-1".into(),
+        title: "Row".into(),
+        subtitle: String::new().into(),
+        duration: String::new().into(),
+        playable: true,
+        artist: String::new().into(),
+        album: String::new().into(),
+        thumbnail: row_thumbnail.into(),
+        cover: Default::default(),
+        duration_secs: 0,
+    };
+    cache
+        .get(&row_url, Source::Bytes(png(&checkerboard(
+            Rgba([10, 90, 220, 255]),
+            Rgba([220, 200, 10, 255]),
+        ))), row_bucket)
+        .unwrap();
+    shell.set_detail_tracks(ModelRc::new(VecModel::from_slice(&[row])));
+    resolve_detail(&shell);
+    let deadline = Instant::now() + Duration::from_secs(3);
+    loop {
+        pump_events();
+        let loaded = shell
+            .get_detail_tracks()
+            .row_data(0)
+            .is_some_and(|row| row.cover.size().width > 0);
+        if loaded {
+            let cover = shell.get_detail_tracks().row_data(0).unwrap().cover;
+            assert_eq!(cover.size().width, row_bucket);
+            break;
+        }
+        assert!(Instant::now() < deadline, "detail row cover never loaded");
         std::thread::sleep(Duration::from_millis(10));
     }
 }
