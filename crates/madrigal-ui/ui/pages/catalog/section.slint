@@ -15,8 +15,8 @@ export component SectionView inherits VerticalLayout {
     sec-title := Text {
         text: root.section.title;
         color: root.palette.on-surface;
-        font-size: 20px;
-        font-weight: 700;
+        font-size: Type.title-medium.size;
+        font-weight: Type.title-medium.weight;
     }
 
     if (!root.cards) : sec-list := VerticalLayout {

@@ -1,6 +1,8 @@
 import { Palette, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { DownloadRow } from "models.slint";
+import { Cover } from "../../components/cover.slint";
+import { M3IconButton } from "../../components/buttons.slint";
 import { Icon, Icons } from "../../components/icons.slint";
 
 export component DownloadsPage inherits Rectangle {
@@ -14,233 +16,419 @@ export component DownloadsPage inherits Rectangle {
     callback dl-retry(string);
     callback dl-retry-all();
 
+    property<int> total: root.rows.length + root.failed.length;
+    property<bool> is-empty: root.total == 0;
+
+    function state-label(state: int) -> string {
+        return state == 0 ? I18n.trl(I18n.lang, "detail.state.queued")
+            : state == 1 ? I18n.trl(I18n.lang, "detail.state.downloading")
+            : state == 2 ? I18n.trl(I18n.lang, "detail.state.paused")
+            : state == 3 ? I18n.trl(I18n.lang, "downloads.done")
+            : state == 4 ? I18n.trl(I18n.lang, "detail.state.error")
+            : state == 5 ? I18n.trl(I18n.lang, "detail.state.cancelled")
+            : I18n.trl(I18n.lang, "detail.state.queued");
+    }
+
+    function state-color(state: int) -> color {
+        return state == 3 ? root.palette.primary : state == 4 || state == 5 ? root.palette.error : root.palette.on-surface-variant;
+    }
+
     background: root.palette.surface;
     accessible-role: text;
     accessible-label: I18n.trl(I18n.lang, "nav.downloads");
 
     VerticalLayout {
+        width: 100%;
+        height: 100%;
         spacing: 0px;
 
         dl-head := HorizontalLayout {
-            padding: 12px;
+            height: 60px;
+            padding-left: 16px;
+            padding-right: 16px;
             spacing: 8px;
-            alignment: center;
 
             dl-head-title := Text {
                 text: I18n.trl(I18n.lang, "nav.downloads");
                 color: root.palette.on-surface;
                 font-size: Type.headline-small.size;
                 font-weight: Type.headline-small.weight;
+                vertical-alignment: center;
+            }
+
+            dl-head-count := Text {
+                text: "" + root.total;
+                color: root.palette.on-surface-variant;
+                font-size: Type.body-medium.size;
+                vertical-alignment: center;
                 horizontal-stretch: 1;
             }
 
-            retry-all-wrap := Rectangle {
-                height: 36px;
-                width: 150px;
-                border-radius: 18px;
-                background: root.palette.surface-container-highest;
-                visible: root.failed.length > 0;
-                retry-all-label := Text {
-                    x: 0px;
-                    y: 0px;
-                    width: 100%;
-                    height: 100%;
-                    text: I18n.trl(I18n.lang, "common.retry");
-                    color: root.palette.on-surface;
-                    font-size: Type.label-large.size;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
-                }
-                retry-all-touch := TouchArea {
-                    accessible-label: I18n.trl(I18n.lang, "common.retry");
-                    accessible-role: button;
-                    mouse-cursor: pointer;
-                    clicked => { root.dl-retry-all(); }
+            if (!root.is-empty && root.failed.length > 0) : retry-all-frame := Rectangle {
+                width: 140px;
+
+                VerticalLayout {
+                    alignment: center;
+
+                    retry-all-wrap := Rectangle {
+                        height: 36px;
+                        border-radius: 18px;
+                        background: retry-all-touch.has-hover ? root.palette.secondary-container : root.palette.surface-container-highest;
+
+                        retry-all-label := Text {
+                            x: 0px;
+                            y: 0px;
+                            width: 100%;
+                            height: 100%;
+                            text: I18n.trl(I18n.lang, "common.retry");
+                            color: root.palette.on-surface;
+                            font-size: Type.label-large.size;
+                            font-weight: Type.label-large.weight;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+
+                        retry-all-touch := TouchArea {
+                            accessible-label: I18n.trl(I18n.lang, "common.retry");
+                            accessible-role: button;
+                            mouse-cursor: pointer;
+                            clicked => { root.dl-retry-all(); }
+                        }
+                    }
                 }
             }
         }
 
-        dl-body := Flickable {
-            vertical-stretch: 1;
+        if (root.is-empty) : dl-empty-state := Rectangle {
+            height: root.height - 60px;
+
+            dl-empty-col := VerticalLayout {
+                width: 100%;
+                height: 100%;
+                alignment: center;
+                spacing: 12px;
+
+                dl-empty-icon-row := HorizontalLayout {
+                    width: 100%;
+                    alignment: center;
+
+                    dl-empty-icon := Icon {
+                        source: Icons.download;
+                        icon-size: 40px;
+                        colorize: root.palette.on-surface-variant;
+                    }
+                }
+
+                dl-empty := Text {
+                    width: 100%;
+                    text: I18n.trl(I18n.lang, "downloads.empty");
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.body-medium.size;
+                    horizontal-alignment: center;
+                }
+            }
+        }
+
+        if (!root.is-empty) : dl-body := Flickable {
+            height: root.height - 60px;
             content-height: dl-col.preferred-height;
 
             dl-col := VerticalLayout {
                 width: 100%;
                 spacing: 2px;
-                padding: 8px;
+                padding-bottom: 16px;
 
-                dl-empty := Text {
-                    text: I18n.trl(I18n.lang, "downloads.empty");
-                    color: root.palette.on-surface-variant;
-                    font-size: Type.body-medium.size;
-                    horizontal-alignment: center;
-                    visible: root.rows.length == 0 && root.failed.length == 0;
-                }
+                if (root.rows.length > 0) : dl-active-head := HorizontalLayout {
+                    height: 40px;
+                    padding-left: 16px;
+                    padding-right: 16px;
 
-                dl-active-label := Text {
-                    text: I18n.trl(I18n.lang, "downloads.active");
-                    color: root.palette.on-surface-variant;
-                    font-size: Type.title-small.size;
-                    visible: root.rows.length > 0;
+                    dl-active-label := Text {
+                        text: I18n.trl(I18n.lang, "downloads.active") + " (" + root.rows.length + ")";
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.title-small.size;
+                        font-weight: Type.title-small.weight;
+                        vertical-alignment: center;
+                    }
                 }
 
                 for row in root.rows: Rectangle {
-                    height: 72px;
-                    border-radius: 12px;
+                    height: 54px;
                     background: transparent;
 
-                    HorizontalLayout {
-                        padding-left: 12px;
-                        padding-right: 12px;
-                        spacing: 12px;
+                    VerticalLayout {
                         alignment: center;
 
-                        state-label := Icon {
-                            width: 28px;
-                            height: 18px;
-                            source: row.state == 1 ? Icons.download : row.state == 2 ? Icons.pause : row.state == 3 ? Icons.check : row.state == 4 ? Icons.triangle-alert : row.state == 5 ? Icons.circle-x : Icons.loader-circle;
-                            colorize: row.state == 4 || row.state == 5 ? root.palette.error : row.state == 3 ? root.palette.primary : root.palette.on-surface-variant;
-                        }
+                        dl-row := HorizontalLayout {
+                            padding-left: 16px;
+                            padding-right: 16px;
+                            spacing: 12px;
 
-                        dl-texts := VerticalLayout {
-                            spacing: 2px;
-                            alignment: center;
-                            horizontal-stretch: 1;
-                            dl-row-title := Text {
-                                text: row.title;
-                                color: root.palette.on-surface;
-                                font-size: Type.body-large.size;
-                                overflow: elide;
-                            }
-                            dl-sub := Text {
-                                text: row.subtitle;
-                                color: root.palette.on-surface-variant;
-                                font-size: Type.body-medium.size;
-                                overflow: elide;
-                            }
-                            dl-bar := Rectangle {
-                                height: 4px;
-                                border-radius: 2px;
-                                background: root.palette.surface-container-highest;
-                                visible: row.state == 0 || row.state == 1;
-                                dl-fill := Rectangle {
-                                    width: parent.width * clamp(row.progress, 0, 1);
-                                    height: 100%;
-                                    border-radius: 2px;
-                                    background: root.palette.primary;
+                            dl-cover := Rectangle {
+                                width: 36px;
+
+                                VerticalLayout {
+                                    alignment: center;
+
+                                    Cover {
+                                        size: 36px;
+                                        radius: 8px;
+                                        palette: root.palette;
+                                    }
                                 }
                             }
-                        }
 
-                        dl-speed := Text {
-                            text: row.speed;
-                            color: root.palette.on-surface-variant;
-                            font-size: Type.body-medium.size;
-                            vertical-alignment: center;
-                            visible: row.speed != "";
-                        }
+                            dl-texts := VerticalLayout {
+                                spacing: 2px;
+                                alignment: center;
+                                horizontal-stretch: 1;
 
-                        dl-pause-label := Icon {
-                            width: 36px;
-                            height: 18px;
-                            source: Icons.pause;
-                            colorize: root.palette.on-surface-variant;
-                            visible: row.state == 0 || row.state == 1;
-                        }
-                        dl-pause-touch := TouchArea {
-                            accessible-label: I18n.trl(I18n.lang, "action.pauseDownload");
-                            accessible-role: button;
-                            mouse-cursor: pointer;
-                            enabled: row.state == 0 || row.state == 1;
-                            clicked => { root.dl-pause(row.id); }
-                        }
+                                dl-row-title := Text {
+                                    text: row.title;
+                                    color: root.palette.on-surface;
+                                    font-size: Type.body-large.size;
+                                    font-weight: Type.body-large.weight;
+                                    overflow: elide;
+                                }
 
-                        dl-resume-label := Icon {
-                            width: 36px;
-                            height: 18px;
-                            source: Icons.play;
-                            colorize: root.palette.primary;
-                            visible: row.state == 2;
-                        }
-                        dl-resume-touch := TouchArea {
-                            accessible-label: I18n.trl(I18n.lang, "action.resumeDownload");
-                            accessible-role: button;
-                            mouse-cursor: pointer;
-                            enabled: row.state == 2;
-                            clicked => { root.dl-resume(row.id); }
-                        }
+                                dl-sub := Text {
+                                    text: row.subtitle;
+                                    color: root.palette.on-surface-variant;
+                                    font-size: Type.body-medium.size;
+                                    overflow: elide;
+                                }
+                            }
 
-                        dl-cancel-label := Icon {
-                            width: 36px;
-                            height: 18px;
-                            source: Icons.x;
-                            colorize: root.palette.on-surface-variant;
-                            visible: row.state != 3;
-                        }
-                        dl-cancel-touch := TouchArea {
-                            accessible-label: I18n.trl(I18n.lang, "action.cancelDownload");
-                            accessible-role: button;
-                            mouse-cursor: pointer;
-                            enabled: row.state != 3;
-                            clicked => { root.dl-cancel(row.id); }
+                            dl-state-col := Rectangle {
+                                width: 96px;
+
+                                VerticalLayout {
+                                    width: 100%;
+                                    alignment: center;
+
+                                    dl-state := Text {
+                                        width: 100%;
+                                        text: root.state-label(row.state);
+                                        color: root.state-color(row.state);
+                                        font-size: Type.body-medium.size;
+                                        horizontal-alignment: right;
+                                        vertical-alignment: center;
+                                        overflow: elide;
+                                    }
+                                }
+                            }
+
+                            dl-bar-col := Rectangle {
+                                width: 120px;
+
+                                VerticalLayout {
+                                    alignment: center;
+
+                                    if (row.state == 0 || row.state == 1 || row.state == 2) : dl-progress := Rectangle {
+                                        width: 100%;
+                                        height: 4px;
+                                        border-radius: 2px;
+                                        background: root.palette.surface-container-highest;
+
+                                        dl-fill := Rectangle {
+                                            width: parent.width * clamp(row.progress, 0, 1);
+                                            height: 100%;
+                                            border-radius: 2px;
+                                            background: root.palette.primary;
+                                        }
+                                    }
+                                }
+                            }
+
+                            dl-speed-col := Rectangle {
+                                width: 72px;
+
+                                VerticalLayout {
+                                    width: 100%;
+                                    alignment: center;
+
+                                    dl-speed := Text {
+                                        width: 100%;
+                                        text: row.state == 1 ? row.speed : "";
+                                        color: root.palette.on-surface-variant;
+                                        font-size: Type.body-medium.size;
+                                        horizontal-alignment: right;
+                                        vertical-alignment: center;
+                                        overflow: elide;
+                                    }
+                                }
+                            }
+
+                            dl-actions := HorizontalLayout {
+                                width: 92px;
+                                spacing: 12px;
+                                alignment: end;
+
+                                if (row.state == 0 || row.state == 1) : dl-pause-frame := Rectangle {
+                                    width: 40px;
+
+                                    VerticalLayout {
+                                        alignment: center;
+
+                                        dl-pause-label := M3IconButton {
+                                            icon: Icons.pause;
+                                            fill: transparent;
+                                            content: root.palette.on-surface-variant;
+                                            state-on-surface: root.palette.on-surface;
+                                            accessible-label: I18n.trl(I18n.lang, "action.pauseDownload");
+                                            clicked => { root.dl-pause(row.id); }
+                                        }
+                                    }
+                                }
+
+                                if (row.state == 2) : dl-resume-frame := Rectangle {
+                                    width: 40px;
+
+                                    VerticalLayout {
+                                        alignment: center;
+
+                                        dl-resume-label := M3IconButton {
+                                            icon: Icons.play;
+                                            fill: transparent;
+                                            content: root.palette.primary;
+                                            state-on-surface: root.palette.on-surface;
+                                            accessible-label: I18n.trl(I18n.lang, "action.resumeDownload");
+                                            clicked => { root.dl-resume(row.id); }
+                                        }
+                                    }
+                                }
+
+                                if (row.state != 3) : dl-cancel-frame := Rectangle {
+                                    width: 40px;
+
+                                    VerticalLayout {
+                                        alignment: center;
+
+                                        dl-cancel-label := M3IconButton {
+                                            icon: Icons.x;
+                                            fill: transparent;
+                                            content: root.palette.on-surface-variant;
+                                            state-on-surface: root.palette.on-surface;
+                                            accessible-label: I18n.trl(I18n.lang, "action.cancelDownload");
+                                            clicked => { root.dl-cancel(row.id); }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
 
-                dl-failed-label := Text {
-                    text: I18n.trl(I18n.lang, "downloads.failed");
-                    color: root.palette.error;
-                    font-size: Type.title-small.size;
-                    visible: root.failed.length > 0;
+                if (root.failed.length > 0) : dl-failed-head := HorizontalLayout {
+                    height: 40px;
+                    padding-left: 16px;
+                    padding-right: 16px;
+
+                    dl-failed-label := Text {
+                        text: I18n.trl(I18n.lang, "downloads.failed") + " (" + root.failed.length + ")";
+                        color: root.palette.error;
+                        font-size: Type.title-small.size;
+                        font-weight: Type.title-small.weight;
+                        vertical-alignment: center;
+                    }
                 }
 
                 for row in root.failed: Rectangle {
-                    height: 64px;
-                    border-radius: 12px;
+                    height: 54px;
                     background: transparent;
 
-                    HorizontalLayout {
-                        padding-left: 12px;
-                        padding-right: 12px;
-                        spacing: 12px;
+                    VerticalLayout {
                         alignment: center;
 
-                        failed-state-label := Icon {
-                            width: 28px;
-                            height: 18px;
-                            source: row.state == 1 ? Icons.download : row.state == 2 ? Icons.pause : row.state == 3 ? Icons.check : row.state == 4 ? Icons.triangle-alert : row.state == 5 ? Icons.circle-x : Icons.loader-circle;
-                            colorize: root.palette.error;
-                        }
+                        dl-failed-row := HorizontalLayout {
+                            padding-left: 16px;
+                            padding-right: 16px;
+                            spacing: 12px;
 
-                        failed-texts := VerticalLayout {
-                            spacing: 2px;
-                            alignment: center;
-                            horizontal-stretch: 1;
-                            failed-title := Text {
-                                text: row.title;
-                                color: root.palette.on-surface;
-                                font-size: Type.body-large.size;
-                                overflow: elide;
-                            }
-                            failed-sub := Text {
-                                text: row.subtitle;
-                                color: root.palette.error;
-                                font-size: Type.body-medium.size;
-                                overflow: elide;
-                            }
-                        }
+                            dl-failed-cover := Rectangle {
+                                width: 36px;
 
-                        dl-retry-label := Icon {
-                            width: 36px;
-                            height: 18px;
-                            source: Icons.rotate-cw;
-                            colorize: root.palette.primary;
-                        }
-                        dl-retry-touch := TouchArea {
-                            accessible-label: I18n.trl(I18n.lang, "action.retryDownload");
-                            accessible-role: button;
-                            mouse-cursor: pointer;
-                            clicked => { root.dl-retry(row.id); }
+                                VerticalLayout {
+                                    alignment: center;
+
+                                    Cover {
+                                        size: 36px;
+                                        radius: 8px;
+                                        palette: root.palette;
+                                    }
+                                }
+                            }
+
+                            failed-texts := VerticalLayout {
+                                spacing: 2px;
+                                alignment: center;
+                                horizontal-stretch: 1;
+
+                                failed-title := Text {
+                                    text: row.title;
+                                    color: root.palette.on-surface;
+                                    font-size: Type.body-large.size;
+                                    font-weight: Type.body-large.weight;
+                                    overflow: elide;
+                                }
+
+                                failed-sub := Text {
+                                    text: row.subtitle;
+                                    color: root.palette.error;
+                                    font-size: Type.body-medium.size;
+                                    overflow: elide;
+                                }
+                            }
+
+                            dl-retry-state-col := Rectangle {
+                                width: 96px;
+
+                                VerticalLayout {
+                                    width: 100%;
+                                    alignment: center;
+
+                                    dl-retry-state := Text {
+                                        width: 100%;
+                                        text: root.state-label(row.state);
+                                        color: root.palette.error;
+                                        font-size: Type.body-medium.size;
+                                        horizontal-alignment: right;
+                                        vertical-alignment: center;
+                                        overflow: elide;
+                                    }
+                                }
+                            }
+
+                            dl-failed-bar-col := Rectangle {
+                                width: 120px;
+                            }
+
+                            dl-failed-speed-col := Rectangle {
+                                width: 72px;
+                            }
+
+                            dl-retry-actions := HorizontalLayout {
+                                width: 92px;
+                                spacing: 12px;
+                                alignment: end;
+
+                                dl-retry-frame := Rectangle {
+                                    width: 40px;
+
+                                    VerticalLayout {
+                                        alignment: center;
+
+                                        dl-retry-label := M3IconButton {
+                                            icon: Icons.rotate-cw;
+                                            fill: transparent;
+                                            content: root.palette.primary;
+                                            state-on-surface: root.palette.on-surface;
+                                            accessible-label: I18n.trl(I18n.lang, "action.retryDownload");
+                                            clicked => { root.dl-retry(row.id); }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

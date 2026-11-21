@@ -151,6 +151,7 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("detail.today", "Hoy", "Today"),
     ("detail.yesterday", "Ayer", "Yesterday"),
     ("downloads.active", "Activas", "Active"),
+    ("downloads.done", "Completada", "Done"),
     ("downloads.empty", "Sin descargas", "No downloads"),
     ("downloads.failed", "Fallidas", "Failed"),
     ("error.no_internet", "Sin conexión de red", "No network connection"),
