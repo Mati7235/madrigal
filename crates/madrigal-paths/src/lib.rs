@@ -62,6 +62,51 @@ pub fn runtime_dir() -> PathBuf {
     data_dir().join("runtime")
 }
 
+fn config_home() -> PathBuf {
+    match env::var("XDG_CONFIG_HOME") {
+        Ok(value) if !value.trim().is_empty() => PathBuf::from(value.trim()),
+        _ => home_dir().join(".config"),
+    }
+}
+
+fn user_dirs_music() -> Option<PathBuf> {
+    let text = fs::read_to_string(config_home().join("user-dirs.dirs")).ok()?;
+    for line in text.lines() {
+        let line = line.trim();
+        let Some(value) = line.strip_prefix("XDG_MUSIC_DIR=") else {
+            continue;
+        };
+        let value = value.trim().trim_matches('"');
+        if value.is_empty() {
+            continue;
+        }
+        let value = value
+            .replace("${HOME}", &home_dir().to_string_lossy())
+            .replace("$HOME", &home_dir().to_string_lossy());
+        return Some(PathBuf::from(value));
+    }
+    None
+}
+
+pub fn music_dir() -> PathBuf {
+    if let Some(root) = profile_root() {
+        if let Ok(value) = env::var("XDG_MUSIC_DIR") {
+            let path = PathBuf::from(value.trim());
+            if !value.trim().is_empty() && path.starts_with(&root) {
+                return path;
+            }
+        }
+        return root.join("music");
+    }
+    if let Ok(value) = env::var("XDG_MUSIC_DIR") {
+        let path = PathBuf::from(value.trim());
+        if !value.trim().is_empty() {
+            return path;
+        }
+    }
+    user_dirs_music().unwrap_or_else(|| home_dir().join("Music"))
+}
+
 pub fn valid_profile_id(id: &str) -> bool {
     let bytes = id.as_bytes();
     if bytes.is_empty() || bytes.len() > 32 {
