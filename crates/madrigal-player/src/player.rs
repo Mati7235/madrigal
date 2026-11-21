@@ -66,6 +66,7 @@ pub struct Player<S: StreamSource> {
     generation: u64,
     awaiting: Option<u64>,
     resolver: Option<Resolver>,
+    last_error_log: Option<String>,
 }
 
 const LOAD_GRACE: Duration = Duration::from_secs(2);
@@ -85,6 +86,7 @@ impl<S: StreamSource> Player<S> {
             generation: 0,
             awaiting: None,
             resolver: None,
+            last_error_log: None,
         }
     }
 
@@ -251,6 +253,7 @@ impl<S: StreamSource> Player<S> {
                 Ok(false)
             }
             EngineEvent::EndFile(reason) => self.on_end_file(*reason),
+            EngineEvent::Error(detail) => self.on_failure(detail.clone()),
             _ => Ok(false),
         }
     }
@@ -266,6 +269,12 @@ impl<S: StreamSource> Player<S> {
                 }
                 EngineEvent::EndFile(reason) => {
                     advanced = self.on_end_file(reason)? || advanced;
+                }
+                EngineEvent::WarnLog { prefix, text } => {
+                    self.last_error_log = Some(format!("{prefix}: {}", text.trim()));
+                }
+                EngineEvent::Error(detail) => {
+                    advanced = self.on_failure(detail)? || advanced;
                 }
                 _ => {}
             }
@@ -295,9 +304,23 @@ impl<S: StreamSource> Player<S> {
                 }
                 self.next_track()
             }
-            EndReason::Error => self.skip_next(),
+            EndReason::Error => {
+                let detail = self
+                    .last_error_log
+                    .take()
+                    .unwrap_or_else(|| "playback failed".to_owned());
+                self.on_failure(detail)
+            }
             _ => Ok(false),
         }
+    }
+
+    fn on_failure(&mut self, detail: String) -> Result<bool, Error> {
+        self.pending = None;
+        if self.skip_next()? {
+            return Ok(true);
+        }
+        Err(Error::Mpv(detail))
     }
 
     fn skip_next(&mut self) -> Result<bool, Error> {
@@ -315,6 +338,7 @@ impl<S: StreamSource> Player<S> {
         self.generation = self.generation.wrapping_add(1);
         self.awaiting = None;
         self.pending = None;
+        self.last_error_log = None;
         if self.source.resolves_remotely(&track) {
             self.engine.stop()?;
             return self.request_resolve(track);

@@ -544,6 +544,13 @@ background threads and bounds every call that can hang (`connect`,
 with `desktop::DBUS_TIMEOUT` (3 s), so boot never waits and shutdown waits at
 most one timeout before the feature stays off.
 
+## mpv end-of-file errors
+
+`libmpv2` 6 reports an `EndFile` event that carries a negative `error` code as
+`Err(mpv_error)` from `wait_event`, not as `Event::EndFile`. The engine maps
+that to `EngineEvent::Error` (with the last mpv error log line as detail);
+dropping it leaves playback stalled with no error to show.
+
 ## Provenance
 
 Madrigal is an independent reimplementation of the Android app's behavior and

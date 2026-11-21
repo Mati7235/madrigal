@@ -31,6 +31,7 @@ pub enum EngineEvent {
     PlaylistPos(i64),
     Position(f64),
     WarnLog { prefix: String, text: String },
+    Error(String),
     Shutdown,
 }
 
@@ -59,6 +60,7 @@ struct LogRecord {
 
 struct Shared {
     logs: Mutex<VecDeque<LogRecord>>,
+    last_error: Mutex<Option<String>>,
     next_seq: AtomicU64,
     stop: AtomicBool,
 }
@@ -98,6 +100,7 @@ impl Engine {
         let (tx, rx) = mpsc::channel();
         let shared = Arc::new(Shared {
             logs: Mutex::new(VecDeque::new()),
+            last_error: Mutex::new(None),
             next_seq: AtomicU64::new(1),
             stop: AtomicBool::new(false),
         });
@@ -252,6 +255,17 @@ impl Engine {
         &self.events
     }
 
+    pub fn logs(&self) -> Vec<String> {
+        self.shared.logs.lock().map_or_else(
+            |_| Vec::new(),
+            |logs| {
+                logs.iter()
+                    .map(|record| format!("{}: {}", record.prefix, record.text.trim()))
+                    .collect()
+            },
+        )
+    }
+
     pub fn drain(&self) -> Vec<EngineEvent> {
         let mut out = Vec::new();
         while let Ok(event) = self.events.try_recv() {
@@ -314,11 +328,13 @@ fn event_loop(events: Mpv, tx: mpsc::Sender<EngineEvent>, shared: &Shared) {
                 }
             }
             Some(Err(err)) => {
-                let out = EngineEvent::WarnLog {
-                    prefix: "event-loop".to_owned(),
-                    text: err.to_string(),
-                };
-                if tx.send(out).is_err() {
+                let detail = shared
+                    .last_error
+                    .lock()
+                    .ok()
+                    .and_then(|mut error| error.take())
+                    .unwrap_or_else(|| describe_error(&err));
+                if tx.send(EngineEvent::Error(detail)).is_err() {
                     break;
                 }
             }
@@ -352,7 +368,7 @@ fn translate(event: &Event<'_>, shared: &Shared) -> Option<EngineEvent> {
             text,
             ..
         } => {
-            push_log(shared, prefix, text);
+            push_log(shared, prefix, level, text);
             if matches!(*level, "warn" | "error" | "fatal") {
                 Some(EngineEvent::WarnLog {
                     prefix: (*prefix).to_owned(),
@@ -367,7 +383,24 @@ fn translate(event: &Event<'_>, shared: &Shared) -> Option<EngineEvent> {
     }
 }
 
-fn push_log(shared: &Shared, prefix: &str, text: &str) {
+fn describe_error(err: &libmpv2::Error) -> String {
+    match err {
+        libmpv2::Error::Raw(code) if *code == libmpv2::mpv_error::AoInitFailed => {
+            "audio output initialization failed".to_owned()
+        }
+        libmpv2::Error::Raw(code) if *code == libmpv2::mpv_error::LoadingFailed => {
+            "loading failed".to_owned()
+        }
+        other => other.to_string(),
+    }
+}
+
+fn push_log(shared: &Shared, prefix: &str, level: &str, text: &str) {
+    if matches!(level, "error" | "fatal") {
+        if let Ok(mut error) = shared.last_error.lock() {
+            *error = Some(text.trim().to_owned());
+        }
+    }
     if let Ok(mut logs) = shared.logs.lock() {
         let seq = shared.next_seq.fetch_add(1, Ordering::SeqCst);
         logs.push_back(LogRecord {

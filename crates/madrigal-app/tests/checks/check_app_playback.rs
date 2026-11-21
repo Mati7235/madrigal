@@ -2,11 +2,13 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
 
-use madrigal_app::playback::{track_from_file, Playback};
+use madrigal_app::desktop::{Desktop, ERROR_CODE};
+use madrigal_app::playback::{track_from_file, Playback, PlaybackService};
 use madrigal_app::state::AppState;
 use madrigal_player::engine::EngineConfig;
-use madrigal_settings::{Player as PlayerConfig, RepeatMode};
+use madrigal_settings::{Player as PlayerConfig, RepeatMode, Settings};
 use madrigal_testkit as kit;
+use madrigal_ui::MainShell;
 
 fn have_ffmpeg() -> bool {
     Command::new("ffmpeg")
@@ -271,6 +273,39 @@ fn app_playback() {
     shell.invoke_shuffle_toggled();
     assert!(shell.get_shuffle());
     shell.invoke_next_requested();
+
+    drop(app);
+
+    let broken = EngineConfig {
+        vo: "null".to_owned(),
+        ao: "madrigal-missing-ao".to_owned(),
+        gapless_audio: false,
+    };
+    let streams = madrigal_app::streams::orchestrator().expect("orchestrator");
+    let playback =
+        Playback::open(broken, &PlayerConfig::default(), streams).expect("open broken engine");
+    let service = PlaybackService::start(playback);
+    let shell = MainShell::new().expect("shell");
+    let _desktop = Desktop::start(&shell, service.core(), &Settings::default());
+    {
+        let core = service.core();
+        let mut playback = core.lock().expect("playback core");
+        let (added, errors) = playback.enqueue_files(std::slice::from_ref(&wav));
+        assert_eq!(added, 1);
+        assert!(errors.is_empty(), "{errors:?}");
+    }
+    let started = Instant::now();
+    while started.elapsed() < Duration::from_secs(5) && shell.get_error_code().is_empty() {
+        kit::mock_advance(Duration::from_millis(250));
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    assert_eq!(shell.get_error_code().as_str(), ERROR_CODE);
+    assert!(
+        shell.get_error_message().contains("audio device"),
+        "unexpected error: {}",
+        shell.get_error_message()
+    );
+    assert_eq!(shell.get_player_dialog(), 4, "error dialog not open");
 
     println!("OK app_playback");
 }
