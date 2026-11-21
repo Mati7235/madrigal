@@ -119,9 +119,15 @@ UPDATE playlists SET track_count = (SELECT COUNT(*) FROM playlist_tracks pt WHER
 CREATE INDEX playlists_updated_at ON playlists(updated_at DESC);
 ";
 
+const MIGRATION_V3: &str = "
+ALTER TABLE events ADD COLUMN title TEXT;
+ALTER TABLE events ADD COLUMN artist TEXT;
+";
+
 static MIGRATION_STEPS: &[rusqlite_migration::M<'_>] = &[
     rusqlite_migration::M::up(MIGRATION_V1),
     rusqlite_migration::M::up(MIGRATION_V2),
+    rusqlite_migration::M::up(MIGRATION_V3),
 ];
 
 fn migrations() -> rusqlite_migration::Migrations<'static> {
@@ -580,13 +586,24 @@ pub fn tag_playlist(conn: &Connection, playlist: &PlaylistId, tag: &str) -> Resu
 }
 
 pub fn record_event(conn: &Connection, event: &Event) -> Result<()> {
+    record_event_meta(conn, event, None, None)
+}
+
+pub fn record_event_meta(
+    conn: &Connection,
+    event: &Event,
+    title: Option<&str>,
+    artist: Option<&str>,
+) -> Result<()> {
     conn.execute(
-        "INSERT INTO events (track_key, played_at, duration_secs, completed) VALUES (?1, ?2, ?3, ?4)",
+        "INSERT INTO events (track_key, played_at, duration_secs, completed, title, artist) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
         params![
             event.track.to_storage_string(),
             event.played_at,
             event.duration_secs,
             event.completed as i64,
+            title.filter(|value| !value.trim().is_empty()),
+            artist.filter(|value| !value.trim().is_empty()),
         ],
     )?;
     Ok(())

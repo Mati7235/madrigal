@@ -27,7 +27,7 @@ fn fresh_db_migrates_to_latest_and_reopen_is_idempotent() {
 
     let conn = open(&path).expect("open fresh");
     assert_eq!(user_version(&conn).unwrap(), latest_version() as i64);
-    assert_eq!(latest_version(), 2);
+    assert_eq!(latest_version(), 3);
     let tables: Vec<String> = conn
         .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
         .unwrap()

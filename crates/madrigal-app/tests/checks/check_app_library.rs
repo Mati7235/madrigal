@@ -99,9 +99,18 @@ fn worker_drives_lists_likes_history_and_filters() {
 
     obs.tab = HISTORY_TAB;
     let models = worker.handle(obs.clone()).expect("history refresh");
-    let titles: Vec<String> = models.history.iter().map(|row| row.title.to_string()).collect();
-    assert_eq!(titles, vec![tracks[1].title.clone()], "{:?}", tracks.iter().map(|t| t.title.clone()).collect::<Vec<_>>());
-    assert_eq!(models.history[0].title.as_str(), tracks[1].title.as_str());
+    let titles: Vec<String> = models
+        .history
+        .iter()
+        .map(|row| row.title.to_string())
+        .collect();
+    assert_eq!(
+        titles,
+        vec![tracks[3].title.clone(), tracks[1].title.clone()],
+        "{:?}",
+        tracks.iter().map(|t| t.title.clone()).collect::<Vec<_>>()
+    );
+    assert_eq!(models.history[0].title.as_str(), tracks[3].title.as_str());
 
     obs.action_count += 1;
     obs.last_action = "history-cleared".to_owned();

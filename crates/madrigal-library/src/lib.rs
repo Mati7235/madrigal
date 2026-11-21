@@ -3,6 +3,7 @@ mod playlists;
 mod songs;
 mod stats;
 
+pub use history::HistoryEntry;
 pub use playlists::{
     AddReport, AutoPlaylist, DuplicatePolicy, PlaylistCapabilities, PlaylistListFilter,
     PlaylistOrder, PlaylistOrigin, PlaylistOriginFilter, PlaylistQuery, PlaylistSummary,

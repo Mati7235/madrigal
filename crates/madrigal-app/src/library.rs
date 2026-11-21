@@ -20,6 +20,7 @@ use crate::store::Store;
 use crate::ui::lang_from_settings;
 
 const POLL_INTERVAL: Duration = Duration::from_millis(250);
+const HISTORY_MIN_PLAY_MS: i32 = 5_000;
 
 const SORT_KEYS: [&str; 5] = [
     "library.sort.recent",
@@ -43,6 +44,8 @@ pub struct Observed {
     pub like_count: i32,
     pub track_id: String,
     pub track_source: i32,
+    pub track_title: String,
+    pub track_artist: String,
     pub position_ms: i32,
     pub duration_ms: i32,
 }
@@ -156,8 +159,11 @@ pub fn build_models(conn: &Connection, settings: &Settings, view: &LibraryView) 
 
 struct Current {
     identity: TrackIdentity,
+    title: String,
+    artist: String,
     max_ms: i32,
     duration_ms: i32,
+    recorded: bool,
 }
 
 pub struct Worker {
@@ -225,18 +231,36 @@ impl Worker {
         if obs.action_count != self.seen.action_count {
             dirty |= self.action(&obs.last_action, &obs.last_arg, obs.multiselect);
         }
+            }
+        }
+            }
+        }
+            }
+        }
         if obs.track_id != self.seen.track_id || obs.track_source != self.seen.track_source {
             self.finish_current();
-            self.current = track_identity(obs.track_source, &obs.track_id).map(|identity| Current {
-                identity,
-                max_ms: 0,
-                duration_ms: 0,
-            });
+            self.current =
+                track_identity(obs.track_source, &obs.track_id).map(|identity| Current {
+                    identity,
+                    title: obs.track_title.clone(),
+                    artist: obs.track_artist.clone(),
+                    max_ms: 0,
+                    duration_ms: 0,
+                    recorded: false,
+                });
             dirty = true;
         }
         if let Some(current) = self.current.as_mut() {
             current.max_ms = current.max_ms.max(obs.position_ms);
             current.duration_ms = current.duration_ms.max(obs.duration_ms);
+        }
+        if self
+            .current
+            .as_ref()
+            .is_some_and(|current| !current.recorded && current.max_ms >= HISTORY_MIN_PLAY_MS)
+        {
+            self.finish_current_early();
+            dirty = true;
         }
         if obs.like_count != self.seen.like_count {
             self.toggle_current_like();
@@ -315,10 +339,40 @@ impl Worker {
         }
     }
 
+    fn finish_current_early(&mut self) {
+        let Some(mut current) = self.current.take() else {
+            return;
+        };
+        if current.recorded {
+            self.current = Some(current);
+            return;
+        }
+        current.recorded = true;
+        let duration_secs = (current.duration_ms / 1000).max(0) as u64;
+        let event = Event {
+            track: current.identity.clone(),
+            played_at: madrigal_library::now_unix(),
+            duration_secs: Some(duration_secs as u32),
+            completed: current.max_ms + 2000 >= current.duration_ms,
+        };
+        {
+            let lib = self.library();
+            if let Err(err) =
+                lib.record_play_meta(&event, Some(&current.title), Some(&current.artist))
+            {
+                eprintln!("library: record play: {err}");
+            }
+        }
+        self.current = Some(current);
+    }
+
     fn finish_current(&mut self) {
         let Some(current) = self.current.take() else {
             return;
         };
+        if current.recorded {
+            return;
+        }
         let duration_secs = (current.duration_ms / 1000).max(0) as u64;
         let played_secs = (current.max_ms / 1000).max(0) as u64;
         let eligibility = Eligibility::from_integrations(&self.settings.integrations);
@@ -331,7 +385,10 @@ impl Worker {
             duration_secs: Some(duration_secs as u32),
             completed: current.max_ms + 2000 >= current.duration_ms,
         };
-        if let Err(err) = self.library().record_play(&event) {
+        if let Err(err) =
+            self.library()
+                .record_play_meta(&event, Some(&current.title), Some(&current.artist))
+        {
             eprintln!("library: record play: {err}");
         }
     }
@@ -356,6 +413,8 @@ fn observe(shell: &MainShell) -> Observed {
         like_count: shell.get_like_count(),
         track_id: shell.get_track_id().to_string(),
         track_source: shell.get_track_source(),
+        track_title: shell.get_track_title().to_string(),
+        track_artist: shell.get_track_artist().to_string(),
         position_ms: shell.get_position_ms(),
         duration_ms: shell.get_duration_ms(),
     }

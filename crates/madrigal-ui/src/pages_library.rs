@@ -212,16 +212,24 @@ pub fn history_rows(lib: &madrigal_library::Library<'_>) -> Vec<HistoryRow> {
             (key, (track.title.clone(), artist))
         })
         .collect();
-    lib.listen_history(100)
+    lib.listen_history_entries(100)
         .unwrap_or_default()
         .into_iter()
-        .map(|event| {
-            let key = event.track.to_storage_string();
-            let (title, artist) = titles.get(&key).cloned().unwrap_or((key.clone(), String::new()));
+        .map(|entry| {
+            let key = entry.event.track.to_storage_string();
+            let fallback = titles.get(&key);
+            let title = entry
+                .title
+                .or_else(|| fallback.map(|(title, _)| title.clone()))
+                .unwrap_or_else(|| key.clone());
+            let artist = entry
+                .artist
+                .or_else(|| fallback.map(|(_, artist)| artist.clone()))
+                .unwrap_or_default();
             HistoryRow {
                 id: key.into(),
                 title: title.into(),
-                subtitle: format!("{artist} · {}", day_clock(event.played_at)).into(),
+                subtitle: format!("{artist} · {}", day_clock(entry.event.played_at)).into(),
             }
         })
         .collect()

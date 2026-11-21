@@ -3,31 +3,59 @@ use rusqlite::params;
 
 use crate::{Error, Library, Result};
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct HistoryEntry {
+    pub event: Event,
+    pub title: Option<String>,
+    pub artist: Option<String>,
+}
+
 impl<'a> Library<'a> {
     pub fn record_play(&self, event: &Event) -> Result<bool> {
+        self.record_play_meta(event, None, None)
+    }
+
+    pub fn record_play_meta(
+        &self,
+        event: &Event,
+        title: Option<&str>,
+        artist: Option<&str>,
+    ) -> Result<bool> {
         if !event.is_valid() {
             return Err(Error::Invalid("event is not valid".to_owned()));
         }
         if self.settings().privacy.pause_listen_history {
             return Ok(false);
         }
-        madrigal_db::record_event(self.conn, event)?;
+        madrigal_db::record_event_meta(self.conn, event, title, artist)?;
         Ok(true)
     }
 
     pub fn listen_history(&self, limit: usize) -> Result<Vec<Event>> {
+        Ok(self
+            .listen_history_entries(limit)?
+            .into_iter()
+            .map(|entry| entry.event)
+            .collect())
+    }
+
+    pub fn listen_history_entries(&self, limit: usize) -> Result<Vec<HistoryEntry>> {
         let mut stmt = self.conn.prepare(
-            "SELECT track_key, played_at, duration_secs, completed FROM events WHERE played_at >= ?1 ORDER BY played_at DESC LIMIT ?2",
+            "SELECT track_key, played_at, duration_secs, completed, title, artist FROM events WHERE played_at >= ?1 ORDER BY played_at DESC, rowid DESC LIMIT ?2",
         )?;
         let events = stmt
             .query_map(params![self.history_cutoff(), limit as i64], |row| {
                 let key: String = row.get("track_key")?;
                 let completed: i64 = row.get("completed")?;
-                Ok(Event {
-                    track: madrigal_core::TrackIdentity::parse_prefixed(&key),
-                    played_at: row.get("played_at")?,
-                    duration_secs: row.get("duration_secs")?,
-                    completed: completed != 0,
+                Ok(HistoryEntry {
+                    event: Event {
+                        track: madrigal_core::TrackIdentity::parse_prefixed(&key),
+                        played_at: row.get("played_at")?,
+                        duration_secs: row.get("duration_secs")?,
+                        completed: completed != 0,
+                    },
+                    title: row.get("title")?,
+                    artist: row.get("artist")?,
                 })
             })?
             .collect::<rusqlite::Result<Vec<_>>>()?;
