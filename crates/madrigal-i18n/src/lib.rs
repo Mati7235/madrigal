@@ -235,7 +235,7 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("player.lyricsLoading", "Buscando letras…", "Searching for lyrics…"),
     ("player.lyricsPlain", "Letra · %1", "Lyrics · %1"),
     ("player.lyricsSynced", "Letra sincronizada · %1", "Synced lyrics · %1"),
-    ("player.noLyrics", "No hay letras disponibles para esta pista.", "No lyrics are available for this track."),
+    ("player.noLyrics", "Sin letra", "No lyrics"),
     ("player.noTrack", "Sin reproducción", "Not playing"),
     ("player.nowPlaying", "En reproducción", "Now playing"),
     ("player.panelTitle", "Tu música", "Your music"),

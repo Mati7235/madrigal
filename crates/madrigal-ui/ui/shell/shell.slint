@@ -809,8 +809,9 @@ export component MainShell inherits Window {
     }
 
     full-layer := FullPlayer {
+        y: 0px;
         width: 100%;
-        height: 100%;
+        height: root.height - 96px;
         visible: root.full-player-open;
         palette: root.palette;
         title: root.track-title;

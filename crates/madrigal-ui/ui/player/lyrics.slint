@@ -1,4 +1,4 @@
-import { Palette, Type } from "../tokens.slint";
+import { Palette, Spacing, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
 import { M3IconButton } from "../components/buttons.slint";
 import { Icons } from "../components/icons.slint";
@@ -19,97 +19,105 @@ export component LyricsView inherits Rectangle {
     accessible-role: AccessibleRole.list;
     accessible-label: I18n.trl(I18n.lang, "player.tab.lyrics");
 
-    VerticalLayout {
-        padding: 12px;
-        spacing: 4px;
+    property<length> head-h: 64px + Spacing.s8;
+    property<length> tab-h: 36px;
 
-        lyrics-head := HorizontalLayout {
-            spacing: 8px;
+    lyrics-head := Rectangle {
+        x: 0px;
+        y: 0px;
+        width: 100%;
+        height: root.head-h;
 
-            lyrics-title := Text {
-                text: I18n.trl(I18n.lang, "player.tab.lyrics");
-                color: root.palette.on-surface;
-                font-size: Type.title-large.size;
-                horizontal-stretch: 1;
-                vertical-alignment: center;
-            }
-
-            lyrics-share := M3IconButton {
-                icon: Icons.save;
-                icon-color: root.palette.on-surface-variant;
-                content: root.palette.on-surface-variant;
-                state-on-surface: root.palette.on-surface;
-                clicked => { root.share-requested(); }
-            }
+        lyrics-share := M3IconButton {
+            x: parent.width - 40px;
+            y: Spacing.s24 + (root.tab-h - self.height) / 2;
+            icon: Icons.save;
+            icon-color: root.palette.on-surface-variant;
+            content: root.palette.on-surface-variant;
+            state-on-surface: root.palette.on-surface;
+            accessible-label: I18n.trl(I18n.lang, "player.shareLyrics");
+            clicked => { root.share-requested(); }
         }
+    }
 
-        lyrics-empty := Text {
-            text: I18n.trl(I18n.lang, "player.noLyrics");
-            color: root.palette.on-surface-variant;
-            font-size: Type.body-medium.size;
-            wrap: word-wrap;
-            visible: root.rows.length == 0;
-        }
+    lyrics-empty := Text {
+        x: 0px;
+        y: root.head-h;
+        width: 100%;
+        height: parent.height - root.head-h;
+        text: I18n.trl(I18n.lang, "player.noLyrics");
+        color: root.palette.on-surface-variant;
+        font-size: Type.title-medium.size;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        visible: root.rows.length == 0;
+    }
 
-        lyrics-list := Rectangle {
-            vertical-stretch: 1;
-            clip: true;
+    lyrics-list := Flickable {
+        x: 0px;
+        y: root.head-h;
+        width: 100%;
+        height: parent.height - root.head-h;
+        content-width: self.width;
+        content-height: lyrics-rows.preferred-height;
+        visible: root.rows.length > 0;
 
-            lyrics-rows := VerticalLayout {
-                x: 0px;
-                y: 0px;
+        lyrics-rows := VerticalLayout {
+            x: 0px;
+            y: 0px;
+            width: 100%;
+            spacing: (root.spacing-mult * 8) * 1px;
+
+            for idx in root.rows.length: line-col := Rectangle {
                 width: 100%;
-                spacing: 4px;
+                height: line-content.preferred-height;
 
-                for idx in root.rows.length: line-col := Rectangle {
-                    height: (root.rows[idx].translation == "" ? root.font-px * 1.8 + 14 : root.font-px * 3.0 + 18) * 1px;
-                    clip: true;
+                line-content := VerticalLayout {
+                    x: 0px;
+                    y: 0px;
+                    width: 100%;
+                    spacing: 2px;
 
-                    VerticalLayout {
-                        x: 0px;
-                        y: 0px;
+                    line-main := Text {
+                        text: root.rows[idx].text;
+                        color: idx == root.active-line ? root.palette.primary : root.palette.on-surface-variant;
+                        font-size: root.font-px * 1px;
+                        font-weight: idx == root.active-line ? Type.title-medium.weight : Type.body-large.weight;
+                        wrap: word-wrap;
                         width: 100%;
-                        spacing: 2px;
-                        padding-top: (root.spacing-mult * 2) * 1px;
+                    }
 
-                        line-main := Text {
-                            text: root.rows[idx].text;
-                            color: idx == root.active-line ? root.palette.primary : root.palette.on-surface;
-                            font-size: root.font-px * 1px;
-                            font-weight: idx == root.active-line ? 600 : 400;
-                            wrap: word-wrap;
-                        }
+                    line-trans := Text {
+                        text: root.rows[idx].translation;
+                        color: root.palette.on-surface-variant;
+                        font-size: root.font-px * 0.85px;
+                        wrap: word-wrap;
+                        width: 100%;
+                        height: root.rows[idx].translation == "" ? 0px : self.preferred-height;
+                        visible: root.rows[idx].translation != "";
+                    }
 
-                        line-trans := Text {
-                            text: root.rows[idx].translation;
-                            color: root.palette.on-surface-variant;
-                            font-size: root.font-px * 0.85px;
-                            wrap: word-wrap;
-                            visible: root.rows[idx].translation != "";
-                        }
+                    line-sweep := Rectangle {
+                        width: min(parent.width, 420px);
+                        height: idx == root.active-line ? 3px : 0px;
+                        border-radius: 2px;
+                        background: root.palette.surface-container-highest;
 
-                        line-sweep := Rectangle {
-                            height: 3px;
+                        line-fill := Rectangle {
+                            width: parent.width * clamp(root.word-progress, 0, 1);
+                            height: 100%;
                             border-radius: 2px;
-                            background: root.palette.surface-container-highest;
-                            visible: idx == root.active-line;
-
-                            line-fill := Rectangle {
-                                width: parent.width * clamp(root.word-progress, 0, 1);
-                                height: 100%;
-                                border-radius: 2px;
-                                background: root.palette.primary;
-                            }
+                            background: root.palette.primary;
                         }
                     }
+                }
 
-                    line-touch := TouchArea {
-                        width: 100%;
-                        height: 100%;
-                        enabled: root.click-seek;
-                        mouse-cursor: root.click-seek ? pointer : default;
-                        clicked => { root.line-seek(root.rows[idx].start); }
-                    }
+                line-touch := TouchArea {
+                    width: 100%;
+                    height: 100%;
+                    enabled: root.click-seek;
+                    mouse-cursor: root.click-seek ? pointer : default;
+                    clicked => { root.line-seek(root.rows[idx].start); }
                 }
             }
         }

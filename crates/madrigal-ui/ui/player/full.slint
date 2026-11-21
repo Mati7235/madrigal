@@ -1,8 +1,8 @@
-import { Palette, Type } from "../tokens.slint";
+import { Palette, Shape, Spacing, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
 import { M3IconButton } from "../components/buttons.slint";
 import { Cover } from "../components/cover.slint";
-import { Icons } from "../components/icons.slint";
+import { Icon, Icons } from "../components/icons.slint";
 import { LyricsView } from "lyrics.slint";
 import { LyricLineRow } from "models.slint";
 
@@ -56,6 +56,10 @@ export component FullPlayer inherits Rectangle {
     property<string> pos-text: Math.floor(root.pos-s / 60) + ":" + (Math.mod(root.pos-s, 60) < 10 ? "0" : "") + Math.mod(root.pos-s, 60);
     property<string> dur-text: Math.floor(root.dur-s / 60) + ":" + (Math.mod(root.dur-s, 60) < 10 ? "0" : "") + Math.mod(root.dur-s, 60);
     property<image> repeat-icon: root.repeat-mode == 1 ? Icons.repeat-1 : Icons.repeat;
+    property<length> left-w: max(520px, root.width * 0.4);
+    property<length> art-size: min(420px, root.left-w - Spacing.s48);
+    property<length> right-x: root.left-w + Spacing.s32;
+    property<length> band-h: 64px;
 
     tick := Timer {
         interval: 16ms;
@@ -79,11 +83,11 @@ export component FullPlayer inherits Rectangle {
     }
 
     bg-glow := Rectangle {
-        x: 60px;
-        y: 90px;
+        x: Spacing.s48;
+        y: 64px + Spacing.s48;
         width: 320px;
         height: 320px;
-        border-radius: 40px;
+        border-radius: Shape.extra-large;
         background: transparent;
         border-width: root.bg-style == 3 ? 3px : 0px;
         border-color: root.palette.primary;
@@ -91,106 +95,170 @@ export component FullPlayer inherits Rectangle {
     }
 
     VerticalLayout {
-        padding: 20px;
-        spacing: 10px;
+        x: Spacing.s16;
+        y: 0px;
+        width: root.width - 2 * Spacing.s16;
+        height: 100%;
+        spacing: 0px;
 
         full-head := HorizontalLayout {
-            spacing: 8px;
+            width: 100%;
+            height: 64px;
+            spacing: Spacing.s8;
 
-            full-close := M3IconButton {
-                icon: Icons.chevron-down;
-                icon-color: root.palette.on-surface-variant;
-                content: root.palette.on-surface-variant;
-                state-on-surface: root.palette.on-surface;
-                clicked => { root.close-clicked(); }
+            close-box := Rectangle {
+                width: 40px;
+
+                VerticalLayout {
+                    alignment: center;
+
+                    full-close := M3IconButton {
+                        icon: Icons.chevron-down;
+                        icon-color: root.palette.on-surface-variant;
+                        content: root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        accessible-label: I18n.trl(I18n.lang, "action.close");
+                        clicked => { root.close-clicked(); }
+                    }
+                }
             }
 
             full-head-texts := VerticalLayout {
-                spacing: 0px;
                 horizontal-stretch: 1;
+                alignment: center;
+                spacing: 0px;
 
                 full-head-title := Text {
                     text: I18n.trl(I18n.lang, "player.fullscreen");
                     color: root.palette.on-surface;
                     font-size: Type.title-large.size;
+                    font-weight: Type.title-large-emphasized.weight;
                     vertical-alignment: center;
+                    width: 100%;
+                    overflow: elide;
                 }
 
                 full-head-album := Text {
                     text: root.has-track ? root.album : I18n.trl(I18n.lang, "player.nowPlaying");
                     color: root.palette.on-surface-variant;
                     font-size: Type.body-medium.size;
+                    vertical-alignment: center;
+                    width: 100%;
                     overflow: elide;
                 }
             }
 
-            full-info := M3IconButton {
-                icon: Icons.info;
-                icon-color: root.palette.on-surface-variant;
-                content: root.palette.on-surface-variant;
-                state-on-surface: root.palette.on-surface;
-                clicked => { root.info-clicked(); }
+            info-box := Rectangle {
+                width: 40px;
+
+                VerticalLayout {
+                    alignment: center;
+
+                    full-info := M3IconButton {
+                        icon: Icons.info;
+                        icon-color: root.palette.on-surface-variant;
+                        content: root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        accessible-label: I18n.trl(I18n.lang, "stream.title");
+                        clicked => { root.info-clicked(); }
+                    }
+                }
             }
 
-            full-like := M3IconButton {
-                icon: root.liked ? Icons.star-filled : Icons.heart;
-                icon-color: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
-                selected: root.liked;
-                fill: root.liked ? root.palette.primary : transparent;
-                content: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
-                state-on-surface: root.palette.on-surface;
-                clicked => { root.like-clicked(); }
+            like-box := Rectangle {
+                width: 40px;
+
+                VerticalLayout {
+                    alignment: center;
+
+                    full-like := M3IconButton {
+                        icon: root.liked ? Icons.star-filled : Icons.heart;
+                        icon-color: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
+                        selected: root.liked;
+                        fill: root.liked ? root.palette.primary : transparent;
+                        content: root.liked ? root.palette.on-primary : root.palette.on-surface-variant;
+                        state-on-surface: root.palette.on-surface;
+                        accessible-label: I18n.trl(I18n.lang, "action.favorite");
+                        clicked => { root.like-clicked(); }
+                    }
+                }
             }
         }
 
-        full-body := HorizontalLayout {
-            spacing: 20px;
+        full-body := Rectangle {
+            width: 100%;
             vertical-stretch: 1;
+            clip: true;
 
             full-left := VerticalLayout {
-                width: 380px;
-                spacing: 10px;
+                x: 0px;
+                width: root.left-w;
+                height: 100%;
                 alignment: center;
+                spacing: 0px;
 
-                full-art := Cover {
-                    size: 300px;
-                    radius: 24px;
-                    round: root.bg-style == 2;
-                    source: root.cover;
-                    palette: root.palette;
+                art-wrap := Rectangle {
+                    width: 100%;
+                    height: root.art-size;
+
+                    full-art := Cover {
+                        x: (parent.width - self.width) / 2;
+                        size: root.art-size;
+                        radius: Shape.extra-large;
+                        round: root.bg-style == 2;
+                        source: root.cover;
+                        palette: root.palette;
+                    }
                 }
 
-                full-title := Text {
-                    text: root.has-track ? root.title : I18n.trl(I18n.lang, "player.noTrack");
-                    color: root.palette.on-surface;
-                    font-size: Type.headline-small.size;
-                    horizontal-alignment: center;
-                    overflow: elide;
+                full-texts := VerticalLayout {
                     width: 100%;
-                }
+                    padding-top: Spacing.s24;
+                    spacing: Spacing.s4;
 
-                full-artist := Text {
-                    text: root.has-track ? root.artist : "";
-                    color: root.palette.on-surface-variant;
-                    font-size: Type.title-medium.size;
-                    horizontal-alignment: center;
-                    overflow: elide;
-                    width: 100%;
+                    full-title := Text {
+                        text: root.has-track ? root.title : I18n.trl(I18n.lang, "player.noTrack");
+                        color: root.palette.on-surface;
+                        font-size: Type.headline-small.size;
+                        font-weight: Type.headline-small-emphasized.weight;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        overflow: elide;
+                        width: 100%;
+                    }
+
+                    full-artist := Text {
+                        text: root.has-track ? root.artist : "";
+                        color: root.palette.on-surface-variant;
+                        font-size: Type.title-medium.size;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        overflow: elide;
+                        width: 100%;
+                    }
                 }
 
                 full-times := HorizontalLayout {
-                    spacing: 8px;
+                    width: 100%;
+                    height: 56px;
+                    padding-top: Spacing.s24;
+                    padding-left: Spacing.s24;
+                    padding-right: Spacing.s24;
+                    spacing: Spacing.s8;
 
                     full-pos := Text {
                         text: root.pos-text;
                         color: root.palette.on-surface-variant;
                         font-size: Type.body-medium.size;
+                        vertical-alignment: center;
                     }
 
                     seek-bar := Rectangle {
                         horizontal-stretch: 1;
                         height: 32px;
                         background: transparent;
+                        accessible-role: AccessibleRole.slider;
+                        accessible-label: I18n.trl(I18n.lang, "player.nowPlaying");
 
                         property<length> bar-w: self.width - 32px;
 
@@ -231,76 +299,107 @@ export component FullPlayer inherits Rectangle {
                         text: root.dur-text;
                         color: root.palette.on-surface-variant;
                         font-size: Type.body-medium.size;
+                        vertical-alignment: center;
                     }
                 }
 
                 full-transport := HorizontalLayout {
-                    spacing: 4px;
+                    width: 100%;
+                    height: 80px;
+                    padding-top: Spacing.s24;
+                    spacing: Spacing.s12;
                     alignment: center;
 
                     full-shuffle := M3IconButton {
                         icon: Icons.shuffle;
+                        icon-size: 22px;
                         icon-color: root.shuffle ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                         selected: root.shuffle;
                         fill: root.shuffle ? root.palette.secondary-container : transparent;
                         content: root.shuffle ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                         state-on-surface: root.palette.on-surface;
+                        accessible-label: I18n.trl(I18n.lang, "action.shuffle");
                         clicked => { root.shuffle-clicked(); }
                     }
 
                     full-prev := M3IconButton {
+                        width: 48px;
+                        height: 48px;
                         icon: Icons.skip-back;
+                        icon-size: 24px;
                         icon-color: root.palette.on-surface;
                         content: root.palette.on-surface;
                         state-on-surface: root.palette.on-surface;
+                        accessible-label: I18n.trl(I18n.lang, "action.previousTrack");
                         clicked => { root.prev-clicked(); }
                     }
 
                     full-play := M3IconButton {
+                        width: 56px;
+                        height: 56px;
                         icon: root.paused ? Icons.play : Icons.pause;
-                        icon-color: root.paused ? root.palette.on-surface : root.palette.on-primary;
+                        icon-size: 28px;
+                        icon-color: root.palette.on-primary;
                         selected: !root.paused;
                         fill: root.palette.primary;
-                        content: root.paused ? root.palette.on-surface : root.palette.on-primary;
+                        content: root.palette.on-primary;
                         state-on-surface: root.palette.on-surface;
+                        accessible-label: I18n.trl(I18n.lang, "action.playPause");
                         clicked => { root.play-clicked(); }
                     }
 
                     full-next := M3IconButton {
+                        width: 48px;
+                        height: 48px;
                         icon: Icons.skip-forward;
+                        icon-size: 24px;
                         icon-color: root.palette.on-surface;
                         content: root.palette.on-surface;
                         state-on-surface: root.palette.on-surface;
+                        accessible-label: I18n.trl(I18n.lang, "action.nextTrack");
                         clicked => { root.next-clicked(); }
                     }
 
                     full-repeat := M3IconButton {
                         icon: root.repeat-icon;
+                        icon-size: 22px;
                         icon-color: root.repeat-mode != 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                         selected: root.repeat-mode != 0;
                         fill: root.repeat-mode != 0 ? root.palette.secondary-container : transparent;
                         content: root.repeat-mode != 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                         state-on-surface: root.palette.on-surface;
+                        accessible-label: I18n.trl(I18n.lang, "action.repeat");
                         clicked => { root.repeat-clicked(); }
                     }
                 }
 
                 full-volrow := HorizontalLayout {
-                    spacing: 8px;
+                    width: 100%;
+                    height: 56px;
+                    padding-top: Spacing.s24;
+                    padding-left: Spacing.s24;
+                    padding-right: Spacing.s24;
+                    spacing: Spacing.s8;
 
-                    full-vol-glyph := Text {
-                        width: 80px;
-                        text: I18n.trl(I18n.lang, "action.volume");
-                        color: root.palette.on-surface-variant;
-                        font-size: Type.body-medium.size;
-                        vertical-alignment: center;
-                        overflow: elide;
+                    full-vol-glyph := Rectangle {
+                        width: 20px;
+                        background: transparent;
+
+                        Icon {
+                            source: Icons.volume-2;
+                            colorize: root.palette.on-surface-variant;
+                            icon-size: 20px;
+                            x: 0px;
+                            y: (parent.height - self.height) / 2;
+                        }
                     }
 
                     vol-bar := Rectangle {
                         horizontal-stretch: 1;
                         height: 32px;
                         background: transparent;
+                        accessible-role: AccessibleRole.slider;
+                        accessible-label: I18n.trl(I18n.lang, "action.volume");
 
                         property<length> vbar-w: self.width - 32px;
 
@@ -339,62 +438,138 @@ export component FullPlayer inherits Rectangle {
                 }
 
                 full-tools := HorizontalLayout {
-                    spacing: 8px;
+                    width: 100%;
+                    height: 64px;
+                    padding-top: Spacing.s24;
+                    spacing: Spacing.s8;
                     alignment: center;
 
                     full-lyrics-btn := M3IconButton {
                         icon: Icons.mic;
+                        icon-size: 22px;
                         icon-color: root.panel == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                         selected: root.panel == 1;
                         fill: root.panel == 1 ? root.palette.secondary-container : transparent;
                         content: root.panel == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                         state-on-surface: root.palette.on-surface;
+                        accessible-label: I18n.trl(I18n.lang, "player.tab.lyrics");
                         clicked => { root.panel-selected(root.panel == 1 ? 0 : 1); }
                     }
 
                     full-sleep := M3IconButton {
                         icon: Icons.clock;
+                        icon-size: 22px;
                         icon-color: root.palette.on-surface-variant;
                         content: root.palette.on-surface-variant;
                         state-on-surface: root.palette.on-surface;
+                        accessible-label: I18n.trl(I18n.lang, "player.sleep_timer");
                         clicked => { root.sleep-clicked(); }
                     }
 
                     full-tempo := M3IconButton {
                         icon: Icons.gauge;
+                        icon-size: 22px;
                         icon-color: root.palette.on-surface-variant;
                         content: root.palette.on-surface-variant;
                         state-on-surface: root.palette.on-surface;
+                        accessible-label: I18n.trl(I18n.lang, "player.tempoPitch");
                         clicked => { root.tempo-clicked(); }
                     }
 
                     full-eq := M3IconButton {
                         icon: Icons.sliders-horizontal;
+                        icon-size: 22px;
                         icon-color: root.palette.on-surface-variant;
                         content: root.palette.on-surface-variant;
                         state-on-surface: root.palette.on-surface;
+                        accessible-label: I18n.trl(I18n.lang, "audio.equalizer");
                         clicked => { root.eq-clicked(); }
                     }
                 }
             }
 
-            full-right := VerticalLayout {
-                horizontal-stretch: 1;
-                spacing: 8px;
+            full-right := Rectangle {
+                x: root.right-x;
+                width: parent.width - root.right-x;
+                height: 100%;
+
+                full-now := Rectangle {
+                    x: 0px;
+                    y: root.band-h;
+                    width: 100%;
+                    height: parent.height - root.band-h;
+                    background: transparent;
+                    visible: root.panel == 0;
+
+                    VerticalLayout {
+                        width: 100%;
+                        height: 100%;
+                        spacing: Spacing.s8;
+                        alignment: center;
+
+                        Text {
+                            text: root.has-track ? root.title : I18n.trl(I18n.lang, "player.noTrack");
+                            color: root.palette.on-surface;
+                            font-size: Type.headline-large.size;
+                            font-weight: Type.headline-large-emphasized.weight;
+                            wrap: word-wrap;
+                            width: 100%;
+                        }
+
+                        Text {
+                            text: root.has-track ? root.artist : "";
+                            color: root.palette.on-surface-variant;
+                            font-size: Type.title-large.size;
+                            wrap: word-wrap;
+                            width: 100%;
+                        }
+
+                        Text {
+                            text: root.has-track ? root.album : "";
+                            color: root.palette.on-surface-variant;
+                            font-size: Type.body-large.size;
+                            wrap: word-wrap;
+                            width: 100%;
+                        }
+                    }
+                }
+
+                full-lyrics := LyricsView {
+                    x: 0px;
+                    y: 0px;
+                    width: 100%;
+                    height: 100%;
+                    visible: root.panel == 1;
+                    palette: root.palette;
+                    rows: root.lyric-rows;
+                    active-line: root.active-line;
+                    word-progress: root.word-progress;
+                    font-px: root.lyrics-font-px;
+                    spacing-mult: root.lyrics-spacing;
+                    line-seek(ms) => { root.lyric-seek(ms); }
+                    share-requested => { root.lyric-share(); }
+                }
 
                 full-panel-tabs := HorizontalLayout {
-                    spacing: 4px;
+                    x: 0px;
+                    y: Spacing.s24;
+                    width: 100%;
+                    height: 36px;
+                    spacing: Spacing.s4;
 
                     full-tab-now := Rectangle {
                         width: 120px;
                         height: 36px;
-                        border-radius: 18px;
+                        border-radius: self.height / 2;
                         background: root.panel == 0 ? root.palette.secondary-container : transparent;
+                        accessible-role: AccessibleRole.tab;
+                        accessible-label: I18n.trl(I18n.lang, "player.nowPlaying");
 
                         Text {
                             text: I18n.trl(I18n.lang, "player.nowPlaying");
                             color: root.panel == 0 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                             font-size: Type.label-large.size;
+                            font-weight: Type.label-large.weight;
                             horizontal-alignment: center;
                             vertical-alignment: center;
                             width: 100%;
@@ -412,13 +587,16 @@ export component FullPlayer inherits Rectangle {
                     full-tab-lyrics := Rectangle {
                         width: 120px;
                         height: 36px;
-                        border-radius: 18px;
+                        border-radius: self.height / 2;
                         background: root.panel == 1 ? root.palette.secondary-container : transparent;
+                        accessible-role: AccessibleRole.tab;
+                        accessible-label: I18n.trl(I18n.lang, "player.tab.lyrics");
 
                         Text {
                             text: I18n.trl(I18n.lang, "player.tab.lyrics");
                             color: root.panel == 1 ? root.palette.on-secondary-container : root.palette.on-surface-variant;
                             font-size: Type.label-large.size;
+                            font-weight: Type.label-large.weight;
                             horizontal-alignment: center;
                             vertical-alignment: center;
                             width: 100%;
@@ -432,33 +610,6 @@ export component FullPlayer inherits Rectangle {
                             clicked => { root.panel-selected(1); }
                         }
                     }
-                }
-
-                full-now := Rectangle {
-                    vertical-stretch: 1;
-                    background: transparent;
-                    visible: root.panel == 0;
-
-                    Text {
-                        text: root.has-track ? root.title + "\n" + root.artist : I18n.trl(I18n.lang, "player.noTrack");
-                        color: root.palette.on-surface-variant;
-                        font-size: Type.body-large.size;
-                        wrap: word-wrap;
-                        width: 100%;
-                    }
-                }
-
-                full-lyrics := LyricsView {
-                    vertical-stretch: 1;
-                    visible: root.panel == 1;
-                    palette: root.palette;
-                    rows: root.lyric-rows;
-                    active-line: root.active-line;
-                    word-progress: root.word-progress;
-                    font-px: root.lyrics-font-px;
-                    spacing-mult: root.lyrics-spacing;
-                    line-seek(ms) => { root.lyric-seek(ms); }
-                    share-requested => { root.lyric-share(); }
                 }
             }
         }

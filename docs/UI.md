@@ -170,3 +170,13 @@ second title.
 
 Media cards (`M3Card`): 150x190, no border artifacts, no clipped shadow, hover
 veil only. Rails use 12px spacing and start at the page margin.
+
+Full player (`full.slint`): fills the workspace above the 96px bar, 16px side
+margin and a 64px header (collapse chevron, title plus album line, info and
+like at the end). Two columns below it: left 40% of the window (min 520px) with
+the up-to-420px artwork centered, title/artist, seek row with the times at the
+ends, transport (56px play), volume and the tool row; the right column takes
+the rest. Tabs sit 24px under the header at the column start, the lyrics view
+fills the column below them (line spacing from settings, active line in
+`primary`, other lines `on-surface-variant`, "Sin letra" when empty) and the
+share button shares the tabs band at the end.
