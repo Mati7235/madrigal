@@ -92,6 +92,20 @@ fn scope_from_prefs(filter: PrefFilter) -> SongScope {
 }
 
 impl<'a> Library<'a> {
+    pub fn song(&self, identity: &TrackIdentity) -> Result<Option<Track>> {
+        self.conn
+            .query_row(
+                "SELECT s.source, s.track_id, s.title, s.artists, s.album, s.duration_secs, s.thumbnail, s.track_number, s.local_path, s.set_video_id FROM songs s WHERE s.key = ?1",
+                params![identity.to_storage_string()],
+                read_track,
+            )
+            .map(Some)
+            .or_else(|err| match err {
+                rusqlite::Error::QueryReturnedNoRows => Ok(None),
+                other => Err(Error::from(other)),
+            })
+    }
+
     pub fn songs(&self, scope: SongScope, sort: SongSort, dir: SortDir) -> Result<Vec<Track>> {
         self.songs_limit(scope, sort, dir, -1)
     }
