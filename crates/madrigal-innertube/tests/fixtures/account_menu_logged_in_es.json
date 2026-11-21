@@ -1,0 +1,358 @@
+{
+  "responseContext": {
+    "visitorData": "CgtzYW1wbGV2aXNpdA%3D%3D",
+    "serviceTrackingParams": [
+      {
+        "service": "CSI",
+        "params": [
+          {
+            "key": "yt_li",
+            "value": "1"
+          },
+          {
+            "key": "GetAccountMenu_rid",
+            "value": "0x0000000000000000"
+          }
+        ]
+      },
+      {
+        "service": "GFEEDBACK",
+        "params": [
+          {
+            "key": "logged_in",
+            "value": "1"
+          }
+        ]
+      },
+      {
+        "service": "ECATCHER",
+        "params": []
+      }
+    ],
+    "responseId": "sampleResponseId"
+  },
+  "actions": [
+    {
+      "clickTrackingParams": "CAAQAA",
+      "openPopupAction": {
+        "popup": {
+          "multiPageMenuRenderer": {
+            "header": {
+              "activeAccountHeaderRenderer": {
+                "accountName": {
+                  "runs": [
+                    {
+                      "text": "Sample User"
+                    }
+                  ]
+                },
+                "accountPhoto": {
+                  "thumbnails": [
+                    {
+                      "url": "https://yt3.ggpht.com/placeholder=s108",
+                      "width": 108,
+                      "height": 108
+                    }
+                  ]
+                },
+                "settingsEndpoint": {
+                  "clickTrackingParams": "CAAQAA",
+                  "applicationSettingsEndpoint": {
+                    "hack": true
+                  }
+                },
+                "manageAccountTitle": {
+                  "runs": [
+                    {
+                      "text": "Administra tu Cuenta de Google",
+                      "navigationEndpoint": {
+                        "clickTrackingParams": "CAAQAA",
+                        "urlEndpoint": {
+                          "url": "https://myaccount.google.com/u/0/?utm_source=YouTubeWeb&tab=rk&utm_medium=act&gar=WzAsIjAiXQ&sl=true&tab=rk&hl=es-419",
+                          "target": "TARGET_NEW_WINDOW"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "trackingParams": "CAAQAA",
+                "channelHandle": {
+                  "runs": [
+                    {
+                      "text": "@sampleuser"
+                    }
+                  ]
+                }
+              }
+            },
+            "sections": [
+              {
+                "multiPageMenuSectionRenderer": {
+                  "items": [
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "ACCOUNT_BOX"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Tu canal"
+                            }
+                          ]
+                        },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CAAQAA",
+                          "browseEndpoint": {
+                            "browseId": "UC0000000000000000000000",
+                            "canonicalBaseUrl": "/@sampleuser",
+                            "browseEndpointContextSupportedConfigs": {
+                              "browseEndpointContextMusicConfig": {
+                                "pageType": "MUSIC_PAGE_TYPE_USER_CHANNEL"
+                              }
+                            }
+                          }
+                        },
+                        "trackingParams": "CAAQAA"
+                      }
+                    },
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "MONETIZATION_ON"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Membresías pagadas"
+                            }
+                          ]
+                        },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CAAQAA",
+                          "browseEndpoint": {
+                            "browseId": "FEmemberships_and_purchases",
+                            "params": "kgMDmAEK"
+                          }
+                        },
+                        "trackingParams": "CAAQAA"
+                      }
+                    },
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "SWITCH_ACCOUNTS"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Cambiar de cuenta"
+                            }
+                          ]
+                        },
+                        "trackingParams": "CAAQAA",
+                        "secondaryIcon": {
+                          "iconType": "CHEVRON_RIGHT"
+                        },
+                        "serviceEndpoint": {
+                          "clickTrackingParams": "CAAQAA",
+                          "getAccountSwitcherEndpoint": {
+                            "hack": true
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "EXIT_TO_APP"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Salir"
+                            }
+                          ]
+                        },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CAAQAA",
+                          "signOutEndpoint": {
+                            "hack": true
+                          }
+                        },
+                        "trackingParams": "CAAQAA"
+                      }
+                    }
+                  ],
+                  "trackingParams": "CAAQAA"
+                }
+              },
+              {
+                "multiPageMenuSectionRenderer": {
+                  "items": [
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "CLOUD_UPLOAD"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Subir música"
+                            }
+                          ]
+                        },
+                        "trackingParams": "CAAQAA",
+                        "serviceEndpoint": {
+                          "clickTrackingParams": "CAAQAA",
+                          "signalServiceEndpoint": {
+                            "signal": "CLIENT_SIGNAL",
+                            "actions": [
+                              {
+                                "clickTrackingParams": "CAAQAA",
+                                "signalAction": {
+                                  "signal": "OPEN_FILE_PICKER"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "WATCH_HISTORY"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Historial"
+                            }
+                          ]
+                        },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CAAQAA",
+                          "browseEndpoint": {
+                            "browseId": "FEmusic_history"
+                          }
+                        },
+                        "trackingParams": "CAAQAA"
+                      }
+                    },
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "SETTINGS"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Configuración"
+                            }
+                          ]
+                        },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CAAQAA",
+                          "applicationSettingsEndpoint": {
+                            "hack": true
+                          }
+                        },
+                        "trackingParams": "CAAQAA"
+                      }
+                    },
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "PRIVACY_INFO"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Condiciones y política de privacidad"
+                            }
+                          ]
+                        },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CAAQAA",
+                          "urlEndpoint": {
+                            "url": "https://www.youtube.com/t/terms?gl=AR&chromeless=1"
+                          }
+                        },
+                        "trackingParams": "CAAQAA"
+                      }
+                    },
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "HELP"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Ayuda"
+                            }
+                          ]
+                        },
+                        "trackingParams": "CAAQAA",
+                        "serviceEndpoint": {
+                          "clickTrackingParams": "CAAQAA",
+                          "signalServiceEndpoint": {
+                            "signal": "CLIENT_SIGNAL",
+                            "actions": [
+                              {
+                                "clickTrackingParams": "CAAQAA",
+                                "signalAction": {
+                                  "signal": "HELP"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "FEEDBACK"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Enviar comentarios"
+                            }
+                          ]
+                        },
+                        "trackingParams": "CAAQAA",
+                        "serviceEndpoint": {
+                          "clickTrackingParams": "CAAQAA",
+                          "signalServiceEndpoint": {
+                            "signal": "CLIENT_SIGNAL",
+                            "actions": [
+                              {
+                                "clickTrackingParams": "CAAQAA",
+                                "sendFeedbackAction": {
+                                  "bucket": "Kevlar"
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "trackingParams": "CAAQAA"
+                }
+              }
+            ],
+            "trackingParams": "CAAQAA",
+            "style": "MULTI_PAGE_MENU_STYLE_TYPE_ACCOUNT"
+          }
+        },
+        "popupType": "DROPDOWN",
+        "reusePopup": true
+      }
+    }
+  ],
+  "trackingParams": "CAAQAA"
+}

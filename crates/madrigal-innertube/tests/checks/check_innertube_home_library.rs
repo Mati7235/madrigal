@@ -172,19 +172,20 @@ fn account_menu_logged_out_is_not_signed_in() {
 }
 
 #[test]
-fn account_menu_parses_structural_logged_in_fixture() {
-    let info = AuthCatalogClient::parse_account_info(&fixture(
-        "account_menu_logged_in_structural.json",
-    ))
-    .expect("parse structural logged-in menu");
-    assert_eq!(info.name, "Sample User");
-    assert_eq!(info.handle.as_deref(), Some("@sampleuser"));
-    assert_eq!(info.email.as_deref(), Some("sample@example.com"));
-    assert_eq!(info.channel_id.as_deref(), Some("UC00000000000000000000"));
-    assert_eq!(
-        info.avatar.as_deref(),
-        Some("https://yt3.ggpht.com/ytc/sample-user-photo=s176-c-k-c0x00ffffff-no-rj")
-    );
+fn account_menu_parses_logged_in_menus() {
+    for name in ["account_menu_logged_in_es.json", "account_menu_logged_in_en.json"] {
+        let info = AuthCatalogClient::parse_account_info(&fixture(name))
+            .unwrap_or_else(|err| panic!("{name}: {err:?}"));
+        assert_eq!(info.name, "Sample User", "{name}");
+        assert_eq!(info.handle.as_deref(), Some("@sampleuser"), "{name}");
+        assert_eq!(info.email, None, "{name}");
+        assert_eq!(info.channel_id.as_deref(), Some("UC0000000000000000000000"), "{name}");
+        assert_eq!(
+            info.avatar.as_deref(),
+            Some("https://yt3.ggpht.com/placeholder=s108"),
+            "{name}"
+        );
+    }
 }
 
 #[test]
