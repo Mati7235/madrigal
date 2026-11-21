@@ -59,6 +59,29 @@ pub fn click_by_id(root: &impl ElementRoot, id: &str) -> Result<(), Error> {
     Ok(())
 }
 
+pub fn scroll_to_bottom(handle: &ElementHandle) {
+    for _ in 0..20 {
+        handle.scroll(0.0, -800.0);
+        mock_advance(Duration::from_millis(20));
+    }
+    mock_advance(Duration::from_millis(200));
+}
+
+pub fn bottom_text_clearance(root: &impl ElementRoot, id: &str) -> f32 {
+    let handle = find_by_id(root, id).unwrap();
+    scroll_to_bottom(&handle);
+    let view = handle.absolute_position();
+    let mut lowest = view.y;
+    for text in handle.query_descendants().match_type_name("Text").find_all() {
+        let position = text.absolute_position();
+        let size = text.size();
+        if size.width > 0.0 && size.height > 0.0 {
+            lowest = lowest.max(position.y + size.height);
+        }
+    }
+    view.y + handle.size().height - lowest
+}
+
 pub fn mock_advance(total: Duration) {
     const STEP: Duration = Duration::from_millis(1);
     let mut rest = total;

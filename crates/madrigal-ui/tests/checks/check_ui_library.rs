@@ -299,8 +299,24 @@ fn ui_library() {
     kit::mock_advance(Duration::from_millis(600));
 
     shell.set_page(3);
+    let chips = shell.get_lib_chips();
+    let playlists_tab = (0..chips.row_count())
+        .find(|index| chips.row_data(*index).unwrap() == "playlists")
+        .expect("playlists chip");
+    shell.set_lib_tab(playlists_tab as i32);
     shell.show().unwrap();
+    kit::mock_advance(Duration::from_millis(50));
     kit::lint_layout_at_sizes(&shell, "library");
+    for (width, height) in kit::WINDOW_SIZES {
+        kit::resize(&shell, width, height);
+        kit::mock_advance(Duration::from_millis(50));
+        let clearance = kit::bottom_text_clearance(&shell, "LibraryPage::playlists-list");
+        assert!(
+            clearance >= 90.0,
+            "library bottom clearance {clearance} at {width}x{height}"
+        );
+    }
+    kit::resize(&shell, 1280.0, 800.0);
     let snapshot_dir = kit::snapshot_dir(tmp.path());
     let library_shot = snapshot_dir.join("library.png");
     kit::snapshot_to(shell.window(), &library_shot).unwrap();

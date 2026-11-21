@@ -373,6 +373,16 @@ fn ui_catalog() {
     click_nth(&shell, "SearchPage::source-chip", 1);
     assert_eq!(shell.get_search_source(), 1);
     kit::lint_layout_at_sizes(&shell, "search");
+    for (width, height) in kit::WINDOW_SIZES {
+        kit::resize(&shell, width, height);
+        kit::mock_advance(Duration::from_millis(50));
+        let clearance = kit::bottom_text_clearance(&shell, "SearchPage::results-scroll");
+        assert!(
+            clearance >= 90.0,
+            "search bottom clearance {clearance} at {width}x{height}"
+        );
+    }
+    kit::resize(&shell, 1280.0, 800.0);
 
     shell.set_search_query("zzz-no-match".into());
     madrigal_ui::apply_search_results(&shell, Vec::new());
@@ -594,6 +604,16 @@ fn ui_catalog() {
     shell.show().unwrap();
     shell.set_page(0);
     kit::lint_layout_at_sizes(&shell, "home");
+    for (width, height) in kit::WINDOW_SIZES {
+        kit::resize(&shell, width, height);
+        kit::mock_advance(Duration::from_millis(50));
+        let clearance = kit::bottom_text_clearance(&shell, "HomePage::page-flick");
+        assert!(
+            clearance >= 90.0,
+            "home bottom clearance {clearance} at {width}x{height}"
+        );
+    }
+    kit::resize(&shell, 1280.0, 800.0);
     snapshot(&shell, &snapshot_dir, "home.png");    shell.set_page(1);
     shell.set_search_query("zzz-no-match".into());
     madrigal_ui::apply_search_results(&shell, Vec::new());
@@ -625,6 +645,16 @@ fn ui_catalog() {
     click_nth(&shell, "DetailPage::detail-back", 0);
     assert!(!is_detail_open(&shell));
     kit::lint_layout_at_sizes(&shell, "explore");
+    for (width, height) in kit::WINDOW_SIZES {
+        kit::resize(&shell, width, height);
+        kit::mock_advance(Duration::from_millis(50));
+        let clearance = kit::bottom_text_clearance(&shell, "ExplorePage::page-flick");
+        assert!(
+            clearance >= 90.0,
+            "explore bottom clearance {clearance} at {width}x{height}"
+        );
+    }
+    kit::resize(&shell, 1280.0, 800.0);
     snapshot(&shell, &snapshot_dir, "explore.png");
     load_album_fixture(&shell, ALBUM_ID, &album_src).unwrap();
     shell.set_detail_stack(1);
