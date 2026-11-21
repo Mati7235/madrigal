@@ -1,5 +1,5 @@
 use madrigal_innertube::library::AuthCatalogClient;
-use madrigal_innertube::{CatalogClient, HomeItem};
+use madrigal_innertube::{CatalogClient, Error, HomeItem};
 use std::path::PathBuf;
 use ytmapi_rs::common::ApiOutcome;
 
@@ -162,6 +162,55 @@ fn malformed_fixtures_error() {
     assert!(AuthCatalogClient::parse_edit_playlist("{}").is_err());
     assert!(AuthCatalogClient::parse_add_playlist_items("not json").is_err());
     assert!(AuthCatalogClient::parse_remove_history_items("").is_err());
+}
+
+#[test]
+fn account_menu_logged_out_is_not_signed_in() {
+    let err = AuthCatalogClient::parse_account_info(&fixture("account_menu_logged_out.json"))
+        .expect_err("logged-out menu must not parse as an account");
+    assert!(matches!(err, Error::NotSignedIn), "distinct error: {err:?}");
+}
+
+#[test]
+fn account_menu_parses_structural_logged_in_fixture() {
+    let info = AuthCatalogClient::parse_account_info(&fixture(
+        "account_menu_logged_in_structural.json",
+    ))
+    .expect("parse structural logged-in menu");
+    assert_eq!(info.name, "Sample User");
+    assert_eq!(info.handle.as_deref(), Some("@sampleuser"));
+    assert_eq!(info.email.as_deref(), Some("sample@example.com"));
+    assert_eq!(info.channel_id.as_deref(), Some("UC00000000000000000000"));
+    assert_eq!(
+        info.avatar.as_deref(),
+        Some("https://yt3.ggpht.com/ytc/sample-user-photo=s176-c-k-c0x00ffffff-no-rj")
+    );
+}
+
+#[test]
+fn account_menu_accepts_email_without_handle() {
+    let source = r#"{"actions":[{"openPopupAction":{"popup":{"multiPageMenuRenderer":{"header":{"activeAccountHeaderRenderer":{"accountName":{"runs":[{"text":"Sample User"}]},"email":{"simpleText":"sample@example.com"}}}}}}}]}"#;
+    let info = AuthCatalogClient::parse_account_info(source).expect("parse email header");
+    assert_eq!(info.name, "Sample User");
+    assert_eq!(info.email.as_deref(), Some("sample@example.com"));
+    assert_eq!(info.handle, None);
+    assert_eq!(info.channel_id, None);
+    assert_eq!(info.avatar, None);
+}
+
+#[test]
+fn account_menu_malformed_errors() {
+    assert!(AuthCatalogClient::parse_account_info("not json").is_err());
+    assert!(matches!(
+        AuthCatalogClient::parse_account_info("{}"),
+        Err(Error::NotSignedIn)
+    ));
+    assert!(matches!(
+        AuthCatalogClient::parse_account_info(
+            r#"{"activeAccountHeaderRenderer":{"channelHandle":{"runs":[{"text":"@x"}]}}}"#
+        ),
+        Err(Error::Fixture(_))
+    ));
 }
 
 const FAKE_COOKIE: &str = "SAPISID=fake_sapisid_123; __Secure-3PAPISID=fake_secure_456; LOGIN_INFO=fake_login_789; SID=fake_sid";

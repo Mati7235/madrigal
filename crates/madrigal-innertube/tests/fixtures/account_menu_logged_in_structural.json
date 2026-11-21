@@ -1,0 +1,220 @@
+{
+  "responseContext": {
+    "visitorData": "CgsyU3VvUW9maWIxayjU34fYBjIKCgJBUhIEGgAgaQ%3D%3D",
+    "serviceTrackingParams": [
+      {
+        "service": "CSI",
+        "params": [
+          {
+            "key": "c",
+            "value": "WEB_REMIX"
+          },
+          {
+            "key": "cver",
+            "value": "1.20261118.01.00"
+          },
+          {
+            "key": "yt_li",
+            "value": "1"
+          },
+          {
+            "key": "GetAccountMenu_rid",
+            "value": "0x0000000000000000"
+          }
+        ]
+      },
+      {
+        "service": "GFEEDBACK",
+        "params": [
+          {
+            "key": "logged_in",
+            "value": "1"
+          }
+        ]
+      }
+    ],
+    "responseId": "IhMI000000000000000000000000000000"
+  },
+  "actions": [
+    {
+      "clickTrackingParams": "CAAQpbsIIhMI000000000000000000000000000000=",
+      "openPopupAction": {
+        "popup": {
+          "multiPageMenuRenderer": {
+            "header": {
+              "activeAccountHeaderRenderer": {
+                "accountName": {
+                  "runs": [
+                    {
+                      "text": "Sample User"
+                    }
+                  ]
+                },
+                "channelHandle": {
+                  "runs": [
+                    {
+                      "text": "@sampleuser"
+                    }
+                  ]
+                },
+                "email": {
+                  "runs": [
+                    {
+                      "text": "sample@example.com"
+                    }
+                  ]
+                },
+                "accountPhoto": {
+                  "thumbnails": [
+                    {
+                      "url": "https://yt3.ggpht.com/ytc/sample-user-photo=s88-c-k-c0x00ffffff-no-rj",
+                      "width": 88,
+                      "height": 88
+                    },
+                    {
+                      "url": "https://yt3.ggpht.com/ytc/sample-user-photo=s176-c-k-c0x00ffffff-no-rj",
+                      "width": 176,
+                      "height": 176
+                    }
+                  ]
+                },
+                "isActive": true,
+                "isSelected": true,
+                "hasChannel": true
+              }
+            },
+            "sections": [
+              {
+                "multiPageMenuSectionRenderer": {
+                  "items": [
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "ACCOUNT_CIRCLE"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Your channel"
+                            }
+                          ]
+                        },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CAEQmbcBGAAiEwi0000000000000000000000000000=",
+                          "browseEndpoint": {
+                            "browseId": "UC00000000000000000000",
+                            "canonicalBaseUrl": "/channel/UC00000000000000000000"
+                          }
+                        },
+                        "trackingParams": "CAEQmbcBGAAiEwi0000000000000000000000000000="
+                      }
+                    },
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "PERSON_OFF"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Turn on Incognito"
+                            }
+                          ]
+                        },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CAIQmbcBGAEiEwi0000000000000000000000000000=",
+                          "signalNavigationEndpoint": {
+                            "signal": "ABOUT_INCOGNITO"
+                          }
+                        },
+                        "trackingParams": "CAIQmbcBGAEiEwi0000000000000000000000000000="
+                      }
+                    },
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "SIGNOUT"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Sign out"
+                            }
+                          ]
+                        },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CAMQmbcBGAIiEwi0000000000000000000000000000=",
+                          "signalNavigationEndpoint": {
+                            "signal": "SIGNOUT"
+                          }
+                        },
+                        "trackingParams": "CAMQmbcBGAIiEwi0000000000000000000000000000="
+                      }
+                    }
+                  ],
+                  "trackingParams": "CAQQ968BGAAiEwi0000000000000000000000000000="
+                }
+              },
+              {
+                "multiPageMenuSectionRenderer": {
+                  "items": [
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "UNLIMITED"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Get Music Premium"
+                            }
+                          ]
+                        },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CAUQmbcBGAMiEwi0000000000000000000000000000=",
+                          "browseEndpoint": {
+                            "browseId": "SPunlimited",
+                            "params": "kgMXShUIBhIRdW5saW1pdGVkLUItbXVzaWM%3D",
+                            "canonicalBaseUrl": "/music_premium"
+                          }
+                        },
+                        "trackingParams": "CAUQmbcBGAMiEwi0000000000000000000000000000="
+                      }
+                    },
+                    {
+                      "compactLinkRenderer": {
+                        "icon": {
+                          "iconType": "SETTINGS"
+                        },
+                        "title": {
+                          "runs": [
+                            {
+                              "text": "Settings"
+                            }
+                          ]
+                        },
+                        "navigationEndpoint": {
+                          "clickTrackingParams": "CAYQ6qgHGAQiEwi0000000000000000000000000000=",
+                          "applicationSettingsEndpoint": {
+                            "hack": true
+                          }
+                        },
+                        "trackingParams": "CAYQ6qgHGAQiEwi0000000000000000000000000000="
+                      }
+                    }
+                  ],
+                  "trackingParams": "CAcQ968BGAEiEwi0000000000000000000000000000="
+                }
+              }
+            ],
+            "trackingParams": "CAEQ_6sBIhMI000000000000000000000000000000",
+            "style": "MULTI_PAGE_MENU_STYLE_TYPE_ACCOUNT"
+          }
+        },
+        "popupType": "DROPDOWN",
+        "reusePopup": true
+      }
+    }
+  ],
+  "trackingParams": "CAAQpbsIIhMI000000000000000000000000000000="
+}

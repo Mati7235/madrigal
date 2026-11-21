@@ -1,3 +1,4 @@
+pub mod account;
 pub mod browse;
 pub mod charts;
 pub mod client;
@@ -10,6 +11,7 @@ pub mod pages;
 pub mod radios;
 pub mod writes;
 
+pub use account::{AccountInfo, GetAccountMenuQuery};
 pub use browse::{
     BrowseItem, BrowsePage, BrowseSection, GetBrowseQuery, MoodPlaylistGroup, MoodPlaylistsPage,
 };
