@@ -31,6 +31,7 @@ fn base_config(shim: &std::path::Path, po: PoConfig) -> StreamConfig {
         ytdlp_bin: shim.to_path_buf(),
         timeout_secs: 10,
         po,
+        innertube: false,
         ..StreamConfig::default()
     }
 }

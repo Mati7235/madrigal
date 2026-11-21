@@ -56,6 +56,7 @@ Without `cargo` available the check is FAIL.
 | `streams_orchestration` | offline | yt-dlp shim: resolution, client fallback, 429 backoff |
 | `streams_cache` | offline | Stream cache TTL, prune of expired only, atomic writes |
 | `streams_po_token` | offline | PO token injection via local server, offline degradation |
+| `streams_innertube` | offline | Resolution order: cache hit, injected innertube hit tagged `innertube:visionos`, innertube failure falls back to yt-dlp, disabled skips it |
 | `settings_roundtrip` | offline | Typed settings load/save with sanitize, unknown-key retention and per-account isolation |
 | `scrobble_thresholds` | offline | Scrobble eligibility table: 50%/180s cap with 30s floor, boundary cases |
 | `scrobble_clients` | offline | Maloja/Last.fm/ListenBrainz payloads, auth signature, error mapping via local mocks |
@@ -101,6 +102,7 @@ Without `cargo` available the check is FAIL.
 | `shazam_client` | offline | amp.shazam.com mock: match parse with links, no-match, 5xx retry, malformed/status errors, rate spacing |
 | `discord_rpc` | offline | Discord IPC handshake/SetActivity via fake unix socket, policy, debounce, preview parity, NotRunning/malformed |
 | `catalog_live` | live | Real network: search/suggestions/home/charts(ZZ)/moods counts and non-emptiness |
+| `streams_live` | live | Real network: 2 fixture ids resolved via innertube:visionos and fully downloaded in 1 MiB ranges |
 | `lyrics_live` | live | Real network: LRCLIB-only fetch of Yesterday/Beatles/125s with >= 10 lines |
 | `ai_providers` | offline | AI chat completions (OpenAI-compat/Gemini), validation, translation chain, mix/suggestion parsing, key secrecy |
 | `together_lan` | offline | LAN sessions: discovery, approve, gated add/control, kick/ban/transfer, LWW play-state, queue reorder, log order, link roundtrip, malformed frames |

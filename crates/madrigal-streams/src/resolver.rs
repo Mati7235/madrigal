@@ -12,6 +12,7 @@ use madrigal_core::{TrackIdentity, TrackSource};
 
 use crate::cache::{self, StreamCache};
 use crate::fallback;
+use crate::innertube::{self, InnertubeResolver, VisionosResolver};
 use crate::po_token::{self, PoConfig, PoToken};
 
 pub const WATCH_URL: &str = "https://music.youtube.com/watch?v=";
@@ -75,6 +76,7 @@ pub struct StreamConfig {
     pub po: PoConfig,
     pub safety_margin_secs: f64,
     pub fallback_ttl_secs: f64,
+    pub innertube: bool,
 }
 
 impl Default for StreamConfig {
@@ -86,6 +88,7 @@ impl Default for StreamConfig {
             po: PoConfig::default(),
             safety_margin_secs: 60.0,
             fallback_ttl_secs: 300.0,
+            innertube: true,
         }
     }
 }
@@ -130,7 +133,7 @@ pub fn build_args(
     args
 }
 
-fn expiry_from_url(url: &str) -> Option<f64> {
+pub(crate) fn expiry_from_url(url: &str) -> Option<f64> {
     let query = url.split_once('?')?.1;
     for pair in query.split('&') {
         let (key, value) = pair.split_once('=')?;
@@ -145,7 +148,7 @@ fn parse_output(video_id: &str, label: &str, stdout: &str) -> Result<AudioStream
     let info: serde_json::Value =
         serde_json::from_str(stdout).map_err(|err| format!("{label}: invalid JSON: {err}"))?;
     let url = info.get("url").and_then(|v| v.as_str()).unwrap_or("");
-    if !url.starts_with("https://") {
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
         return Err(format!("{label}: no url field"));
     }
     let expires_at = info
@@ -214,6 +217,7 @@ struct Inner {
     config: StreamConfig,
     cache: StreamCache,
     rate_limits: Mutex<HashMap<String, u32>>,
+    innertube: Option<Arc<dyn InnertubeResolver>>,
 }
 
 #[derive(Clone)]
@@ -228,20 +232,38 @@ impl Orchestrator {
     }
 
     pub fn with_cache_dir(config: StreamConfig, dir: impl Into<PathBuf>) -> Self {
-        let cache = StreamCache::with_dir(
-            dir,
-            config.safety_margin_secs,
-            config.fallback_ttl_secs,
-        );
+        let cache = StreamCache::with_dir(dir, config.safety_margin_secs, config.fallback_ttl_secs);
         Self::with_cache(config, cache)
     }
 
+    pub fn with_innertube(
+        config: StreamConfig,
+        dir: impl Into<PathBuf>,
+        resolver: Arc<dyn InnertubeResolver>,
+    ) -> Self {
+        let cache = StreamCache::with_dir(dir, config.safety_margin_secs, config.fallback_ttl_secs);
+        Self::build(config, cache, Some(resolver))
+    }
+
     fn with_cache(config: StreamConfig, cache: StreamCache) -> Self {
+        let resolver: Option<Arc<dyn InnertubeResolver>> = config.innertube.then(|| {
+            let timeout = Duration::from_secs(config.timeout_secs.clamp(1, 20));
+            Arc::new(VisionosResolver::new(timeout)) as Arc<dyn InnertubeResolver>
+        });
+        Self::build(config, cache, resolver)
+    }
+
+    fn build(
+        config: StreamConfig,
+        cache: StreamCache,
+        innertube: Option<Arc<dyn InnertubeResolver>>,
+    ) -> Self {
         Self {
             inner: Arc::new(Inner {
                 config,
                 cache,
                 rate_limits: Mutex::new(HashMap::new()),
+                innertube,
             }),
         }
     }
@@ -285,6 +307,28 @@ impl Orchestrator {
         }
         let timeout = Duration::from_secs(self.inner.config.timeout_secs.max(1));
         let mut errors: Vec<String> = Vec::new();
+        if let Some(resolver) = &self.inner.innertube {
+            match resolver.resolve(video_id) {
+                Ok(found) => {
+                    let stream = AudioStream {
+                        video_id: video_id.to_string(),
+                        url: found.url,
+                        user_agent: found.user_agent,
+                        title: None,
+                        duration: None,
+                        ext: found.ext,
+                        acodec: found.acodec,
+                        abr: None,
+                        client: "visionos".to_string(),
+                        expires_at: found.expires_at,
+                        resolution_path: innertube::LABEL.to_string(),
+                    };
+                    let _ = self.inner.cache.store(video_id, quality, &stream, now);
+                    return Ok((stream, innertube::LABEL.to_string()));
+                }
+                Err(detail) => errors.push(format!("{}: {detail}", innertube::LABEL)),
+            }
+        }
         for client in fallback::player_clients() {
             let label = fallback::client_label(client.as_deref()).to_string();
             let token = po_token::fetch(&self.inner.config.po, video_id, client.as_deref());

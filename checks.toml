@@ -49,6 +49,10 @@ name = "streams_po_token"
 group = "offline"
 
 [[check]]
+name = "streams_innertube"
+group = "offline"
+
+[[check]]
 name = "settings_roundtrip"
 group = "offline"
 
@@ -226,6 +230,10 @@ group = "offline"
 
 [[check]]
 name = "catalog_live"
+group = "live"
+
+[[check]]
+name = "streams_live"
 group = "live"
 
 [[check]]

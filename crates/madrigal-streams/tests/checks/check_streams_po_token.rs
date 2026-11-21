@@ -88,6 +88,7 @@ fn po_token_injected_and_degrades_when_down() {
         ytdlp_bin: shim.clone(),
         timeout_secs: 10,
         po: live,
+        innertube: false,
         ..StreamConfig::default()
     };
     let client = Orchestrator::with_cache_dir(config, &cache_dir);
@@ -104,6 +105,7 @@ fn po_token_injected_and_degrades_when_down() {
         ytdlp_bin: shim.clone(),
         timeout_secs: 10,
         po: down,
+        innertube: false,
         ..StreamConfig::default()
     };
     let dir2 = cache_dir.join("down");
