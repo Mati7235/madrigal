@@ -391,10 +391,27 @@ fn ui_catalog() {
     assert_eq!(mixed[0].kind, DetailKind::Artist);
     assert_eq!(mixed[MIXED_PER_KIND].kind, DetailKind::Album);
 
-    click_nth(&shell, "SearchPage::source-chip", 0);
+    let source_signals: Rc<RefCell<u32>> = Rc::new(RefCell::new(0));
+    {
+        let source_signals = source_signals.clone();
+        shell.on_source_selected(move |_| {
+            *source_signals.borrow_mut() += 1;
+        });
+    }
+    let segments: Vec<_> =
+        kit::ElementHandle::find_by_element_id(&shell, "M3SegmentedButton::segment").collect();
+    assert_eq!(segments.len(), 2);
+    assert_eq!(segments[0].accessible_label().unwrap().as_str(), "Local");
+    assert_eq!(segments[1].accessible_label().unwrap().as_str(), "En línea");
+    kit::click(&segments[0]);
     assert_eq!(shell.get_search_source(), 0);
-    click_nth(&shell, "SearchPage::source-chip", 1);
+    assert_eq!(*source_signals.borrow(), 1);
+    kit::click(&segments[0]);
+    assert_eq!(shell.get_search_source(), 0);
+    assert_eq!(*source_signals.borrow(), 1);
+    kit::click(&segments[1]);
     assert_eq!(shell.get_search_source(), 1);
+    assert_eq!(*source_signals.borrow(), 2);
     kit::lint_layout_at_sizes(&shell, "search");
     for (width, height) in kit::WINDOW_SIZES {
         kit::resize(&shell, width, height);

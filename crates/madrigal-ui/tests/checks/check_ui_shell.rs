@@ -270,21 +270,25 @@ fn ui_shell() {
         });
 
     shell.set_search_query("".into());
-    let mut chip_focused = false;
+    let mut segment_focused = false;
     for _ in 0..20 {
         shell
             .window()
             .dispatch_event(slint::platform::WindowEvent::KeyPressed { text: "\t".into() });
-        if kit::ElementHandle::find_by_element_id(&shell, "M3Chip::focus-ring").count() == 1 {
-            chip_focused = true;
+        if kit::ElementHandle::find_by_element_id(&shell, "M3SegmentedButton::focus-ring").count() == 1 {
+            segment_focused = true;
             break;
         }
     }
-    assert!(chip_focused, "chip focus ring after Tab");
+    assert!(segment_focused, "segmented control focus ring after Tab");
     shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
         text: slint::platform::Key::Return.into(),
     });
-    assert_eq!(shell.get_search_source(), 0, "Return activates the focused chip");
+    assert_eq!(
+        shell.get_search_source(),
+        0,
+        "Return activates the focused segment"
+    );
 
     shell.set_page(0);
     kit::resize(&shell, 1920.0, 1080.0);
