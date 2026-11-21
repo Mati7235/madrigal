@@ -3,6 +3,7 @@ set -eu
 dir=$("$(dirname "$0")/session" dir)
 . "$dir/env"
 fifo=$dir/ptr.fifo
+case "${1:-}" in click|move|scroll) [ -p "$fifo" ] || { echo "no pointer: $fifo is not a pipe; run: session start" >&2; exit 1; } ;; esac
 case "${1:-}" in
   click) printf 'move %s %s\nclick %s\n' "$2" "$3" "${4:-left}" > "$fifo"; sleep 0.3 ;;
   move) printf 'move %s %s\n' "$2" "$3" > "$fifo" ;;
