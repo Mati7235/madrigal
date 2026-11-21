@@ -120,6 +120,7 @@ Without `cargo` available the check is FAIL.
 | `app_lyrics` | offline | app lyrics wiring: embedded USLT/SYLT first, db cache fallback, chain on track change, searching/found/none/error, retry and stale drop |
 | `app_library` | offline | Library worker over real innertube fixture songs: query filter, playlists, selection, likes, play recording threshold, history clear, stats years, tags |
 | `app_downloads` | offline | Download service over a loopback HTTP server: page rows, progress/speed, queued ordering, pause/resume, retry, cancel and quarantine |
+| `desktop` | offline | Peripherals wiring: settings persistence of volume/repeat/shuffle, session keeper, single-instance file handoff, notification action mapping, scrobble eligibility and outcome merge, D-Bus skip without a session bus |
 
 ## Visual verification
 

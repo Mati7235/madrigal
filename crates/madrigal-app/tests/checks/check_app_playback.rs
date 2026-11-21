@@ -66,6 +66,7 @@ fn app_playback() {
     }
     let root = tempfile::tempdir().expect("tempdir");
     std::env::set_var(madrigal_paths::PROFILE_ROOT_ENV, root.path());
+    std::env::set_var(madrigal_app::desktop::BUS_ADDRESS_ENV, "");
     std::env::set_var("XDG_DATA_HOME", root.path().join("data"));
     std::env::set_var("XDG_CONFIG_HOME", root.path().join("config"));
     std::env::set_var("XDG_CACHE_HOME", root.path().join("cache"));
@@ -130,7 +131,12 @@ fn app_playback() {
     wait_playing(&mut playback, 200);
 
     playback.seek_ms(4000).expect("seek");
-    std::thread::sleep(Duration::from_millis(400));
+    let started = Instant::now();
+    while started.elapsed() < Duration::from_secs(3)
+        && !(3800..6000).contains(&playback.position_ms())
+    {
+        std::thread::sleep(Duration::from_millis(50));
+    }
     let seeked = playback.position_ms();
     assert!(
         (3800..6000).contains(&seeked),

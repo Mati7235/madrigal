@@ -307,3 +307,7 @@ group = "offline"
 [[check]]
 name = "app_downloads"
 group = "offline"
+
+[[check]]
+name = "desktop"
+group = "offline"

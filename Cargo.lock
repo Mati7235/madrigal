@@ -3535,7 +3535,9 @@ dependencies = [
  "madrigal-library",
  "madrigal-localmedia",
  "madrigal-lyrics",
+ "madrigal-mpris",
  "madrigal-net",
+ "madrigal-notify",
  "madrigal-paths",
  "madrigal-player",
  "madrigal-scrobble",
@@ -3544,9 +3546,11 @@ dependencies = [
  "madrigal-ui",
  "reqwest 0.12.28",
  "rusqlite",
+ "serde_json",
  "slint",
  "tempfile",
  "tokio",
+ "zbus",
 ]
 
 [[package]]

@@ -27,8 +27,23 @@ fn main() -> ExitCode {
     let _instance = match acquire() {
         Ok(InstanceRole::Primary(guard)) => guard,
         Ok(InstanceRole::Secondary) => {
-            println!("madrigal ya está en ejecución");
-            return ExitCode::SUCCESS;
+            if opts.files.is_empty() {
+                println!("madrigal ya está en ejecución");
+                return ExitCode::SUCCESS;
+            }
+            return match madrigal_app::desktop::forward_files(
+                &madrigal_app::desktop::handoff_path(),
+                &opts.files,
+            ) {
+                Ok(count) => {
+                    println!("madrigal ya está en ejecución: {count} archivo(s) enviados");
+                    ExitCode::SUCCESS
+                }
+                Err(err) => {
+                    eprintln!("handoff: {err}");
+                    ExitCode::from(1)
+                }
+            };
         }
         Err(err) => {
             eprintln!("single-instance: {err}");

@@ -24,7 +24,9 @@ madrigal-innertube = { path = "../madrigal-innertube" }
 madrigal-library = { path = "../madrigal-library" }
 madrigal-localmedia = { path = "../madrigal-localmedia" }
 madrigal-lyrics = { path = "../madrigal-lyrics" }
+madrigal-mpris = { path = "../madrigal-mpris" }
 madrigal-net = { path = "../madrigal-net" }
+madrigal-notify = { path = "../madrigal-notify" }
 madrigal-paths = { path = "../madrigal-paths" }
 madrigal-player = { path = "../madrigal-player" }
 madrigal-scrobble = { path = "../madrigal-scrobble" }
@@ -32,8 +34,10 @@ madrigal-settings = { path = "../madrigal-settings" }
 madrigal-ui = { path = "../madrigal-ui" }
 reqwest = { version = "0.12", features = ["blocking"] }
 rusqlite = "0.41"
+serde_json = "1"
 slint = "=1.19.0"
 tokio = { version = "1", features = ["rt"] }
+zbus = { version = "5", features = ["tokio"] }
 
 [dev-dependencies]
 madrigal-testkit = { path = "../madrigal-testkit" }
@@ -70,3 +74,7 @@ path = "tests/checks/check_app_library.rs"
 [[test]]
 name = "check_app_downloads"
 path = "tests/checks/check_app_downloads.rs"
+
+[[test]]
+name = "check_desktop"
+path = "tests/checks/check_desktop.rs"

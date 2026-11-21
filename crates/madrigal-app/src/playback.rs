@@ -6,9 +6,10 @@ use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
-use madrigal_core::{TrackIdentity, TrackSource};
+use madrigal_core::{Track, TrackIdentity, TrackSource};
 use madrigal_player::engine::{Engine, EngineConfig};
 use madrigal_player::player::Player;
+use madrigal_player::session::SessionState;
 use madrigal_player::source::{ResolvedStream, StreamSource};
 use madrigal_settings::Player as PlayerConfig;
 use madrigal_settings::{RepeatMode, TransitionMode};
@@ -173,6 +174,85 @@ impl Playback {
         self.player.play_at(index).map_err(|err| err.to_string())?;
         self.revision = self.revision.wrapping_add(1);
         Ok(())
+    }
+
+    pub fn pause(&mut self) -> Result<(), String> {
+        self.player
+            .engine()
+            .set_paused(true)
+            .map_err(|err| err.to_string())
+    }
+
+    pub fn resume(&mut self) -> Result<(), String> {
+        if !self.has_track() {
+            return Ok(());
+        }
+        self.player
+            .resume(&self.settings)
+            .map_err(|err| err.to_string())
+    }
+
+    pub fn session_state(&self) -> Option<SessionState> {
+        self.player.snapshot().ok()
+    }
+
+    pub fn restore_session(&mut self, state: &SessionState) -> bool {
+        if !self.player.restore(state).unwrap_or(false) {
+            return false;
+        }
+        for identity in state
+            .tracks
+            .iter()
+            .filter(|identity| identity.source == TrackSource::Local)
+        {
+            if let Ok((_, meta)) = track_from_file(Path::new(&identity.id)) {
+                self.meta.insert(identity.id.clone(), meta);
+            }
+        }
+        self.revision = self.revision.wrapping_add(1);
+        true
+    }
+
+    pub fn repeat_mode(&self) -> RepeatMode {
+        self.player.queue().repeat()
+    }
+
+    pub fn shuffle_enabled(&self) -> bool {
+        self.player.queue().is_shuffled()
+    }
+
+    pub fn current_track(&self) -> Option<Track> {
+        let identity = self.player.queue().current()?.clone();
+        let meta = self.meta.get(&identity.id);
+        let title = meta
+            .map(|meta| meta.title.clone())
+            .filter(|title| !title.trim().is_empty())
+            .unwrap_or_else(|| identity.id.clone());
+        let artists = meta
+            .map(|meta| {
+                meta.artist
+                    .split(", ")
+                    .map(str::trim)
+                    .filter(|artist| !artist.is_empty())
+                    .map(str::to_owned)
+                    .collect()
+            })
+            .unwrap_or_default();
+        let album = meta
+            .map(|meta| meta.album.clone())
+            .filter(|album| !album.trim().is_empty());
+        let local_path = (identity.source == TrackSource::Local).then(|| identity.id.clone());
+        Some(Track {
+            identity,
+            title,
+            artists,
+            album,
+            duration_secs: meta.and_then(|meta| meta.duration_secs),
+            thumbnail: None,
+            track_number: None,
+            local_path,
+            set_video_id: None,
+        })
     }
 
     pub fn play_pause(&mut self) -> Result<(), String> {
