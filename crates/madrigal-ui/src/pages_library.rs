@@ -2,7 +2,11 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
-use crate::{DownloadRow, HistoryRow, LibCardRow, LibPlaylistRow, LibSongRow, StatRow};
+use slint::{ModelRc, VecModel};
+
+use crate::{
+    DownloadRow, HistoryRow, LibCardRow, LibPlaylistRow, LibSongRow, MainShell, StatRow,
+};
 
 pub const CHIP_LIBRARY: &str = "library";
 pub const CHIP_PLAYLISTS: &str = "playlists";
@@ -546,4 +550,146 @@ pub fn load_downloads_fixture() -> Vec<DownloadItem> {
             }
         })
         .collect()
+}
+
+pub fn matches_query(query: &str, fields: &[&str]) -> bool {
+    let needle = query.trim().to_lowercase();
+    if needle.is_empty() {
+        return true;
+    }
+    fields
+        .iter()
+        .any(|field| field.to_lowercase().contains(&needle))
+}
+
+pub fn filter_songs(rows: Vec<LibSongRow>, query: &str) -> Vec<LibSongRow> {
+    rows.into_iter()
+        .filter(|row| matches_query(query, &[row.title.as_str(), row.subtitle.as_str()]))
+        .collect()
+}
+
+pub fn filter_playlists(rows: Vec<LibPlaylistRow>, query: &str) -> Vec<LibPlaylistRow> {
+    rows.into_iter()
+        .filter(|row| {
+            matches_query(
+                query,
+                &[row.title.as_str(), row.subtitle.as_str(), row.tags.as_str()],
+            )
+        })
+        .collect()
+}
+
+pub fn filter_cards(rows: Vec<LibCardRow>, query: &str) -> Vec<LibCardRow> {
+    rows.into_iter()
+        .filter(|row| matches_query(query, &[row.title.as_str(), row.subtitle.as_str()]))
+        .collect()
+}
+
+pub fn filter_history(rows: Vec<HistoryRow>, query: &str) -> Vec<HistoryRow> {
+    rows.into_iter()
+        .filter(|row| matches_query(query, &[row.title.as_str(), row.subtitle.as_str()]))
+        .collect()
+}
+
+pub fn filter_downloads(rows: Vec<DownloadRow>, query: &str) -> Vec<DownloadRow> {
+    rows.into_iter()
+        .filter(|row| matches_query(query, &[row.title.as_str(), row.subtitle.as_str()]))
+        .collect()
+}
+
+pub fn downloaded_rows(lib: &madrigal_library::Library<'_>) -> Vec<DownloadRow> {
+    let entries = lib
+        .connection()
+        .prepare("SELECT song_key, title, artists FROM downloads ORDER BY created_at DESC")
+        .and_then(|mut stmt| {
+            stmt.query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                ))
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()
+        })
+        .unwrap_or_default();
+    let completed = download_state_index(madrigal_downloads::DownloadState::Completed);
+    entries
+        .into_iter()
+        .map(|(key, title, artists)| DownloadRow {
+            id: key.into(),
+            title: title.into(),
+            subtitle: serde_json::from_str::<Vec<String>>(&artists)
+                .unwrap_or_default()
+                .join(", ")
+                .into(),
+            state: completed,
+            progress: 1.0,
+            speed: "".into(),
+        })
+        .collect()
+}
+
+#[derive(Default)]
+pub struct LibraryModels {
+    pub chips: Vec<String>,
+    pub sort_options: Vec<String>,
+    pub sort: i32,
+    pub tags: Vec<String>,
+    pub songs: Vec<LibSongRow>,
+    pub playlists: Vec<LibPlaylistRow>,
+    pub cards: Vec<LibCardRow>,
+    pub history: Vec<HistoryRow>,
+    pub history_paused: bool,
+    pub stats_totals: String,
+    pub stats_streaks: String,
+    pub stat_tracks: Vec<StatRow>,
+    pub stat_artists: Vec<StatRow>,
+    pub stat_albums: Vec<StatRow>,
+    pub years: Vec<String>,
+    pub year: i32,
+    pub downloads: Vec<DownloadRow>,
+    pub failed_downloads: Vec<DownloadRow>,
+    pub selected_count: i32,
+    pub liked: Option<bool>,
+}
+
+fn string_model(values: &[String]) -> ModelRc<slint::SharedString> {
+    ModelRc::new(VecModel::from(
+        values
+            .iter()
+            .map(|value| slint::SharedString::from(value.as_str()))
+            .collect::<Vec<_>>(),
+    ))
+}
+
+fn row_model<T>(values: &[T]) -> ModelRc<T>
+where
+    T: Clone + 'static,
+{
+    ModelRc::new(VecModel::from(values.to_vec()))
+}
+
+pub fn apply_library(shell: &MainShell, models: &LibraryModels) {
+    shell.set_lib_chips(string_model(&models.chips));
+    shell.set_lib_sort_options(string_model(&models.sort_options));
+    shell.set_lib_sort(models.sort);
+    shell.set_lib_tags(string_model(&models.tags));
+    shell.set_lib_songs(row_model(&models.songs));
+    shell.set_lib_playlists(row_model(&models.playlists));
+    shell.set_lib_cards(row_model(&models.cards));
+    shell.set_lib_history(row_model(&models.history));
+    shell.set_lib_history_paused(models.history_paused);
+    shell.set_lib_stats_totals(models.stats_totals.as_str().into());
+    shell.set_lib_stats_streaks(models.stats_streaks.as_str().into());
+    shell.set_lib_stat_tracks(row_model(&models.stat_tracks));
+    shell.set_lib_stat_artists(row_model(&models.stat_artists));
+    shell.set_lib_stat_albums(row_model(&models.stat_albums));
+    shell.set_lib_years(string_model(&models.years));
+    shell.set_lib_year(models.year);
+    shell.set_lib_selected_count(models.selected_count);
+    shell.set_dl_rows(row_model(&models.downloads));
+    shell.set_dl_failed(row_model(&models.failed_downloads));
+    if let Some(liked) = models.liked {
+        shell.set_liked(liked);
+    }
 }

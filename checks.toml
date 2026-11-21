@@ -299,3 +299,7 @@ group = "native"
 [[check]]
 name = "app_lyrics"
 group = "offline"
+
+[[check]]
+name = "app_library"
+group = "offline"

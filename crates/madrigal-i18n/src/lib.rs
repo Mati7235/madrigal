@@ -184,6 +184,7 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("library.sort.artist", "Artista", "Artist"),
     ("library.sort.name", "Nombre", "Name"),
     ("library.sort.plays", "Reproducciones", "Plays"),
+    ("library.sort.playtime", "Tiempo", "Time"),
     ("library.sort.recent", "Recientes", "Recent"),
     ("library.sort.title", "Ordenar", "Sort"),
     ("library.stats.top", "Top", "Top"),

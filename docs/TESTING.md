@@ -118,6 +118,7 @@ Without `cargo` available the check is FAIL.
 | `app_catalog` | offline | Catalog wiring over innertube fixtures: boot home/explore dispatch, search+suggestions, filter and chip routing, stale-response drop, local source keeps network off |
 | `app_playback` | native | app playback over libmpv ao=null: enqueue, position, pause, seek, volume, repeat, shell snapshot and lyrics clock; SKIP without ffmpeg/libmpv |
 | `app_lyrics` | offline | app lyrics wiring: embedded USLT/SYLT first, db cache fallback, chain on track change, searching/found/none/error, retry and stale drop |
+| `app_library` | offline | Library worker over real innertube fixture songs: query filter, playlists, selection, likes, play recording threshold, history clear, stats years, tags |
 
 ## Visual verification
 

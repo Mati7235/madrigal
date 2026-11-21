@@ -23,12 +23,13 @@ pub use pages_catalog::{
 };
 
 pub use pages_library::{
-    LibraryFixture, album_cards, artist_cards, chip_order, default_chip_order, download_models,
-    download_state_index, event_years, history_rows, load_downloads_fixture, load_library_fixture,
-    move_chip, playlist_rows, save_chip_order, song_rows, song_sort_for_settings, stats_streaks,
-    stats_totals, top_album_rows, top_artist_rows, top_track_rows, year_index, year_model,
-    DownloadItem, CHIP_ALBUMS, CHIP_ARTISTS, CHIP_HISTORY, CHIP_LIBRARY, CHIP_PLAYLISTS, CHIP_SONGS,
-    CHIP_STATS,
+    apply_library, album_cards, artist_cards, chip_order, default_chip_order, download_models,
+    download_state_index, downloaded_rows, event_years, filter_cards, filter_downloads,
+    filter_history, filter_playlists, filter_songs, history_rows, load_downloads_fixture,
+    load_library_fixture, matches_query, move_chip, playlist_rows, save_chip_order, song_rows,
+    song_sort_for_settings, stats_streaks, stats_totals, top_album_rows, top_artist_rows,
+    top_track_rows, year_index, year_model, DownloadItem, LibraryFixture, LibraryModels,
+    CHIP_ALBUMS, CHIP_ARTISTS, CHIP_HISTORY, CHIP_LIBRARY, CHIP_PLAYLISTS, CHIP_SONGS, CHIP_STATS,
 };
 
 pub use player_ui::{
@@ -37,9 +38,9 @@ pub use player_ui::{
     background_index, chain_fetcher, clear_lyrics, dialog_index, eq_preset_gains,
     lyric_progress_at, lyrics_delivery, maybe_fetch_lyrics, open_player_dialog, queue_tabs_from_queue,
     render_share_png, repeat_from_index, repeat_index, set_lyrics, set_queue_models,
-    set_stream_info, show_error, sync_lyrics_clock, track_source_index, wire_lyrics_clock,
-    wire_lyrics_fetch, wire_player_callbacks, PlaybackUiState, PlayerBackgroundStyle, PlayerDialog,
-    QueueRowData, QueueTabData,
+    set_stream_info, show_error, sync_lyrics_clock, track_source_from_index, track_source_index,
+    wire_lyrics_clock, wire_lyrics_fetch, wire_player_callbacks, PlaybackUiState,
+    PlayerBackgroundStyle, PlayerDialog, QueueRowData, QueueTabData,
 };
 pub use lyrics_clock::{LyricsClock, MAX_OFFSET_MS};
 pub use lyrics_fetch::{

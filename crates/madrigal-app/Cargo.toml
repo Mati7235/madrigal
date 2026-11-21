@@ -20,10 +20,12 @@ madrigal-core = { path = "../madrigal-core" }
 madrigal-db = { path = "../madrigal-db" }
 madrigal-i18n = { path = "../madrigal-i18n" }
 madrigal-innertube = { path = "../madrigal-innertube" }
+madrigal-library = { path = "../madrigal-library" }
 madrigal-localmedia = { path = "../madrigal-localmedia" }
 madrigal-lyrics = { path = "../madrigal-lyrics" }
 madrigal-paths = { path = "../madrigal-paths" }
 madrigal-player = { path = "../madrigal-player" }
+madrigal-scrobble = { path = "../madrigal-scrobble" }
 madrigal-settings = { path = "../madrigal-settings" }
 madrigal-ui = { path = "../madrigal-ui" }
 rusqlite = "0.41"
@@ -57,3 +59,7 @@ path = "tests/checks/check_app_playback.rs"
 [[test]]
 name = "check_app_lyrics"
 path = "tests/checks/check_app_lyrics.rs"
+
+[[test]]
+name = "check_app_library"
+path = "tests/checks/check_app_library.rs"

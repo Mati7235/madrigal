@@ -19,6 +19,7 @@ pub struct AppState {
     pub store: Store,
     pub ui: Ui,
     playback: Rc<RefCell<PlaybackService>>,
+    _library: crate::library::LibraryService,
     _poll: slint::Timer,
     _catalog: Wiring,
 }
@@ -56,6 +57,7 @@ impl AppState {
         wire_player_callbacks(&ui.shell);
         wire_playback(&ui.shell, &core);
         crate::lyrics::wire(&ui.shell);
+        let library = crate::library::wire_library(&ui.shell, &store);
         let poll = start_poll(&ui.shell, Rc::clone(&service));
         let catalog = catalog::wire_catalog(&ui.shell, &settings.content)?;
 
@@ -63,6 +65,7 @@ impl AppState {
             store,
             ui,
             playback: service,
+            _library: library,
             _poll: poll,
             _catalog: catalog,
         })

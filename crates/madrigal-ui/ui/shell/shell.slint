@@ -51,6 +51,7 @@ export component MainShell inherits Window {
     in-out property<[DownloadRow]> dl-failed;
     in-out property<int> lib-action-count: 0;
     in-out property<string> lib-last-action: "";
+    in-out property<string> lib-last-arg: "";
     in-out property<int> dl-action-count: 0;
     in-out property<string> dl-last-action: "";
     in-out property<string> track-title: "";
@@ -271,8 +272,8 @@ export component MainShell inherits Window {
         root.lib-record("tags-closed");
         root.lib-tags-open = false;
     }
-    lib-tag-created(t) => { root.lib-record("tag-created"); }
-    lib-tag-removed(t) => { root.lib-record("tag-removed"); }
+    lib-tag-created(t) => { root.lib-record("tag-created"); root.lib-last-arg = t; }
+    lib-tag-removed(t) => { root.lib-record("tag-removed"); root.lib-last-arg = t; }
     lib-sort-opened() => {
         root.lib-record("sort-opened");
         root.lib-sort-open = true;
@@ -286,14 +287,14 @@ export component MainShell inherits Window {
         root.lib-sort = i;
         root.lib-sort-open = false;
     }
-    lib-song-toggled(id) => { root.lib-record("song-toggled"); }
-    lib-song-chosen(id) => { root.lib-record("song-chosen"); }
+    lib-song-toggled(id) => { root.lib-record("song-toggled"); root.lib-last-arg = id; }
+    lib-song-chosen(id) => { root.lib-record("song-chosen"); root.lib-last-arg = id; }
     lib-multiselect-toggled() => {
         root.lib-record("multiselect-toggled");
         root.lib-multiselect = !root.lib-multiselect;
     }
     lib-selection-cleared() => { root.lib-record("selection-cleared"); }
-    lib-playlist-opened(id) => { root.lib-record("playlist-opened"); }
+    lib-playlist-opened(id) => { root.lib-record("playlist-opened"); root.lib-last-arg = id; }
     lib-history-cleared() => { root.lib-record("history-cleared"); }
     lib-year-prev() => {
         root.lib-record("year-prev");
