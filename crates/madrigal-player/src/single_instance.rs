@@ -3,6 +3,8 @@ use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 
 pub struct SingleInstance {
+    // Kept alive so the socket stays bound; dropping it stops accepting connections.
+    #[allow(dead_code)]
     listener: UnixListener,
     path: PathBuf,
 }

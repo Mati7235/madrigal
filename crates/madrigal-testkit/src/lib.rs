@@ -210,8 +210,8 @@ fn build_tree(root: &impl ElementRoot) -> Vec<Node> {
     for index in 1..nodes.len() {
         let mut parent = None;
         let mut smallest = usize::MAX;
-        for candidate in 0..index {
-            let span = nodes[candidate].span;
+        for (candidate, node) in nodes.iter().enumerate().take(index) {
+            let span = node.span;
             if span == 0 || candidate + span < index || span >= smallest {
                 continue;
             }
