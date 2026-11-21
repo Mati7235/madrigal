@@ -32,9 +32,14 @@ pub const TICK: Duration = Duration::from_millis(250);
 pub const SETTINGS_DEBOUNCE: Duration = Duration::from_millis(750);
 pub const SESSION_INTERVAL: Duration = Duration::from_secs(5);
 pub const FLUSH_INTERVAL: Duration = Duration::from_secs(30);
+pub const DBUS_TIMEOUT: Duration = Duration::from_secs(3);
 pub const HANDOFF_SOCKET: &str = "madrigal-handoff.sock";
 pub const BUS_ADDRESS_ENV: &str = "MADRIGAL_DBUS_ADDRESS";
 pub const ERROR_CODE: &str = "playback";
+
+fn with_timeout<F: std::future::Future>(future: F) -> Option<F::Output> {
+    zbus::block_on(async move { tokio::time::timeout(DBUS_TIMEOUT, future).await }).ok()
+}
 
 fn lock(core: &Arc<Mutex<Playback>>) -> MutexGuard<'_, Playback> {
     match core.lock() {
@@ -303,38 +308,44 @@ pub fn start_notifications(
     labels: Labels,
     actions: Sender<Action>,
 ) -> Option<NotifyBridge> {
-    let backend = zbus::block_on(ZbusBackend::connect(address)).ok()?;
-    let subscriber = zbus::block_on(ZbusBackend::connect(address)).ok()?;
-    let mut subscription = zbus::block_on(subscriber.subscribe_actions()).ok()?;
-    let notifier = Notifier::new(backend);
-    let labeled = zbus::block_on(notifier.server_capabilities())
-        .map(|caps| caps.iter().any(|cap| cap == "actions"))
-        .unwrap_or(false);
     let (tx, rx) = mpsc::channel::<Notice>();
     let stop = Arc::new(AtomicBool::new(false));
+    let address = address.map(str::to_owned);
     let worker = {
         let stop = Arc::clone(&stop);
         thread::Builder::new()
             .name("madrigal-notify".to_owned())
-            .spawn(move || {
-                while !stop.load(Ordering::Relaxed) {
-                    let notice = match rx.recv_timeout(Duration::from_millis(200)) {
-                        Ok(notice) => notice,
-                        Err(mpsc::RecvTimeoutError::Timeout) => continue,
-                        Err(mpsc::RecvTimeoutError::Disconnected) => break,
-                    };
-                    let builder = NotificationBuilder::new(notice.title).body(notice.artists);
-                    let builder = if labeled {
-                        builder.playback_actions(&labels.previous, &labels.toggle, &labels.next)
-                    } else {
-                        builder
-                    };
-                    let _ = zbus::block_on(notifier.show(&builder));
-                }
-            })
+            .spawn(move || run_notifications(address.as_deref(), labels, actions, rx, stop))
             .ok()?
     };
-    thread::Builder::new()
+    Some(NotifyBridge {
+        tx,
+        stop,
+        worker: Some(worker),
+    })
+}
+
+fn run_notifications(
+    address: Option<&str>,
+    labels: Labels,
+    actions: Sender<Action>,
+    rx: Receiver<Notice>,
+    stop: Arc<AtomicBool>,
+) {
+    let Some(Ok(backend)) = with_timeout(ZbusBackend::connect(address)) else {
+        return;
+    };
+    let Some(Ok(subscriber)) = with_timeout(ZbusBackend::connect(address)) else {
+        return;
+    };
+    let Some(Ok(mut subscription)) = with_timeout(subscriber.subscribe_actions()) else {
+        return;
+    };
+    let notifier = Notifier::new(backend);
+    let labeled = with_timeout(notifier.server_capabilities())
+        .and_then(Result::ok)
+        .is_some_and(|caps| caps.iter().any(|cap| cap == "actions"));
+    let _ = thread::Builder::new()
         .name("madrigal-notify-actions".to_owned())
         .spawn(move || {
             while let Ok((_, key)) = zbus::block_on(subscription.next()) {
@@ -345,13 +356,21 @@ pub fn start_notifications(
                     break;
                 }
             }
-        })
-        .ok()?;
-    Some(NotifyBridge {
-        tx,
-        stop,
-        worker: Some(worker),
-    })
+        });
+    while !stop.load(Ordering::Relaxed) {
+        let notice = match rx.recv_timeout(Duration::from_millis(200)) {
+            Ok(notice) => notice,
+            Err(mpsc::RecvTimeoutError::Timeout) => continue,
+            Err(mpsc::RecvTimeoutError::Disconnected) => break,
+        };
+        let builder = NotificationBuilder::new(notice.title).body(notice.artists);
+        let builder = if labeled {
+            builder.playback_actions(&labels.previous, &labels.toggle, &labels.next)
+        } else {
+            builder
+        };
+        let _ = with_timeout(notifier.show(&builder));
+    }
 }
 
 fn playback_status(has_track: bool, paused: bool) -> PlaybackStatus {
@@ -483,31 +502,38 @@ impl Drop for MprisBridge {
     }
 }
 
-pub fn start_mpris(core: Arc<Mutex<Playback>>, address: &str) -> Option<MprisBridge> {
-    let service = zbus::block_on(MprisService::start(
-        Arc::new(PlaybackProvider { core }),
-        Some(address),
-    ))
-    .ok()?;
+pub fn start_mpris<P>(provider: Arc<P>, address: &str) -> Option<MprisBridge>
+where
+    P: NowPlayingProvider,
+{
     let stop = Arc::new(AtomicBool::new(false));
+    let address = address.to_owned();
     let worker = {
         let stop = Arc::clone(&stop);
         thread::Builder::new()
             .name("madrigal-mpris".to_owned())
-            .spawn(move || {
-                while !stop.load(Ordering::Relaxed) {
-                    thread::sleep(Duration::from_secs(1));
-                    if zbus::block_on(service.sync()).is_err() {
-                        break;
-                    }
-                }
-            })
+            .spawn(move || run_mpris(provider, &address, stop))
             .ok()?
     };
     Some(MprisBridge {
         stop,
         worker: Some(worker),
     })
+}
+
+fn run_mpris<P: NowPlayingProvider>(provider: Arc<P>, address: &str, stop: Arc<AtomicBool>) {
+    let Some(Ok(service)) = with_timeout(MprisService::start(provider, Some(address))) else {
+        return;
+    };
+    while !stop.load(Ordering::Relaxed) {
+        thread::sleep(Duration::from_secs(1));
+        if stop.load(Ordering::Relaxed) {
+            break;
+        }
+        if with_timeout(service.sync()).is_none_or(|result| result.is_err()) {
+            break;
+        }
+    }
 }
 
 pub const MAX_TICK_GAP: Duration = Duration::from_secs(2);
@@ -749,9 +775,14 @@ impl Desktop {
         }
         let (action_tx, actions) = mpsc::channel();
         let bus = bus_address();
-        let mpris = bus
-            .as_deref()
-            .and_then(|address| start_mpris(Arc::clone(&core), address));
+        let mpris = bus.as_deref().and_then(|address| {
+            start_mpris(
+                Arc::new(PlaybackProvider {
+                    core: Arc::clone(&core),
+                }),
+                address,
+            )
+        });
         let notify = bus.as_deref().filter(|_| settings.appearance.notify_track_change).and_then(|address| {
             start_notifications(Some(address), Labels::from_settings(settings), action_tx)
         });

@@ -1,6 +1,8 @@
+use std::os::unix::net::UnixListener;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::thread;
 use std::time::{Duration, Instant};
 
 use madrigal_app::desktop::{
@@ -8,12 +10,37 @@ use madrigal_app::desktop::{
 };
 use madrigal_app::playback::track_from_file;
 use madrigal_core::Track;
+use madrigal_mpris::{MockProvider, MockState};
 use madrigal_player::session;
 use madrigal_scrobble::outbox::Outbox;
 use madrigal_scrobble::{Eligibility, SubmitOutcome};
 use madrigal_settings::{RepeatMode, Settings};
 
 static ENV: Mutex<()> = Mutex::new(());
+
+struct SilentBus {
+    _dir: tempfile::TempDir,
+    address: String,
+}
+
+impl SilentBus {
+    fn start() -> Self {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("bus.sock");
+        let listener = UnixListener::bind(&path).expect("bind silent bus");
+        thread::spawn(move || {
+            let mut held = Vec::new();
+            for stream in listener.incoming() {
+                let Ok(stream) = stream else { break };
+                held.push(stream);
+            }
+        });
+        Self {
+            address: format!("unix:path={}", path.display()),
+            _dir: dir,
+        }
+    }
+}
 
 fn fixture() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -291,10 +318,57 @@ fn dbus_services_skip_without_session_bus() {
     std::env::set_var(desktop::BUS_ADDRESS_ENV, bogus);
     assert_eq!(desktop::bus_address().as_deref(), Some(bogus));
     let (tx, _rx) = mpsc::channel();
+    let started = Instant::now();
+    let bridge = desktop::start_notifications(Some(bogus), labels, tx);
     assert!(
-        desktop::start_notifications(Some(bogus), labels, tx).is_none(),
-        "notifications started on an unreachable bus"
+        started.elapsed() < Duration::from_secs(1),
+        "boot waited on an unreachable bus: {:?}",
+        started.elapsed()
+    );
+    let started = Instant::now();
+    drop(bridge);
+    assert!(
+        started.elapsed() < desktop::DBUS_TIMEOUT + Duration::from_secs(2),
+        "unreachable bus delayed shutdown: {:?}",
+        started.elapsed()
     );
     std::env::remove_var(desktop::BUS_ADDRESS_ENV);
     println!("OK dbus skip");
+}
+
+#[test]
+fn dbus_setup_never_blocks_boot() {
+    let _guard = ENV.lock().expect("env lock");
+    let bus = SilentBus::start();
+    std::env::set_var(desktop::BUS_ADDRESS_ENV, &bus.address);
+    let address = desktop::bus_address().expect("bus address");
+    let labels = desktop::Labels::from_settings(&Settings::default());
+
+    let started = Instant::now();
+    let (tx, _rx) = mpsc::channel();
+    let notify = desktop::start_notifications(Some(&address), labels, tx);
+    let mpris = desktop::start_mpris(Arc::new(MockProvider::new(MockState::default())), &address);
+    assert!(
+        started.elapsed() < Duration::from_secs(1),
+        "boot waited on dbus: {:?}",
+        started.elapsed()
+    );
+
+    let started = Instant::now();
+    drop(notify);
+    assert!(
+        started.elapsed() < desktop::DBUS_TIMEOUT + Duration::from_secs(2),
+        "notification shutdown waited on a hung bus: {:?}",
+        started.elapsed()
+    );
+    let started = Instant::now();
+    drop(mpris);
+    assert!(
+        started.elapsed() < desktop::DBUS_TIMEOUT + Duration::from_secs(2),
+        "mpris shutdown waited on a hung bus: {:?}",
+        started.elapsed()
+    );
+
+    std::env::remove_var(desktop::BUS_ADDRESS_ENV);
+    println!("OK dbus setup bounded");
 }

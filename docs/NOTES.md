@@ -534,6 +534,16 @@ LOAD an http(s) stream URL, check audio starts, set volume, stop,
 disconnect.
 
 
+## D-Bus setup timeouts
+
+`org.freedesktop.Notifications` can be registered as activatable (a KDE Plasma
+service file) with no daemon behind it; activation then blocks for the bus
+timeout instead of failing. `madrigal-app` sets up MPRIS and notifications in
+background threads and bounds every call that can hang (`connect`,
+`subscribe_actions`, `GetCapabilities`, `Notify`, `MprisService::start`, `sync`)
+with `desktop::DBUS_TIMEOUT` (3 s), so boot never waits and shutdown waits at
+most one timeout before the feature stays off.
+
 ## Provenance
 
 Madrigal is an independent reimplementation of the Android app's behavior and
