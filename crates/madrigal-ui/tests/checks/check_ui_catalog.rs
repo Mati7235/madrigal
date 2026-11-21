@@ -372,6 +372,7 @@ fn ui_catalog() {
     assert_eq!(shell.get_search_source(), 0);
     click_nth(&shell, "SearchPage::source-chip", 1);
     assert_eq!(shell.get_search_source(), 1);
+    kit::lint_layout_at_sizes(&shell, "search");
 
     shell.set_search_query("zzz-no-match".into());
     madrigal_ui::apply_search_results(&shell, Vec::new());
@@ -533,10 +534,8 @@ fn ui_catalog() {
     kit::mock_advance(Duration::from_millis(600));
     shell.show().unwrap();
     shell.set_page(0);
-    let violations = kit::lint_layout(&shell, (1920.0, 1080.0));
-    assert!(violations.is_empty(), "layout violations: {violations:#?}");
-    snapshot(&shell, &snapshot_dir, "home.png");
-    shell.set_page(1);
+    kit::lint_layout_at_sizes(&shell, "home");
+    snapshot(&shell, &snapshot_dir, "home.png");    shell.set_page(1);
     shell.set_search_query("zzz-no-match".into());
     madrigal_ui::apply_search_results(&shell, Vec::new());
     shell.invoke_query_changed("zzz-no-match".into());
@@ -558,10 +557,19 @@ fn ui_catalog() {
     );
     click_nth(&shell, "DetailPage::detail-back", 0);
     assert!(!is_detail_open(&shell));
-    let violations = kit::lint_layout(&shell, (1920.0, 1080.0));
-    assert!(violations.is_empty(), "explore layout violations: {violations:#?}");
+    kit::lint_layout_at_sizes(&shell, "explore");
     snapshot(&shell, &snapshot_dir, "explore.png");
     load_album_fixture(&shell, ALBUM_ID, &album_src).unwrap();
     shell.set_detail_stack(1);
+    for (width, height) in kit::WINDOW_SIZES {
+        kit::resize(&shell, width, height);
+        let page = kit::find_by_id(&shell, "PageHost::detail-view").unwrap();
+        let violations = kit::lint_layout_of(&page, (width, height));
+        assert!(
+            violations.is_empty(),
+            "detail at {width}x{height}: {violations:#?}"
+        );
+    }
+    kit::resize(&shell, 1280.0, 800.0);
     snapshot(&shell, &snapshot_dir, "detail.png");
 }

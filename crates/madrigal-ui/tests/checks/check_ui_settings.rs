@@ -445,8 +445,8 @@ fn ui_settings() {
             );
         }
 
-        let violations = kit::lint_layout(&shell, (1920.0, 1080.0));
-        assert!(violations.is_empty(), "layout violations {group:?}: {violations:#?}");
+        let label = format!("settings {group:?}");
+        kit::lint_layout_at_sizes(&shell, &label);
         let name = format!("settings-{:?}.png", group).to_lowercase();
         kit::snapshot_to(shell.window(), &snapshot_dir.join(name)).unwrap();
     }
