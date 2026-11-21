@@ -11,7 +11,7 @@ use madrigal_app::account::{
 use madrigal_app::catalog::{
     wire_catalog_with, CatalogEvent, CatalogSource, ExplorePages,
 };
-use madrigal_innertube::{CatalogClient, HomeFeed, SearchFilter, SearchOutcome};
+use madrigal_innertube::{AccountInfo, CatalogClient, HomeFeed, SearchFilter, SearchOutcome};
 use madrigal_settings::Content;
 use madrigal_testkit as kit;
 use madrigal_ui::{wire_shell, wire_shell_i18n, MainShell, SettingsPresenter};
@@ -134,17 +134,31 @@ fn loop_until<F: Fn() -> bool>(done: F) {
     }
 }
 
-fn slow_ok(_cookie: &str) -> Result<(), String> {
+fn slow_ok(_cookie: &str) -> Result<AccountInfo, String> {
     std::thread::sleep(Duration::from_secs(1));
-    Ok(())
+    Ok(account_info())
 }
 
-fn validator_ok(_cookie: &str) -> Result<(), String> {
-    Ok(())
+fn account_info() -> AccountInfo {
+    AccountInfo {
+        name: "Sample User".to_owned(),
+        handle: Some("@sampleuser".to_owned()),
+        email: Some("sample@example.com".to_owned()),
+        channel_id: Some("UC00000000000000000000".to_owned()),
+        avatar: Some("https://example.com/avatar.png".to_owned()),
+    }
 }
 
-fn validator_fail(_cookie: &str) -> Result<(), String> {
+fn validator_ok(_cookie: &str) -> Result<AccountInfo, String> {
+    Ok(account_info())
+}
+
+fn validator_fail(_cookie: &str) -> Result<AccountInfo, String> {
     Err("rejected".to_owned())
+}
+
+fn validator_not_signed_in(_cookie: &str) -> Result<AccountInfo, String> {
+    Err("account menu shows no signed-in account".to_owned())
 }
 
 #[test]
@@ -165,15 +179,33 @@ fn app_account() {
         LoginOutcome::Failed { error: ERR_AUTH.to_owned() },
         "rejected cookies map to errAuth"
     );
+    let outcome = run_login_with(&validator_not_signed_in);
+    assert_eq!(
+        outcome,
+        LoginOutcome::Failed { error: ERR_AUTH.to_owned() },
+        "logged-out account menu maps to errAuth"
+    );
     assert!(
         !SessionStore::default().active().catalog_ready(),
         "failed login must not store a session"
     );
 
     let outcome = run_login_with(&validator_ok);
-    assert!(matches!(outcome, LoginOutcome::Connected { .. }), "login succeeds: {outcome:?}");
+    assert_eq!(
+        outcome,
+        LoginOutcome::Connected {
+            name: "Sample User".to_owned(),
+            email: "sample@example.com".to_owned(),
+        },
+        "login reports the account from the menu"
+    );
     let stored = SessionStore::default().active();
     assert!(stored.logged_in() && stored.catalog_ready(), "session stored");
+    assert_eq!(stored.account_name, "Sample User");
+    assert_eq!(stored.account_email, "sample@example.com");
+    assert_eq!(stored.channel_handle, "@sampleuser");
+    assert_eq!(stored.channel_id, "UC00000000000000000000");
+    assert_eq!(stored.avatar_url, "https://example.com/avatar.png");
     assert!(stored.cookie.contains("LOGIN_INFO=login-test"), "login cookie stored");
     assert!(stored.cookie.contains("SAPISID=sapisid-test"), "sapisid stored");
     assert!(stored.cookie.contains("__Secure-3PAPISID=sapisid3-test"), "primary sapisid stored");
@@ -223,6 +255,11 @@ fn app_account() {
     loop_until(|| shell.get_settings_account_connected());
     assert!(!shell.get_settings_account_busy());
     assert!(shell.get_settings_account_error().is_empty());
+    assert_eq!(shell.get_settings_account_name().as_str(), "Sample User");
+    assert_eq!(
+        shell.get_settings_account_email().as_str(),
+        "sample@example.com"
+    );
     assert!(SessionStore::default().active().catalog_ready());
 
     shell.invoke_settings_login("signout".into());
@@ -247,5 +284,60 @@ fn app_account() {
         shell.get_settings_account_error().as_str(),
         ERR_NO_FIREFOX,
         "missing firefox sets errNoFirefox state"
+    );
+
+    std::env::set_var("HOME", home.path());
+    let outcome = run_login_with(&validator_ok);
+    assert!(
+        matches!(outcome, LoginOutcome::Connected { .. }),
+        "seed a stored login for the boot restore"
+    );
+
+    let restored = MainShell::new().expect("restore shell");
+    let restored_lang = wire_shell_i18n(&restored, madrigal_i18n::Lang::Es);
+    let restored_presenter = Rc::new(RefCell::new(SettingsPresenter::load(
+        &settings_path,
+        SessionStore::default().ids(),
+        &root.path().join("diag-restore"),
+    )));
+    wire_shell(&restored, restored_presenter.clone(), &restored_lang);
+    let (restore_sink, _restore_rx) = std::sync::mpsc::channel::<CatalogEvent>();
+    let restore_sink = Arc::new(Mutex::new(restore_sink));
+    let restore_delivery: madrigal_app::catalog::Delivery = Arc::new(move |_event| {
+        let _guard = restore_sink.lock();
+    });
+    let restore_wiring = Arc::new(
+        wire_catalog_with(
+            &restored,
+            &Content::default(),
+            Box::new(FixtureSource),
+            restore_delivery,
+        )
+        .expect("wire restore catalog"),
+    );
+    let started = Instant::now();
+    let _restore_timer = wire_account_with(
+        &restored,
+        restored_presenter.clone(),
+        Arc::clone(&restore_wiring),
+        validator_fail,
+    );
+    assert!(
+        started.elapsed() < Duration::from_millis(500),
+        "restore blocked the boot thread"
+    );
+    restored.show().expect("show restore");
+
+    loop_until(|| restored.get_settings_account_connected());
+    assert_eq!(restored.get_settings_account_name().as_str(), "Sample User");
+    assert_eq!(
+        restored.get_settings_account_email().as_str(),
+        "sample@example.com"
+    );
+    assert!(restored.get_settings_account_error().is_empty());
+    assert!(!restored.get_settings_account_busy());
+    assert_eq!(
+        SessionStore::default().active().channel_id,
+        "UC00000000000000000000"
     );
 }

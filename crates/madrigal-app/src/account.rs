@@ -8,7 +8,7 @@ use madrigal_account::browser::{records_from_browser, BrowserError};
 use madrigal_account::cookies::merge_login_cookies;
 use madrigal_account::session::Session;
 use madrigal_account::store::SessionStore;
-use madrigal_innertube::CatalogClient;
+use madrigal_innertube::{AccountInfo, CatalogClient};
 use madrigal_ui::{refresh_settings, MainShell, SettingsPresenter};
 use slint::ComponentHandle;
 
@@ -27,6 +27,14 @@ pub enum LoginOutcome {
     Failed { error: String },
 }
 
+enum AccountEvent {
+    Restore(Option<Session>),
+    Login {
+        outcome: LoginOutcome,
+        session: Option<Session>,
+    },
+}
+
 fn error_key(err: &BrowserError) -> &'static str {
     match err {
         BrowserError::Unknown(_) => ERR_UNKNOWN,
@@ -38,15 +46,14 @@ fn error_key(err: &BrowserError) -> &'static str {
     }
 }
 
-pub fn validate_cookie(cookie: &str) -> Result<(), String> {
+pub fn validate_cookie(cookie: &str) -> Result<AccountInfo, String> {
     let client = CatalogClient::with_cookies(cookie).map_err(|err| err.to_string())?;
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .map_err(|err| err.to_string())?;
     runtime
-        .block_on(client.library_playlists())
-        .map(|_| ())
+        .block_on(client.account_info())
         .map_err(|err| err.to_string())
 }
 
@@ -59,21 +66,43 @@ pub fn import_login() -> Result<Session, &'static str> {
     })
 }
 
-pub fn run_login_with(validator: &dyn Fn(&str) -> Result<(), String>) -> LoginOutcome {
-    let session = match import_login() {
+fn identity(session: &Session) -> String {
+    if session.account_email.is_empty() {
+        session.channel_handle.clone()
+    } else {
+        session.account_email.clone()
+    }
+}
+
+pub fn run_login_with(
+    validator: &dyn Fn(&str) -> Result<AccountInfo, String>,
+) -> LoginOutcome {
+    let mut session = match import_login() {
         Ok(session) => session,
         Err(key) => {
-            return LoginOutcome::Failed { error: key.to_owned() };
+            return LoginOutcome::Failed {
+                error: key.to_owned(),
+            };
         }
     };
-    if validator(&session.cookie).is_err() {
-        return LoginOutcome::Failed { error: ERR_AUTH.to_owned() };
-    }
+    let info = match validator(&session.cookie) {
+        Ok(info) => info,
+        Err(_) => {
+            return LoginOutcome::Failed {
+                error: ERR_AUTH.to_owned(),
+            };
+        }
+    };
+    session.account_name = info.name;
+    session.account_email = info.email.unwrap_or_default();
+    session.channel_handle = info.handle.unwrap_or_default();
+    session.channel_id = info.channel_id.unwrap_or_default();
+    session.avatar_url = info.avatar.unwrap_or_default();
     let store = SessionStore::default();
     let _ = store.save(&session, None);
     LoginOutcome::Connected {
         name: session.account_name.clone(),
-        email: session.account_email.clone(),
+        email: identity(&session),
     }
 }
 
@@ -105,50 +134,75 @@ pub fn refresh_account(shell: &MainShell, presenter: &Rc<RefCell<SettingsPresent
     refresh_settings(shell, &state);
 }
 
-fn apply_outcome(
+fn apply_restore(
     shell: &MainShell,
     presenter: &Rc<RefCell<SettingsPresenter>>,
     catalog: &Wiring,
-    outcome: LoginOutcome,
+    session: Option<Session>,
 ) {
-    match outcome {
-        LoginOutcome::Connected { name, email } => {
-            let session = SessionStore::default().active();
-            if session.catalog_ready() {
-                catalog.set_session(Some(session.cookie.clone()));
-            }
-            let mut state = presenter.borrow_mut();
-            state.finish_account_work();
-            state.set_account_connected(&name, &email);
+    {
+        let mut state = presenter.borrow_mut();
+        if state.account_busy || state.account_connected {
+            return;
         }
-        LoginOutcome::Failed { error } => {
-            let mut state = presenter.borrow_mut();
-            state.finish_account_work();
-            state.set_account_error(&error);
+        match session {
+            Some(session) if session.catalog_ready() => {
+                state.set_account_connected(&session.account_name, &identity(&session));
+                catalog.set_session(Some(session.cookie));
+            }
+            _ => state.clear_account(),
         }
     }
     refresh_account(shell, presenter);
 }
 
-fn poll_outcome(
+fn apply_login(
     shell: &MainShell,
     presenter: &Rc<RefCell<SettingsPresenter>>,
     catalog: &Wiring,
-    pending: &Rc<RefCell<Option<Receiver<LoginOutcome>>>>,
+    outcome: LoginOutcome,
+    session: Option<Session>,
+) {
+    {
+        let mut state = presenter.borrow_mut();
+        state.finish_account_work();
+        match outcome {
+            LoginOutcome::Connected { name, email } => {
+                if let Some(session) = session.filter(Session::catalog_ready) {
+                    catalog.set_session(Some(session.cookie));
+                }
+                state.set_account_connected(&name, &email);
+            }
+            LoginOutcome::Failed { error } => state.set_account_error(&error),
+        }
+    }
+    refresh_account(shell, presenter);
+}
+
+fn poll_account(
+    shell: &MainShell,
+    presenter: &Rc<RefCell<SettingsPresenter>>,
+    catalog: &Wiring,
+    pending: &Rc<RefCell<Option<Receiver<AccountEvent>>>>,
 ) {
     let ready = pending
         .borrow_mut()
         .as_ref()
         .and_then(|rx| rx.try_recv().ok());
-    if let Some(outcome) = ready {
-        *pending.borrow_mut() = None;
-        apply_outcome(shell, presenter, catalog, outcome);
+    match ready {
+        Some(AccountEvent::Restore(session)) => {
+            apply_restore(shell, presenter, catalog, session);
+        }
+        Some(AccountEvent::Login { outcome, session }) => {
+            apply_login(shell, presenter, catalog, outcome, session);
+        }
+        None => {}
     }
 }
 
-fn spawn_login(
-    pending: &Rc<RefCell<Option<Receiver<LoginOutcome>>>>,
-    job: impl FnOnce() -> LoginOutcome + Send + 'static,
+fn spawn_account(
+    pending: &Rc<RefCell<Option<Receiver<AccountEvent>>>>,
+    job: impl FnOnce() -> AccountEvent + Send + 'static,
 ) {
     let (tx, rx) = mpsc::channel();
     *pending.borrow_mut() = Some(rx);
@@ -171,23 +225,14 @@ pub fn wire_account_with(
     shell: &MainShell,
     presenter: Rc<RefCell<SettingsPresenter>>,
     catalog: Arc<Wiring>,
-    validator: fn(&str) -> Result<(), String>,
+    validator: fn(&str) -> Result<AccountInfo, String>,
 ) -> slint::Timer {
-    let store = SessionStore::default();
-    match restore_session(&store) {
-        Some(session) => {
-            presenter
-                .borrow_mut()
-                .set_account_connected(&session.account_name, &session.account_email);
-            catalog.set_session(Some(session.cookie.clone()));
-        }
-        None => {
-            presenter.borrow_mut().clear_account();
-        }
-    }
+    let pending: Rc<RefCell<Option<Receiver<AccountEvent>>>> = Rc::new(RefCell::new(None));
+    spawn_account(&pending, || {
+        AccountEvent::Restore(restore_session(&SessionStore::default()))
+    });
     refresh_account(shell, &presenter);
 
-    let pending: Rc<RefCell<Option<Receiver<LoginOutcome>>>> = Rc::new(RefCell::new(None));
     let timer = slint::Timer::default();
     {
         let weak = shell.as_weak();
@@ -201,7 +246,7 @@ pub fn wire_account_with(
                 let Some(shell) = weak.upgrade() else {
                     return;
                 };
-                poll_outcome(&shell, &timer_presenter, &timer_catalog, &timer_pending);
+                poll_account(&shell, &timer_presenter, &timer_catalog, &timer_pending);
             },
         );
     }
@@ -218,7 +263,16 @@ pub fn wire_account_with(
             "firefox" | "google" => {
                 handler_presenter.borrow_mut().begin_account_work();
                 refresh_account(&shell, &handler_presenter);
-                spawn_login(&handler_pending, move || run_login_with(&validator));
+                spawn_account(&handler_pending, move || {
+                    let outcome = run_login_with(&validator);
+                    let session = match &outcome {
+                        LoginOutcome::Connected { .. } => {
+                            Some(SessionStore::default().active())
+                        }
+                        LoginOutcome::Failed { .. } => None,
+                    };
+                    AccountEvent::Login { outcome, session }
+                });
             }
             "signout" => {
                 sign_out(&SessionStore::default());

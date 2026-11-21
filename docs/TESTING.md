@@ -97,7 +97,7 @@ Without `cargo` available the check is FAIL.
 | `artwork` | offline | ArtworkCache buckets/hits/LRU/prune and headless Cover PNG with generation guard |
 | `sponsorblock` | offline | Segments parse, category filter, active-segment math, skip-once, 404 empty, custom URL |
 | `tidal_client` | offline | Device-link login, 0600 token store, search Tracks, HLS manifest, lyrics payload |
-| `innertube_home_library` | offline | Fixture home feed maps to models, library/history/writes parse from pinned fixtures, cookie upgrade builds offline |
+| `innertube_home_library` | offline | Fixture home feed maps to models, library/history/writes parse from pinned fixtures, logged-out and structural logged-in account menus parse, cookie upgrade builds offline |
 | `innertube_discover` | offline | Fixture charts/new releases/browse walk/mood deep-link/radio fallback map to models, malformed input errors |
 | `shazam_signature` | native | DejaVu signature: determinism, chunked-feed equality, order sensitivity, pinned tone hash, clean wav errors |
 | `shazam_client` | offline | amp.shazam.com mock: match parse with links, no-match, 5xx retry, malformed/status errors, rate spacing |
@@ -126,7 +126,7 @@ Without `cargo` available the check is FAIL.
 | `app_library` | offline | Library worker over real innertube fixture songs: query filter, playlists, selection, likes, play recording threshold, history clear, stats years, tags |
 | `app_downloads` | offline | Download service over a loopback HTTP server: page rows, progress/speed, queued ordering, pause/resume, retry, cancel and quarantine |
 | `desktop` | offline | Peripherals wiring: settings persistence of volume/repeat/shuffle, session keeper, single-instance file handoff, notification action mapping, scrobble eligibility and outcome merge, D-Bus skip without a session bus, bounded D-Bus setup and shutdown against a silent socket |
-| `app_account` | offline | Firefox login wiring: session stored with cookies only via secret backend, success reports connected, failure sets the mapped error, handler returns without blocking |
+| `app_account` | offline | Firefox login wiring: account menu validation fills name, handle, channel and avatar into the session, success reports connected, logged-out or rejected cookies map to errAuth, failure sets the mapped error, login and boot restore stay off the UI thread |
 
 ## Visual verification
 
