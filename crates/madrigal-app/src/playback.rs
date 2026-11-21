@@ -44,6 +44,7 @@ pub struct Snapshot {
     pub title: String,
     pub artist: String,
     pub album: String,
+    pub thumbnail: String,
     pub track_id: String,
     pub track_source: TrackSource,
     pub has_track: bool,
@@ -467,10 +468,27 @@ impl Playback {
             .map(|secs| (secs * 1000.0).round().clamp(0.0, f64::from(i32::MAX)) as i32)
             .or_else(|| meta_duration.map(|secs| (secs as i32).saturating_mul(1000)))
             .unwrap_or(0);
+        let mut tabs = queue_tabs_from_queue(queue, "");
+        for row in tabs
+            .all
+            .iter_mut()
+            .chain(tabs.searched.iter_mut())
+            .chain(tabs.cont.iter_mut())
+            .chain(tabs.auto.iter_mut())
+        {
+            row.thumbnail = self
+                .meta
+                .get(row.title.as_str())
+                .and_then(|meta| meta.thumbnail.clone())
+                .unwrap_or_default();
+        }
         Snapshot {
             title: meta.map(|meta| meta.title.clone()).unwrap_or_default(),
             artist: meta.map(|meta| meta.artist.clone()).unwrap_or_default(),
             album: meta.map(|meta| meta.album.clone()).unwrap_or_default(),
+            thumbnail: meta
+                .and_then(|meta| meta.thumbnail.clone())
+                .unwrap_or_default(),
             track_id,
             track_source,
             has_track: current.is_some(),
@@ -483,7 +501,7 @@ impl Playback {
             locked: queue.locked(),
             queue_index: queue.current_index().map(|i| i as i32).unwrap_or(-1),
             queue_revision: self.revision,
-            queue: queue_tabs_from_queue(queue, ""),
+            queue: tabs,
         }
     }
 }

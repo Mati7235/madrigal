@@ -6,7 +6,7 @@ use madrigal_innertube::{
     MoodListing, NewReleases, PlaylistPage,
 };
 
-use crate::{CatalogItem, CatalogSection, DetailKind, DetailRef, MainShell, MoodEntry};
+use crate::{artwork, CatalogItem, CatalogSection, DetailKind, DetailRef, MainShell, MoodEntry};
 
 pub type CatalogResult<T> = Result<T, madrigal_innertube::Error>;
 
@@ -28,6 +28,7 @@ fn item(
         artist: SharedString::new(),
         album: SharedString::new(),
         thumbnail: SharedString::new(),
+        cover: Default::default(),
         duration_secs: 0,
     }
 }
@@ -44,6 +45,7 @@ pub fn track_item(track: &Track) -> CatalogItem {
         artist: track.artist_text().into(),
         album: track.album.as_deref().unwrap_or_default().into(),
         thumbnail: track.thumbnail.as_deref().unwrap_or_default().into(),
+        cover: Default::default(),
         duration_secs: track.duration_secs.unwrap_or_default() as i32,
         ..item(
             DetailKind::Album,
@@ -57,25 +59,31 @@ pub fn track_item(track: &Track) -> CatalogItem {
 }
 
 pub fn album_item(album: &Album) -> CatalogItem {
-    item(
-        DetailKind::Album,
-        album.id.as_str(),
-        album.title.as_str(),
-        album.artist_text().as_str(),
-        album.year.as_deref().unwrap_or_default(),
-        false,
-    )
+    CatalogItem {
+        thumbnail: album.thumbnail.as_deref().unwrap_or_default().into(),
+        ..item(
+            DetailKind::Album,
+            album.id.as_str(),
+            album.title.as_str(),
+            album.artist_text().as_str(),
+            album.year.as_deref().unwrap_or_default(),
+            false,
+        )
+    }
 }
 
 pub fn artist_item(artist: &Artist) -> CatalogItem {
-    item(
-        DetailKind::Artist,
-        artist.id.as_str(),
-        artist.name.as_str(),
-        artist.subscribers.as_deref().unwrap_or_default(),
-        "",
-        false,
-    )
+    CatalogItem {
+        thumbnail: artist.thumbnail.as_deref().unwrap_or_default().into(),
+        ..item(
+            DetailKind::Artist,
+            artist.id.as_str(),
+            artist.name.as_str(),
+            artist.subscribers.as_deref().unwrap_or_default(),
+            "",
+            false,
+        )
+    }
 }
 
 pub fn playlist_item(playlist: &Playlist) -> CatalogItem {
@@ -86,14 +94,17 @@ pub fn playlist_item(playlist: &Playlist) -> CatalogItem {
         }
         subtitle.push_str(&count.to_string());
     }
-    item(
-        DetailKind::Playlist,
-        playlist.id.as_str(),
-        playlist.title.as_str(),
-        subtitle.as_str(),
-        "",
-        false,
-    )
+    CatalogItem {
+        thumbnail: playlist.thumbnail.as_deref().unwrap_or_default().into(),
+        ..item(
+            DetailKind::Playlist,
+            playlist.id.as_str(),
+            playlist.title.as_str(),
+            subtitle.as_str(),
+            "",
+            false,
+        )
+    }
 }
 
 pub fn episode_item(episode: &Episode) -> CatalogItem {
@@ -181,6 +192,7 @@ pub fn apply_home(shell: &MainShell, feed: &HomeFeed) {
     ))));
     shell.set_home_current_chip(0);
     shell.set_home_selected_item(-1);
+    artwork::resolve_home(shell);
 }
 
 pub fn apply_home_chips(
@@ -202,6 +214,7 @@ pub fn apply_home_chip(shell: &MainShell, chip: i32, feed: &HomeFeed) {
         sections = sections.into_iter().skip(index).take(1).collect();
     }
     shell.set_home_sections(ModelRc::new(VecModel::from_slice(&sections)));
+    artwork::resolve_home(shell);
 }
 
 pub fn apply_pins(shell: &MainShell, ids: &[String], tracks: &[Track]) {
@@ -237,6 +250,7 @@ pub fn album_results(albums: &[Album]) -> Vec<CatalogItem> {
 
 pub fn apply_search_results(shell: &MainShell, items: Vec<CatalogItem>) {
     shell.set_search_results(ModelRc::new(VecModel::from_slice(&items)));
+    artwork::resolve_search(shell);
 }
 
 pub fn apply_suggestions(shell: &MainShell, query: &str, all: &[String]) {
@@ -300,6 +314,7 @@ pub fn apply_releases(shell: &MainShell, releases: &NewReleases) {
     shell.set_explore_releases_videos(ModelRc::new(VecModel::from_slice(&song_results(
         &releases.videos,
     ))));
+    artwork::resolve_releases(shell);
 }
 
 pub fn apply_charts_entry(shell: &MainShell, charts: &ChartsPage) {
@@ -318,6 +333,7 @@ pub fn apply_browse(shell: &MainShell, browse: &BrowsePage) {
         })
         .collect();
     shell.set_explore_browse_sections(ModelRc::new(VecModel::from_slice(&sections)));
+    artwork::resolve_browse(shell);
 }
 
 pub fn load_explore_fixtures(

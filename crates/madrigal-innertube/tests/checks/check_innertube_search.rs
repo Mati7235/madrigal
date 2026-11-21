@@ -21,6 +21,10 @@ fn search_songs_fixture_maps_to_tracks() {
     assert!(tracks.iter().all(|t| t.is_valid() && t.is_remote()));
     assert!(tracks.iter().all(|t| t.thumbnail.as_ref().is_some_and(|u| u
         .starts_with("https://"))));
+    assert_eq!(
+        first.thumbnail.as_deref(),
+        Some("https://yt3.googleusercontent.com/WbzeDYz9fRAzx_6-Ix97oujwsPzpC5z3dtSd0uftkwu1sMpoGykm7T6zx2UT3iCQw-uVxJ-OaFHtQGT9=w120-h120-l90-rj")
+    );
 }
 
 #[test]
@@ -35,6 +39,10 @@ fn search_artists_fixture_maps_to_artists() {
         first.subscribers.as_deref(),
         Some("55.5M monthly audience")
     );
+    assert_eq!(
+        first.thumbnail.as_deref(),
+        Some("https://lh3.googleusercontent.com/z8KZsHNKS-O1qYVyKlSErT_RLMSMwVht89USvSdFAd0EoRlBOppi9DOdRkv609Ye_tfq_Wp8WwhVJbw=w120-h120-p-l90-rj")
+    );
     assert!(artists.iter().all(|a| a.is_valid()));
 }
 
@@ -47,6 +55,10 @@ fn search_albums_fixture_maps_to_albums() {
     assert_eq!(first.title, "Rubber Soul (Remastered 2009)");
     assert_eq!(first.artists, vec!["The Beatles".to_owned()]);
     assert_eq!(first.year.as_deref(), Some("1965"));
+    assert_eq!(
+        first.thumbnail.as_deref(),
+        Some("https://yt3.googleusercontent.com/IjEb5kMRk7qimcH3BCJaK85pf79X383z5KNrAxJSNOHVWC41_e66Id233ZGj1AQhH1H5AiKxQMEbHPn0=w544-h544-l90-rj")
+    );
     assert!(albums.iter().all(|a| a.is_valid()));
 }
 

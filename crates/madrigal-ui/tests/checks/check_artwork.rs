@@ -1,11 +1,14 @@
 use image::{Rgba, RgbaImage};
-use madrigal_artwork::{ArtworkCache, Source};
+use madrigal_artwork::{bucket_for, sized_url, ArtworkCache, Source};
 use madrigal_testkit as kit;
-use madrigal_ui::{apply_cover, to_slint_image, CoverTestWindow};
-use slint::ComponentHandle;
+use madrigal_ui::{
+    apply_cover, init_artwork, resolve_search, to_slint_image, CatalogItem, CoverTestWindow,
+    DetailKind, MainShell,
+};
+use slint::{ComponentHandle, Model, ModelRc, VecModel};
 use std::collections::HashSet;
 use std::io;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 fn checkerboard(a: Rgba<u8>, b: Rgba<u8>) -> RgbaImage {
     let mut image = RgbaImage::new(48, 48);
@@ -70,4 +73,44 @@ fn artwork_ui_check() {
     kit::snapshot_to(window.window(), &guard).unwrap();
     let center = image::open(&guard).unwrap().to_rgba8().get_pixel(48, 48).0;
     assert_eq!(center, [0, 0, 255, 255], "stale cover overwrote newer one");
+
+    let shell = MainShell::new().unwrap();
+    let bucket = bucket_for(36.0, shell.window().scale_factor());
+    let url = sized_url(
+        "https://yt3.googleusercontent.com/catalog-art=w120-h120-l90-rj",
+        bucket,
+    );
+    let art = checkerboard(Rgba([10, 200, 40, 255]), Rgba([240, 200, 10, 255]));
+    cache.get(&url, Source::Bytes(png(&art)), bucket).unwrap();
+    init_artwork(tmp.path().to_path_buf(), 1 << 20);
+    let item = CatalogItem {
+        kind: DetailKind::Album,
+        id: "art-1".into(),
+        title: "Art".into(),
+        subtitle: String::new().into(),
+        duration: String::new().into(),
+        playable: true,
+        artist: String::new().into(),
+        album: String::new().into(),
+        thumbnail: url.into(),
+        cover: Default::default(),
+        duration_secs: 0,
+    };
+    shell.set_search_results(ModelRc::new(VecModel::from_slice(&[item])));
+    resolve_search(&shell);
+    let deadline = Instant::now() + Duration::from_secs(3);
+    loop {
+        pump_events();
+        let loaded = shell
+            .get_search_results()
+            .row_data(0)
+            .is_some_and(|row| row.cover.size().width > 0);
+        if loaded {
+            let cover = shell.get_search_results().row_data(0).unwrap().cover;
+            assert_eq!(cover.size().width, bucket);
+            break;
+        }
+        assert!(Instant::now() < deadline, "catalog cover never loaded");
+        std::thread::sleep(Duration::from_millis(10));
+    }
 }

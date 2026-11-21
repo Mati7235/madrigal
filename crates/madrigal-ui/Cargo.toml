@@ -8,6 +8,7 @@ license.workspace = true
 all = "warn"
 
 [dependencies]
+madrigal-artwork = { path = "../madrigal-artwork" }
 madrigal-core = { path = "../madrigal-core" }
 madrigal-db = { path = "../madrigal-db" }
 madrigal-downloads = { path = "../madrigal-downloads" }
@@ -18,6 +19,7 @@ madrigal-lyrics = { path = "../madrigal-lyrics" }
 madrigal-paths = { path = "../madrigal-paths" }
 madrigal-player = { path = "../madrigal-player" }
 madrigal-settings = { path = "../madrigal-settings" }
+crossbeam-channel = "0.5"
 image = "0.25"
 rusqlite = { version = "0.41", features = ["bundled"] }
 serde = "1"

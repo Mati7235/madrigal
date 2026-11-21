@@ -57,6 +57,7 @@ export component MainShell inherits Window {
     in-out property<string> track-title: "";
     in-out property<string> track-artist: "";
     in-out property<string> track-album: "";
+    in-out property<image> cover;
     in-out property<bool> has-track: false;
     in-out property<int> position-ms: 0;
     in-out property<int> duration-ms: 0;
@@ -810,6 +811,7 @@ export component MainShell inherits Window {
         title: root.track-title;
         artist: root.track-artist;
         has-track: root.has-track;
+        cover: root.cover;
         position-ms: root.position-ms;
         duration-ms: root.duration-ms;
         paused: root.paused;
@@ -858,6 +860,7 @@ export component MainShell inherits Window {
         artist: root.track-artist;
         album: root.track-album;
         has-track: root.has-track;
+        cover: root.cover;
         position-ms: root.position-ms;
         duration-ms: root.duration-ms;
         paused: root.paused;

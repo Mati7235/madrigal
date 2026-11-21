@@ -5,8 +5,8 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use madrigal_player::engine::EngineConfig;
 use madrigal_ui::{
     apply_background_style, apply_lyrics_settings, apply_player_settings, repeat_from_index,
-    repeat_index, set_queue_models, sync_lyrics_clock, track_source_index, wire_player_callbacks,
-    MainShell,
+    repeat_index, set_now_playing_cover, set_queue_models, sync_lyrics_clock, track_source_index,
+    wire_player_callbacks, MainShell,
 };
 use slint::ComponentHandle;
 
@@ -41,17 +41,21 @@ impl AppState {
         let ui = boot_ui()?;
         let store = Store::open()?;
         let config = engine_config(store.settings(), "auto");
-        Self::with_ui(ui, store, config)
+        Self::with_ui(ui, store, config, true)
     }
 
     pub fn boot_with_engine(config: EngineConfig) -> Result<Self, String> {
         let ui = boot_ui()?;
         let store = Store::open()?;
-        Self::with_ui(ui, store, config)
+        Self::with_ui(ui, store, config, false)
     }
 
-    fn with_ui(ui: Ui, store: Store, config: EngineConfig) -> Result<Self, String> {
+    fn with_ui(ui: Ui, store: Store, config: EngineConfig, artwork: bool) -> Result<Self, String> {
         let settings = store.settings();
+        if artwork {
+            let budget = settings.storage.max_image_cache_mb.max(16) as usize * 1024 * 1024;
+            madrigal_ui::init_artwork(madrigal_paths::cache_dir(), budget);
+        }
         let streams = crate::streams::orchestrator()?;
         let playback = Playback::open(config, &settings.player, streams.clone())?;
         let service = Rc::new(RefCell::new(PlaybackService::start(playback)));
@@ -323,6 +327,7 @@ pub fn apply_snapshot(shell: &MainShell, snapshot: &Snapshot, queue_changed: boo
     shell.set_track_id(snapshot.track_id.clone().into());
     shell.set_track_source(track_source_index(snapshot.track_source));
     shell.set_has_track(snapshot.has_track);
+    set_now_playing_cover(shell, &snapshot.thumbnail);
     shell.set_position_ms(snapshot.position_ms);
     shell.set_duration_ms(snapshot.duration_ms);
     shell.set_paused(snapshot.paused);

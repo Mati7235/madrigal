@@ -10,7 +10,10 @@ mod player_ui;
 mod shell;
 mod theme;
 
-pub use artwork::{apply_cover, to_slint_image};
+pub use artwork::{
+    apply_cover, init_artwork, resolve_browse, resolve_home, resolve_queue, resolve_releases,
+    resolve_search, set_now_playing_cover, to_slint_image,
+};
 
 pub use pages_catalog::{
     album_results, apply_album_detail, apply_artist_detail, apply_browse, apply_browse_detail,

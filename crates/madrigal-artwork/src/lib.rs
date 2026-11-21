@@ -18,6 +18,50 @@ pub const DEFAULT_BUDGET_BYTES: usize = 256 * 1024 * 1024;
 pub const DEFAULT_MEMORY_BUDGET_BYTES: usize = 24 * 1024 * 1024;
 pub const BUCKETS: [u32; 4] = [96, 128, 384, 640];
 
+pub fn bucket_for(rendered_px: f32, scale: f32) -> u32 {
+    let target = (rendered_px * scale.max(1.0)).max(1.0);
+    BUCKETS
+        .iter()
+        .copied()
+        .find(|bucket| *bucket as f32 >= target)
+        .unwrap_or(640)
+}
+
+pub fn sized_url(url: &str, px: u32) -> String {
+    let Some((base, suffix)) = url.rsplit_once('=') else {
+        return url.to_owned();
+    };
+    let mut changed = false;
+    let parts: Vec<String> = suffix
+        .split('-')
+        .map(|part| {
+            let resized = if let Some(value) = part.strip_prefix('w') {
+                value.parse::<u32>().ok().map(|value| {
+                    changed = true;
+                    format!("w{}", value.min(px))
+                })
+            } else if let Some(value) = part.strip_prefix('h') {
+                value.parse::<u32>().ok().map(|value| {
+                    changed = true;
+                    format!("h{}", value.min(px))
+                })
+            } else if let Some(value) = part.strip_prefix('s') {
+                value.parse::<u32>().ok().map(|value| {
+                    changed = true;
+                    format!("s{}", value.min(px))
+                })
+            } else {
+                None
+            };
+            resized.unwrap_or_else(|| part.to_owned())
+        })
+        .collect();
+    if !changed {
+        return url.to_owned();
+    }
+    format!("{base}={}", parts.join("-"))
+}
+
 const FETCH_TIMEOUT: Duration = Duration::from_secs(8);
 const MAX_FETCH_BYTES: usize = 4 * 1024 * 1024;
 const MAX_DIMENSION: u32 = 4096;
@@ -293,6 +337,45 @@ mod tests {
             .write_to(&mut io::Cursor::new(&mut bytes), image::ImageFormat::Png)
             .unwrap();
         bytes
+    }
+
+    #[test]
+    fn bucket_selection_rounds_up_to_cached_sizes() {
+        assert_eq!(bucket_for(36.0, 1.0), 96);
+        assert_eq!(bucket_for(44.0, 1.0), 96);
+        assert_eq!(bucket_for(48.0, 2.0), 96);
+        assert_eq!(bucket_for(118.0, 1.0), 128);
+        assert_eq!(bucket_for(118.0, 2.0), 384);
+        assert_eq!(bucket_for(300.0, 1.0), 384);
+        assert_eq!(bucket_for(300.0, 2.0), 640);
+        assert_eq!(bucket_for(900.0, 3.0), 640);
+    }
+
+    #[test]
+    fn url_size_selection_keeps_available_bounds() {
+        let small = "https://yt3.googleusercontent.com/Wbze=w60-h60-l90-rj";
+        assert_eq!(
+            sized_url(small, 384),
+            "https://yt3.googleusercontent.com/Wbze=w60-h60-l90-rj"
+        );
+        assert_eq!(
+            sized_url(small, 48),
+            "https://yt3.googleusercontent.com/Wbze=w48-h48-l90-rj"
+        );
+        let large = "https://lh3.googleusercontent.com/z8K=w1500-h844-l90-rj";
+        assert_eq!(
+            sized_url(large, 384),
+            "https://lh3.googleusercontent.com/z8K=w384-h384-l90-rj"
+        );
+        let square = "https://yt3.ggpht.com/ytc/AIdro=s96-c-k-c0x00-no-cc-rj-rp";
+        assert_eq!(
+            sized_url(square, 384),
+            "https://yt3.ggpht.com/ytc/AIdro=s96-c-k-c0x00-no-cc-rj-rp"
+        );
+        assert_eq!(
+            sized_url("https://example.com/cover.jpg", 96),
+            "https://example.com/cover.jpg"
+        );
     }
 
     #[test]

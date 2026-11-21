@@ -2,6 +2,7 @@ import { Palette, Type } from "../tokens.slint";
 import { I18n } from "../i18n.slint";
 import { M3IconButton } from "../components/buttons.slint";
 import { Icon, Icons } from "../components/icons.slint";
+import { Cover } from "../components/cover.slint";
 import { QueueRow } from "models.slint";
 
 export component QueueDrawer inherits Rectangle {
@@ -146,6 +147,13 @@ export component QueueDrawer inherits Rectangle {
                                 colorize: root.palette.primary;
                                 icon-size: 16px;
                                 visible: page-rows[idx].current;
+                            }
+
+                            row-cover := Cover {
+                                size: 40px;
+                                radius: 8px;
+                                source: page-rows[idx].cover;
+                                palette: root.palette;
                             }
 
                             row-texts := VerticalLayout {

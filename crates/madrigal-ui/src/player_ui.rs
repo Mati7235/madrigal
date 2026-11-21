@@ -71,6 +71,7 @@ pub struct QueueRowData {
     pub title: String,
     pub artist: String,
     pub current: bool,
+    pub thumbnail: String,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -91,6 +92,7 @@ pub fn queue_tabs_from_queue(queue: &madrigal_player::queue::Queue, query: &str)
             title: item.id.clone(),
             artist: String::new(),
             current: Some(index) == current,
+            thumbnail: String::new(),
         })
         .collect();
     let searched = all
@@ -110,6 +112,8 @@ fn to_model(rows: &[QueueRowData]) -> ModelRc<QueueRow> {
         title: row.title.clone().into(),
         artist: row.artist.clone().into(),
         current: row.current,
+        thumbnail: row.thumbnail.clone().into(),
+        cover: Default::default(),
     }).collect::<Vec<_>>().as_slice())))
 }
 
@@ -316,6 +320,7 @@ pub fn set_queue_models(shell: &MainShell, tabs: &QueueTabData) {
     shell.set_queue_auto(to_model(&tabs.auto));
     let total = (tabs.all.len() + tabs.searched.len() + tabs.cont.len() + tabs.auto.len()) as i32;
     shell.set_queue_count(total);
+    crate::artwork::resolve_queue(shell, tabs);
 }
 
 pub fn set_lyrics(shell: &MainShell, lyrics: &madrigal_lyrics::Lyrics) {
