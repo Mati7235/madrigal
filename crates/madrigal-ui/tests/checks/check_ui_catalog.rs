@@ -179,8 +179,8 @@ fn ui_catalog() {
     }
     {
         let played = played.clone();
-        shell.on_play_requested(move |id| {
-            played.borrow_mut().push(id.to_string());
+        shell.on_play_requested(move |item| {
+            played.borrow_mut().push(item.id.to_string());
         });
     }
     {

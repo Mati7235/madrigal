@@ -13,6 +13,7 @@ use madrigal_player::session::SessionState;
 use madrigal_player::source::{ResolvedStream, StreamSource};
 use madrigal_settings::Player as PlayerConfig;
 use madrigal_settings::{RepeatMode, TransitionMode};
+use madrigal_streams::Orchestrator;
 use madrigal_ui::{queue_tabs_from_queue, QueueTabData};
 
 pub const POLL_INTERVAL: Duration = Duration::from_millis(100);
@@ -23,6 +24,19 @@ pub struct TrackMeta {
     pub artist: String,
     pub album: String,
     pub duration_secs: Option<u32>,
+    pub thumbnail: Option<String>,
+}
+
+impl From<&Track> for TrackMeta {
+    fn from(track: &Track) -> Self {
+        Self {
+            title: track.title.clone(),
+            artist: track.artist_text(),
+            album: track.album.clone().unwrap_or_default(),
+            duration_secs: track.duration_secs,
+            thumbnail: track.thumbnail.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -45,23 +59,48 @@ pub struct Snapshot {
     pub queue: QueueTabData,
 }
 
-#[derive(Debug, Default)]
-pub struct FileSource;
+pub struct AppSource {
+    streams: Orchestrator,
+}
 
-impl StreamSource for FileSource {
-    fn resolve(&self, track: &TrackIdentity) -> Result<ResolvedStream, String> {
-        if track.id.is_empty() {
-            return Err("el track no tiene url".to_owned());
-        }
-        if track.id.starts_with("http://") || track.id.starts_with("https://") {
-            return Ok(ResolvedStream::new(track.id.clone()));
-        }
-        let path = Path::new(&track.id);
-        if !path.is_file() {
-            return Err(format!("no es un archivo: {}", track.id));
-        }
-        Ok(ResolvedStream::new(track.id.clone()))
+impl AppSource {
+    pub fn new(streams: Orchestrator) -> Self {
+        Self { streams }
     }
+}
+
+impl StreamSource for AppSource {
+    fn resolve(&self, track: &TrackIdentity) -> Result<ResolvedStream, String> {
+        match track.source {
+            TrackSource::Local => resolve_local(track),
+            TrackSource::Youtube => {
+                let (stream, _) = self
+                    .streams
+                    .resolve(track, None)
+                    .map_err(|err| err.to_string())?;
+                Ok(ResolvedStream::new(stream.url).with_user_agent(stream.user_agent))
+            }
+            TrackSource::Tidal => Err(format!("unsupported source: {}", track.source)),
+        }
+    }
+
+    fn resolves_remotely(&self, track: &TrackIdentity) -> bool {
+        track.source == TrackSource::Youtube
+    }
+}
+
+fn resolve_local(track: &TrackIdentity) -> Result<ResolvedStream, String> {
+    if track.id.is_empty() {
+        return Err("el track no tiene url".to_owned());
+    }
+    if track.id.starts_with("http://") || track.id.starts_with("https://") {
+        return Ok(ResolvedStream::new(track.id.clone()));
+    }
+    let path = Path::new(&track.id);
+    if !path.is_file() {
+        return Err(format!("no es un archivo: {}", track.id));
+    }
+    Ok(ResolvedStream::new(track.id.clone()))
 }
 
 pub fn engine_config(settings: &madrigal_settings::Settings, ao: &str) -> EngineConfig {
@@ -106,12 +145,13 @@ pub fn track_from_file(path: &Path) -> Result<(TrackIdentity, TrackMeta), String
             artist,
             album,
             duration_secs,
+            thumbnail: None,
         },
     ))
 }
 
 pub struct Playback {
-    player: Player<FileSource>,
+    player: Player<AppSource>,
     meta: HashMap<String, TrackMeta>,
     settings: PlayerConfig,
     revision: u64,
@@ -119,9 +159,13 @@ pub struct Playback {
 }
 
 impl Playback {
-    pub fn open(config: EngineConfig, settings: &PlayerConfig) -> Result<Self, String> {
+    pub fn open(
+        config: EngineConfig,
+        settings: &PlayerConfig,
+        streams: Orchestrator,
+    ) -> Result<Self, String> {
         let engine = Engine::open(&config).map_err(|err| err.to_string())?;
-        let mut player = Player::new(engine, FileSource);
+        let mut player = Player::new(engine, AppSource::new(streams));
         player
             .apply_settings(settings)
             .map_err(|err| err.to_string())?;
@@ -168,6 +212,21 @@ impl Playback {
             let _ = self.player.play_at(start);
         }
         (added, errors)
+    }
+
+    pub fn report(&mut self, message: impl Into<String>) {
+        self.error = Some(message.into());
+    }
+
+    pub fn enqueue_track(&mut self, track: &Track) -> Result<(), String> {
+        let start = self.player.queue().len();
+        if !self.player.queue_mut().push(track.identity.clone()) {
+            return Err("queue is locked".to_owned());
+        }
+        self.meta
+            .insert(track.identity.id.clone(), TrackMeta::from(track));
+        self.revision = self.revision.wrapping_add(1);
+        self.play_index(start)
     }
 
     pub fn play_index(&mut self, index: usize) -> Result<(), String> {
@@ -248,7 +307,7 @@ impl Playback {
             artists,
             album,
             duration_secs: meta.and_then(|meta| meta.duration_secs),
-            thumbnail: None,
+            thumbnail: meta.and_then(|meta| meta.thumbnail.clone()),
             track_number: None,
             local_path,
             set_video_id: None,
@@ -256,7 +315,7 @@ impl Playback {
     }
 
     pub fn play_pause(&mut self) -> Result<(), String> {
-        if self.player.queue().current().is_none() {
+        if self.player.queue().current().is_none() || self.player.is_idle() {
             return self.player.play().map_err(|err| err.to_string());
         }
         if self.paused() {

@@ -20,7 +20,7 @@ export component SearchPage inherits FocusScope {
     callback filter-selected(int);
     callback source-selected(int);
     callback detail-requested(DetailRef);
-    callback play-requested(string);
+    callback play-requested(CatalogItem);
 
     key-dispatched(dir) => {
         if (dir == "down") {
@@ -217,7 +217,7 @@ export component SearchPage inherits FocusScope {
                             progress-track: root.palette.surface-container-highest;
                             progress-fill: root.palette.primary;
                             action => {
-                                root.play-requested(hit.id);
+                                root.play-requested(hit);
                             }
                         }
                     }

@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
 
-use madrigal_app::downloads::{register_with, Downloads, UrlResolver};
+use madrigal_app::downloads::{register_with, Downloads, MediaRequest, UrlResolver};
 use madrigal_core::{Track, TrackIdentity};
 use madrigal_downloads::{DownloadState, JobOptions, ManagerConfig};
 use madrigal_settings::Storage;
@@ -21,8 +21,11 @@ struct Resolver {
 }
 
 impl UrlResolver for Resolver {
-    fn resolve(&self, identity: &TrackIdentity) -> Result<String, String> {
-        Ok(format!("{}/{}.mp3", self.base, identity.id))
+    fn resolve(&self, identity: &TrackIdentity) -> Result<MediaRequest, String> {
+        Ok(MediaRequest {
+            url: format!("{}/{}.mp3", self.base, identity.id),
+            user_agent: None,
+        })
     }
 }
 

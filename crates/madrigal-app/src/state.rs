@@ -51,7 +51,8 @@ impl AppState {
 
     fn with_ui(ui: Ui, store: Store, config: EngineConfig) -> Result<Self, String> {
         let settings = store.settings();
-        let playback = Playback::open(config, &settings.player)?;
+        let streams = crate::streams::orchestrator()?;
+        let playback = Playback::open(config, &settings.player, streams.clone())?;
         let service = Rc::new(RefCell::new(PlaybackService::start(playback)));
         let core = service.borrow().core();
 
@@ -62,7 +63,7 @@ impl AppState {
         wire_playback(&ui.shell, &core);
         crate::lyrics::wire(&ui.shell);
         let library = crate::library::wire_library(&ui.shell, &store);
-        let downloads = crate::downloads::register(&ui.shell, settings);
+        let downloads = crate::downloads::register(&ui.shell, settings, streams);
         let desktop = Desktop::start(&ui.shell, Arc::clone(&core), settings);
         let poll = start_poll(&ui.shell, Rc::clone(&service));
         let catalog = catalog::wire_catalog(&ui.shell, &settings.content)?;
@@ -280,6 +281,8 @@ fn wire_playback(shell: &MainShell, core: &Arc<Mutex<Playback>>) {
             }
         }
     });
+
+    crate::catalog::wire_play_requests(shell, core);
 }
 
 fn start_poll(shell: &MainShell, service: Rc<RefCell<PlaybackService>>) -> slint::Timer {
@@ -303,7 +306,7 @@ fn start_poll(shell: &MainShell, service: Rc<RefCell<PlaybackService>>) -> slint
     timer
 }
 
-fn apply_snapshot(shell: &MainShell, snapshot: &Snapshot, queue_changed: bool) {
+pub fn apply_snapshot(shell: &MainShell, snapshot: &Snapshot, queue_changed: bool) {
     shell.set_track_title(snapshot.title.clone().into());
     shell.set_track_artist(snapshot.artist.clone().into());
     shell.set_track_album(snapshot.album.clone().into());

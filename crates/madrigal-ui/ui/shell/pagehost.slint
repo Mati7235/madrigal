@@ -106,7 +106,7 @@ export component PageHost inherits Rectangle {
     callback filter-selected(int);
     callback source-selected(int);
     callback detail-requested(DetailRef);
-    callback play-requested(string);
+    callback play-requested(CatalogItem);
     callback detail-closed();
     in-out property<int> settings-group;
     in property<[string]> settings-group-titles;
@@ -163,7 +163,7 @@ export component PageHost inherits Rectangle {
         selected-item <=> root.home-selected-item;
         chip-selected(i) => { root.chip-selected(i); }
         detail-requested(ref) => { root.detail-requested(ref); }
-        play-requested(id) => { root.play-requested(id); }
+        play-requested(item) => { root.play-requested(item); }
     }
 
     if (root.page == 1) : search-page := SearchPage {
@@ -180,7 +180,7 @@ export component PageHost inherits Rectangle {
         filter-selected(i) => { root.filter-selected(i); }
         source-selected(i) => { root.source-selected(i); }
         detail-requested(ref) => { root.detail-requested(ref); }
-        play-requested(id) => { root.play-requested(id); }
+        play-requested(item) => { root.play-requested(item); }
     }
 
     if (root.page == 2) : explore-page := ExplorePage {
@@ -195,7 +195,7 @@ export component PageHost inherits Rectangle {
         releases-videos: root.explore-releases-videos;
         browse-sections: root.explore-browse-sections;
         detail-requested(ref) => { root.detail-requested(ref); }
-        play-requested(id) => { root.play-requested(id); }
+        play-requested(item) => { root.play-requested(item); }
     }
 
     if (root.page == 3) : library-host := LibraryPage {
@@ -322,6 +322,6 @@ export component PageHost inherits Rectangle {
             root.detail-closed();
         }
         detail-requested(ref) => { root.detail-requested(ref); }
-        play-requested(id) => { root.play-requested(id); }
+        play-requested(item) => { root.play-requested(item); }
     }
 }

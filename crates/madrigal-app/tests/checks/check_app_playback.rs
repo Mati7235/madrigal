@@ -88,7 +88,8 @@ fn app_playback() {
         "duración {meta:?}"
     );
 
-    let mut playback = Playback::open(config.clone(), &settings).expect("open playback");
+    let streams = madrigal_app::streams::orchestrator().expect("orchestrator");
+    let mut playback = Playback::open(config.clone(), &settings, streams).expect("open playback");
     let (added, errors) = playback.enqueue_files(&[wav.clone(), other.clone()]);
     assert_eq!(added, 2);
     assert!(errors.is_empty(), "{errors:?}");

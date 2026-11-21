@@ -23,7 +23,7 @@ export component DetailPage inherits Rectangle {
 
     callback back-requested();
     callback detail-requested(DetailRef);
-    callback play-requested(string);
+    callback play-requested(CatalogItem);
 
     background: root.palette.surface;
     accessible-role: text;
@@ -97,7 +97,7 @@ export component DetailPage inherits Rectangle {
                     state-on-surface: root.palette.on-surface;
                     clicked => {
                         if (root.tracks.length > 0) {
-                            root.play-requested(root.tracks[0].id);
+                            root.play-requested(root.tracks[0]);
                         }
                     }
                 }
@@ -129,7 +129,7 @@ export component DetailPage inherits Rectangle {
                     accent: root.palette.primary;
                     progress-track: root.palette.surface-container-highest;
                     progress-fill: root.palette.primary;
-                    action => { root.play-requested(track.id); }
+                    action => { root.play-requested(track); }
                 }
             }
 
@@ -211,7 +211,7 @@ export component DetailPage inherits Rectangle {
                     accent: root.palette.primary;
                     progress-track: root.palette.surface-container-highest;
                     progress-fill: root.palette.primary;
-                    action => { root.play-requested(track.id); }
+                    action => { root.play-requested(track); }
                 }
             }
 
@@ -221,7 +221,7 @@ export component DetailPage inherits Rectangle {
                     palette: root.palette;
                     section: sec;
                     detail-requested(ref) => { root.detail-requested(ref); }
-                    play-requested(id) => { root.play-requested(id); }
+                    play-requested(item) => { root.play-requested(item); }
                 }
             }
 

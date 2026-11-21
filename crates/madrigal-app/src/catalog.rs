@@ -3,6 +3,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 
+use madrigal_core::{Track, TrackIdentity};
 use madrigal_innertube::{
     BrowsePage, CatalogClient, ChartsPage, Error as InnertubeError, HomeFeed, MoodListing,
     NewReleases, SearchFilter, SearchOutcome,
@@ -11,9 +12,11 @@ use madrigal_settings::{Content, SearchSource};
 use madrigal_ui::{
     album_results, apply_browse, apply_charts_entry, apply_home, apply_home_chip, apply_moods,
     apply_releases, apply_search_results, apply_suggestions, artist_results, home_chips,
-    song_results, MainShell,
+    song_results, CatalogItem, DetailKind, MainShell,
 };
 use slint::{ComponentHandle, ModelRc, VecModel};
+
+use crate::playback::Playback;
 
 const EXPLORE_BROWSE_ID: &str = "FEmusic_explore";
 const SOURCE_LOCAL: i32 = 0;
@@ -332,6 +335,50 @@ fn filter_for_tab(tab: i32) -> Option<SearchFilter> {
         3 => Some(SearchFilter::Albums),
         _ => None,
     }
+}
+
+pub fn playable_track(item: &CatalogItem) -> Option<Track> {
+    if !item.playable || item.kind == DetailKind::Podcast || item.id.is_empty() {
+        return None;
+    }
+    let non_empty = |text: &str| (!text.is_empty()).then(|| text.to_owned());
+    Some(Track {
+        identity: TrackIdentity::youtube(item.id.as_str()),
+        title: item.title.to_string(),
+        artists: item
+            .artist
+            .split(", ")
+            .map(str::trim)
+            .filter(|artist| !artist.is_empty())
+            .map(str::to_owned)
+            .collect(),
+        album: non_empty(item.album.as_str()),
+        duration_secs: u32::try_from(item.duration_secs)
+            .ok()
+            .filter(|secs| *secs > 0),
+        thumbnail: non_empty(item.thumbnail.as_str()),
+        track_number: None,
+        local_path: None,
+        set_video_id: None,
+    })
+}
+
+pub fn wire_play_requests(shell: &MainShell, core: &Arc<Mutex<Playback>>) {
+    shell.on_play_requested({
+        let core = Arc::clone(core);
+        move |item| {
+            let Some(track) = playable_track(&item) else {
+                return;
+            };
+            let mut playback = match core.lock() {
+                Ok(guard) => guard,
+                Err(poisoned) => poisoned.into_inner(),
+            };
+            if let Err(message) = playback.enqueue_track(&track) {
+                playback.report(message);
+            }
+        }
+    });
 }
 
 pub struct Wiring {

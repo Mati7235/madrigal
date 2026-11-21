@@ -305,6 +305,10 @@ name = "app_playback"
 group = "native"
 
 [[check]]
+name = "app_streams"
+group = "native"
+
+[[check]]
 name = "app_lyrics"
 group = "offline"
 

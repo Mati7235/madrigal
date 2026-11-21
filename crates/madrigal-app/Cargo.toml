@@ -31,6 +31,7 @@ madrigal-paths = { path = "../madrigal-paths" }
 madrigal-player = { path = "../madrigal-player" }
 madrigal-scrobble = { path = "../madrigal-scrobble" }
 madrigal-settings = { path = "../madrigal-settings" }
+madrigal-streams = { path = "../madrigal-streams" }
 madrigal-ui = { path = "../madrigal-ui" }
 reqwest = { version = "0.12", features = ["blocking"] }
 rusqlite = "0.41"
@@ -78,3 +79,7 @@ path = "tests/checks/check_app_downloads.rs"
 [[test]]
 name = "check_desktop"
 path = "tests/checks/check_desktop.rs"
+
+[[test]]
+name = "check_app_streams"
+path = "tests/checks/check_app_streams.rs"

@@ -7,6 +7,7 @@ pub mod desktop;
 pub mod playback;
 pub mod state;
 pub mod store;
+pub mod streams;
 pub mod ui;
 
 use std::path::Path;

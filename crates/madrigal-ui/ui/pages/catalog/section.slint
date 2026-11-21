@@ -1,14 +1,14 @@
 import { Palette, Type } from "../../tokens.slint";
 import { M3Card } from "../../components/cards.slint";
 import { M3ListItem } from "../../components/rows.slint";
-import { CatalogSection, DetailRef } from "refs.slint";
+import { CatalogItem, CatalogSection, DetailRef } from "refs.slint";
 
 export component SectionView inherits VerticalLayout {
     in property<Palette> palette;
     in property<CatalogSection> section;
     in property<bool> cards: false;
     callback detail-requested(DetailRef);
-    callback play-requested(string);
+    callback play-requested(CatalogItem);
 
     spacing: 8px;
 
@@ -35,7 +35,7 @@ export component SectionView inherits VerticalLayout {
             progress-fill: root.palette.primary;
             action => {
                 if (item.playable) {
-                    root.play-requested(item.id);
+                    root.play-requested(item);
                 } else {
                     root.detail-requested({ kind: item.kind, id: item.id });
                 }
@@ -61,7 +61,7 @@ export component SectionView inherits VerticalLayout {
                 shadow-color: root.palette.shadow;
                 clicked => {
                     if (item.playable) {
-                        root.play-requested(item.id);
+                        root.play-requested(item);
                     } else {
                         root.detail-requested({ kind: item.kind, id: item.id });
                     }

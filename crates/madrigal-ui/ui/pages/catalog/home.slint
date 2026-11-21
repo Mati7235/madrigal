@@ -19,7 +19,7 @@ export component HomePage inherits Rectangle {
 
     callback chip-selected(int);
     callback detail-requested(DetailRef);
-    callback play-requested(string);
+    callback play-requested(CatalogItem);
 
     background: root.palette.surface;
     accessible-role: text;
@@ -75,7 +75,7 @@ export component HomePage inherits Rectangle {
                         unselected-line: root.palette.outline-variant;
                         clicked => {
                             root.selected-item = 10000 + i;
-                            root.play-requested(pin.id);
+                            root.play-requested(pin);
                         }
                     }
                 }
@@ -108,7 +108,7 @@ export component HomePage inherits Rectangle {
                             shadow-color: root.palette.shadow;
                             clicked => {
                                 root.selected-item = i;
-                                root.play-requested(pick.id);
+                                root.play-requested(pick);
                             }
                         }
                     }
@@ -128,7 +128,7 @@ export component HomePage inherits Rectangle {
                         progress-fill: root.palette.primary;
                         action => {
                             root.selected-item = i;
-                            root.play-requested(pick.id);
+                            root.play-requested(pick);
                         }
                     }
                 }
@@ -141,9 +141,9 @@ export component HomePage inherits Rectangle {
                     section: sec;
                     cards: sec.items.length > 0 ? !sec.items[0].playable : false;
                     detail-requested(ref) => { root.detail-requested(ref); }
-                    play-requested(id) => {
+                    play-requested(item) => {
                         root.selected-item = 20000 + s;
-                        root.play-requested(id);
+                        root.play-requested(item);
                     }
                 }
             }

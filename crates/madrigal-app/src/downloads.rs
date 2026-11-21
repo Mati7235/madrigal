@@ -12,21 +12,46 @@ use madrigal_downloads::{
     JobOptions, ManagerConfig, ProgressEvent, RunContext, RunnerError,
 };
 use madrigal_settings::Settings;
+use madrigal_streams::Orchestrator;
 use madrigal_ui::{download_models, DownloadItem, MainShell};
+use reqwest::header::{CONTENT_RANGE, RANGE, USER_AGENT};
+use reqwest::StatusCode;
 use slint::{ComponentHandle, ModelRc, VecModel};
 
 const PUMP_INTERVAL: Duration = Duration::from_millis(150);
 const CHUNK_BYTES: usize = 64 * 1024;
+const RANGE_BYTES: u64 = 1024 * 1024;
 
-pub trait UrlResolver: Send + Sync + 'static {
-    fn resolve(&self, identity: &TrackIdentity) -> Result<String, String>;
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MediaRequest {
+    pub url: String,
+    pub user_agent: Option<String>,
 }
 
-pub struct NoResolver;
+pub trait UrlResolver: Send + Sync + 'static {
+    fn resolve(&self, identity: &TrackIdentity) -> Result<MediaRequest, String>;
+}
 
-impl UrlResolver for NoResolver {
-    fn resolve(&self, _identity: &TrackIdentity) -> Result<String, String> {
-        Err("stream resolver not wired".to_owned())
+pub struct StreamResolver {
+    streams: Orchestrator,
+}
+
+impl StreamResolver {
+    pub fn new(streams: Orchestrator) -> Self {
+        Self { streams }
+    }
+}
+
+impl UrlResolver for StreamResolver {
+    fn resolve(&self, identity: &TrackIdentity) -> Result<MediaRequest, String> {
+        let (stream, _) = self
+            .streams
+            .resolve(identity, None)
+            .map_err(|err| err.to_string())?;
+        Ok(MediaRequest {
+            url: stream.url,
+            user_agent: stream.user_agent,
+        })
     }
 }
 
@@ -41,6 +66,29 @@ impl HttpRunner {
             .map_err(|err| err.to_string());
         Self { client, resolver }
     }
+
+    fn request(
+        client: &reqwest::blocking::Client,
+        target: &MediaRequest,
+        start: u64,
+    ) -> Result<reqwest::blocking::Response, RunnerError> {
+        let end = start.saturating_add(RANGE_BYTES - 1);
+        let mut request = client
+            .get(&target.url)
+            .header(RANGE, format!("bytes={start}-{end}"));
+        if let Some(agent) = &target.user_agent {
+            request = request.header(USER_AGENT, agent);
+        }
+        request
+            .send()
+            .map_err(|err| RunnerError::Failed(format!("http: {err}")))
+    }
+}
+
+fn content_range_total(response: &reqwest::blocking::Response) -> Option<u64> {
+    let value = response.headers().get(CONTENT_RANGE)?.to_str().ok()?;
+    let (_, total) = value.rsplit_once('/')?;
+    total.parse::<u64>().ok()
 }
 
 impl DownloadRunner for HttpRunner {
@@ -59,65 +107,95 @@ impl DownloadRunner for HttpRunner {
             .client
             .as_ref()
             .map_err(|err| RunnerError::Failed(err.clone()))?;
-        let url = self
+        let target = self
             .resolver
             .resolve(&ctx.identity)
             .map_err(RunnerError::Failed)?;
-        let mut response = client
-            .get(&url)
-            .send()
-            .map_err(|err| RunnerError::Failed(format!("http: {err}")))?;
-        if !response.status().is_success() {
-            return Err(RunnerError::Failed(format!(
-                "http status {}",
-                response.status()
-            )));
-        }
-        let total = response.content_length();
         if let Some(parent) = ctx.output.parent() {
             std::fs::create_dir_all(parent)
                 .map_err(|err| RunnerError::Failed(format!("output dir: {err}")))?;
         }
-        let mut file = File::create(&ctx.output)
-            .map_err(|err| RunnerError::Failed(format!("output file: {err}")))?;
+        let mut created: Option<File> = None;
         let key = ctx.identity.to_storage_string();
         let started = Instant::now();
         let mut downloaded = 0u64;
+        let mut total: Option<u64> = None;
         let mut buffer = vec![0u8; CHUNK_BYTES];
         loop {
-            if ctx.is_cancelled() {
-                drop(file);
-                let _ = std::fs::remove_file(&ctx.output);
-                return Err(RunnerError::Cancelled);
-            }
-            if ctx.is_paused() {
-                return Err(RunnerError::Paused);
-            }
-            let read = match response.read(&mut buffer) {
-                Ok(read) => read,
-                Err(err) => {
-                    return Err(RunnerError::Failed(format!("read: {err}")));
-                }
-            };
-            if read == 0 {
+            let mut response = Self::request(client, &target, downloaded)?;
+            if response.status() == StatusCode::RANGE_NOT_SATISFIABLE {
                 break;
             }
-            file.write_all(&buffer[..read])
-                .map_err(|err| RunnerError::Failed(format!("write: {err}")))?;
-            downloaded += read as u64;
-            let elapsed = started.elapsed().as_secs_f64();
-            let speed = (elapsed > 0.0).then(|| downloaded as f64 / elapsed);
-            let percent = total
-                .filter(|total| *total > 0)
-                .map(|total| downloaded as f64 / total as f64 * 100.0)
-                .unwrap_or(0.0);
-            report(ProgressEvent {
-                key: key.clone(),
-                downloaded_bytes: downloaded,
-                total_bytes: total,
-                speed_bps: speed,
-                percent,
-            });
+            if !response.status().is_success() {
+                return Err(RunnerError::Failed(format!(
+                    "http status {}",
+                    response.status()
+                )));
+            }
+            if created.is_none() {
+                created = Some(
+                    File::create(&ctx.output)
+                        .map_err(|err| RunnerError::Failed(format!("output file: {err}")))?,
+                );
+            }
+            let Some(file) = created.as_mut() else {
+                return Err(RunnerError::Failed("output file missing".to_owned()));
+            };
+            let ranged = response.status() == StatusCode::PARTIAL_CONTENT;
+            if ranged {
+                total = total.or_else(|| content_range_total(&response));
+            } else {
+                total = response.content_length().or(total);
+            }
+            let mut received = 0u64;
+            loop {
+                if ctx.is_cancelled() {
+                    drop(created.take());
+                    let _ = std::fs::remove_file(&ctx.output);
+                    return Err(RunnerError::Cancelled);
+                }
+                if ctx.is_paused() {
+                    return Err(RunnerError::Paused);
+                }
+                let read = match response.read(&mut buffer) {
+                    Ok(read) => read,
+                    Err(err) => {
+                        return Err(RunnerError::Failed(format!("read: {err}")));
+                    }
+                };
+                if read == 0 {
+                    break;
+                }
+                file.write_all(&buffer[..read])
+                    .map_err(|err| RunnerError::Failed(format!("write: {err}")))?;
+                downloaded += read as u64;
+                received += read as u64;
+                let elapsed = started.elapsed().as_secs_f64();
+                let speed = (elapsed > 0.0).then(|| downloaded as f64 / elapsed);
+                let percent = total
+                    .filter(|total| *total > 0)
+                    .map(|total| downloaded as f64 / total as f64 * 100.0)
+                    .unwrap_or(0.0);
+                report(ProgressEvent {
+                    key: key.clone(),
+                    downloaded_bytes: downloaded,
+                    total_bytes: total,
+                    speed_bps: speed,
+                    percent,
+                });
+            }
+            if received == 0 || !ranged || received < RANGE_BYTES {
+                break;
+            }
+            if total.is_some_and(|total| downloaded >= total) {
+                break;
+            }
+        }
+        let Some(mut file) = created else {
+            return Err(RunnerError::Failed("empty stream".to_owned()));
+        };
+        if downloaded == 0 {
+            return Err(RunnerError::Failed("empty stream".to_owned()));
         }
         file.flush()
             .map_err(|err| RunnerError::Failed(format!("flush: {err}")))?;
@@ -135,7 +213,7 @@ pub struct Downloads {
     _timer: slint::Timer,
 }
 
-pub fn register(shell: &MainShell, settings: &Settings) -> Downloads {
+pub fn register(shell: &MainShell, settings: &Settings, streams: Orchestrator) -> Downloads {
     let dir = settings.storage.downloads_dir.trim();
     let downloads_dir = if dir.is_empty() {
         default_downloads_dir()
@@ -147,7 +225,7 @@ pub fn register(shell: &MainShell, settings: &Settings) -> Downloads {
         madrigal_paths::db_path(),
         &settings.storage,
     );
-    register_with(shell, Arc::new(NoResolver), config)
+    register_with(shell, Arc::new(StreamResolver::new(streams)), config)
 }
 
 pub fn register_with(

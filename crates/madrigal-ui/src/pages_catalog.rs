@@ -25,6 +25,10 @@ fn item(
         subtitle: subtitle.into(),
         duration: duration.into(),
         playable,
+        artist: SharedString::new(),
+        album: SharedString::new(),
+        thumbnail: SharedString::new(),
+        duration_secs: 0,
     }
 }
 
@@ -36,14 +40,20 @@ pub fn track_item(track: &Track) -> CatalogItem {
         }
         subtitle.push_str(album);
     }
-    item(
-        DetailKind::Album,
-        track.identity.id.as_str(),
-        track.title.as_str(),
-        subtitle.as_str(),
-        madrigal_core::format_duration(track.duration_secs).as_str(),
-        true,
-    )
+    CatalogItem {
+        artist: track.artist_text().into(),
+        album: track.album.as_deref().unwrap_or_default().into(),
+        thumbnail: track.thumbnail.as_deref().unwrap_or_default().into(),
+        duration_secs: track.duration_secs.unwrap_or_default() as i32,
+        ..item(
+            DetailKind::Album,
+            track.identity.id.as_str(),
+            track.title.as_str(),
+            subtitle.as_str(),
+            madrigal_core::format_duration(track.duration_secs).as_str(),
+            true,
+        )
+    }
 }
 
 pub fn album_item(album: &Album) -> CatalogItem {

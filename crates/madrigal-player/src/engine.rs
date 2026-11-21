@@ -124,6 +124,15 @@ impl Engine {
             .map_err(|err| Error::Mpv(err.to_string()))
     }
 
+    pub fn load_stream(&self, url: &str, user_agent: Option<&str>) -> Result<(), Error> {
+        if let Some(agent) = user_agent {
+            self.mpv
+                .set_property("user-agent", agent)
+                .map_err(|err| Error::Mpv(err.to_string()))?;
+        }
+        self.load(url)
+    }
+
     pub fn append(&self, url: &str) -> Result<(), Error> {
         self.mpv
             .command("loadfile", &[url, "append"])

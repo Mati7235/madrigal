@@ -1,5 +1,8 @@
+use std::sync::{mpsc, Arc};
+use std::thread;
 use std::time::{Duration, Instant};
 
+use madrigal_core::TrackIdentity;
 use madrigal_settings::Player as PlayerConfig;
 
 use crate::audio::{ErrorSkipper, VolumeAction, ZeroVolumePause, MAX_AUTO_SKIPS};
@@ -7,12 +10,52 @@ use crate::engine::{EndReason, Engine, EngineEvent};
 use crate::queue::Queue;
 use crate::session::SessionState;
 use crate::sleep::{SleepMode, SleepTimer};
-use crate::source::StreamSource;
+use crate::source::{ResolvedStream, StreamSource};
 use crate::Error;
+
+struct ResolveRequest {
+    generation: u64,
+    track: TrackIdentity,
+}
+
+struct ResolveDone {
+    generation: u64,
+    track: TrackIdentity,
+    result: Result<ResolvedStream, String>,
+}
+
+struct Resolver {
+    requests: mpsc::Sender<ResolveRequest>,
+    results: mpsc::Receiver<ResolveDone>,
+}
+
+impl Resolver {
+    fn spawn<S: StreamSource>(source: Arc<S>) -> Result<Self, Error> {
+        let (requests, inbox) = mpsc::channel::<ResolveRequest>();
+        let (outbox, results) = mpsc::channel();
+        thread::Builder::new()
+            .name("madrigal-resolve".to_owned())
+            .spawn(move || {
+                for request in inbox {
+                    let result = source.resolve(&request.track);
+                    let done = ResolveDone {
+                        generation: request.generation,
+                        track: request.track,
+                        result,
+                    };
+                    if outbox.send(done).is_err() {
+                        break;
+                    }
+                }
+            })
+            .map_err(Error::Io)?;
+        Ok(Self { requests, results })
+    }
+}
 
 pub struct Player<S: StreamSource> {
     engine: Engine,
-    source: S,
+    source: Arc<S>,
     queue: Queue,
     sleep: Option<SleepTimer>,
     skips: ErrorSkipper,
@@ -20,6 +63,9 @@ pub struct Player<S: StreamSource> {
     preload_enabled: bool,
     autoskip_enabled: bool,
     pending: Option<Instant>,
+    generation: u64,
+    awaiting: Option<u64>,
+    resolver: Option<Resolver>,
 }
 
 const LOAD_GRACE: Duration = Duration::from_secs(2);
@@ -28,7 +74,7 @@ impl<S: StreamSource> Player<S> {
     pub fn new(engine: Engine, source: S) -> Self {
         Self {
             engine,
-            source,
+            source: Arc::new(source),
             queue: Queue::new(),
             sleep: None,
             skips: ErrorSkipper::new(MAX_AUTO_SKIPS),
@@ -36,6 +82,9 @@ impl<S: StreamSource> Player<S> {
             preload_enabled: true,
             autoskip_enabled: true,
             pending: None,
+            generation: 0,
+            awaiting: None,
+            resolver: None,
         }
     }
 
@@ -54,7 +103,11 @@ impl<S: StreamSource> Player<S> {
     }
 
     pub fn source(&self) -> &S {
-        &self.source
+        self.source.as_ref()
+    }
+
+    pub fn is_idle(&self) -> bool {
+        self.awaiting.is_none() && self.engine.playlist_pos().is_ok_and(|pos| pos < 0)
     }
 
     pub fn queue(&self) -> &Queue {
@@ -180,6 +233,9 @@ impl<S: StreamSource> Player<S> {
         let Some(next) = self.queue.peek_next().cloned() else {
             return Ok(false);
         };
+        if self.source.resolves_remotely(&next) {
+            return Ok(false);
+        }
         let Ok(resolved) = self.source.resolve(&next) else {
             return Ok(false);
         };
@@ -200,6 +256,7 @@ impl<S: StreamSource> Player<S> {
     }
 
     pub fn poll_failed_load(&mut self, now: Instant) -> Result<bool, Error> {
+        self.apply_resolved()?;
         let mut advanced = false;
         for event in self.engine.drain() {
             match event {
@@ -255,8 +312,77 @@ impl<S: StreamSource> Player<S> {
         let Some(track) = self.queue.current().cloned() else {
             return Err(Error::NoTrack);
         };
+        self.generation = self.generation.wrapping_add(1);
+        self.awaiting = None;
+        self.pending = None;
+        if self.source.resolves_remotely(&track) {
+            self.engine.stop()?;
+            return self.request_resolve(track);
+        }
         let resolved = self.source.resolve(&track).map_err(Error::Resolve)?;
-        self.engine.load(&resolved.url)?;
+        self.apply_load(&resolved)
+    }
+
+    fn request_resolve(&mut self, track: TrackIdentity) -> Result<(), Error> {
+        if self.resolver.is_none() {
+            self.resolver = Some(Resolver::spawn(Arc::clone(&self.source))?);
+        }
+        let request = ResolveRequest {
+            generation: self.generation,
+            track,
+        };
+        let sent = self
+            .resolver
+            .as_ref()
+            .is_some_and(|resolver| resolver.requests.send(request).is_ok());
+        if !sent {
+            self.resolver = None;
+            return Err(Error::Resolve("resolver stopped".to_owned()));
+        }
+        self.awaiting = Some(self.generation);
+        Ok(())
+    }
+
+    fn apply_resolved(&mut self) -> Result<(), Error> {
+        let mut ready: Vec<ResolveDone> = Vec::new();
+        let mut disconnected = false;
+        if let Some(resolver) = self.resolver.as_ref() {
+            loop {
+                match resolver.results.try_recv() {
+                    Ok(done) => ready.push(done),
+                    Err(mpsc::TryRecvError::Empty) => break,
+                    Err(mpsc::TryRecvError::Disconnected) => {
+                        disconnected = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if disconnected {
+            self.resolver = None;
+            if self.awaiting.take().is_some() {
+                return Err(Error::Resolve("resolver stopped".to_owned()));
+            }
+        }
+        for done in ready {
+            if done.generation != self.generation || self.queue.current() != Some(&done.track) {
+                continue;
+            }
+            self.awaiting = None;
+            match done.result {
+                Ok(resolved) => self.apply_load(&resolved)?,
+                Err(detail) => {
+                    self.skip_next()?;
+                    return Err(Error::Resolve(detail));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn apply_load(&mut self, resolved: &ResolvedStream) -> Result<(), Error> {
+        self.engine
+            .load_stream(&resolved.url, resolved.user_agent.as_deref())?;
         if resolved.start_offset_secs > 0.0 {
             self.engine.seek(resolved.start_offset_secs)?;
         }

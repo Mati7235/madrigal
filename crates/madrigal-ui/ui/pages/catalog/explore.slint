@@ -17,7 +17,7 @@ export component ExplorePage inherits Rectangle {
     property<length> mood-tile-width: (root.width - 2 * 24px - 3 * 12px) / 4;
 
     callback detail-requested(DetailRef);
-    callback play-requested(string);
+    callback play-requested(CatalogItem);
 
     background: root.palette.surface;
     accessible-role: text;
@@ -159,7 +159,7 @@ export component ExplorePage inherits Rectangle {
                         title-color: root.palette.on-surface;
                         subtitle-color: root.palette.on-surface-variant;
                         shadow-color: root.palette.shadow;
-                        clicked => { root.play-requested(video.id); }
+                        clicked => { root.play-requested(video); }
                     }
                 }
             }
@@ -171,7 +171,7 @@ export component ExplorePage inherits Rectangle {
                     palette: root.palette;
                     section: sec;
                     detail-requested(ref) => { root.detail-requested(ref); }
-                    play-requested(id) => { root.play-requested(id); }
+                    play-requested(item) => { root.play-requested(item); }
                 }
             }
 
