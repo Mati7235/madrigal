@@ -298,6 +298,22 @@ fn app_catalog() {
     }
     assert_eq!(shell.get_search_results().row_count(), 20, "online source");
 
+    shell.invoke_query_changed("".into());
+    assert_eq!(
+        shell.get_search_results().row_count(),
+        0,
+        "empty query clears results"
+    );
+    assert_eq!(
+        shell.get_search_suggestions().row_count(),
+        0,
+        "empty query clears suggestions"
+    );
+    assert!(
+        rx.recv_timeout(Duration::from_millis(200)).is_err(),
+        "empty query must not hit the source"
+    );
+
     let played: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(Vec::new()));
     {
         let played = played.clone();

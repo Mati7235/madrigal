@@ -92,6 +92,7 @@ export component M3SearchBar inherits Rectangle {
     in property<bool> ring: false;
     out property<bool> input-focused: search-input.has-focus;
     callback accepted(string);
+    callback cleared();
     callback nav-key(string) -> bool;
 
     accessible-label: root.hint;
@@ -188,6 +189,7 @@ export component M3SearchBar inherits Rectangle {
                         state-on-surface: root.state-on-surface;
                         clicked => {
                             root.value = "";
+                            root.cleared();
                             search-input.focus();
                         }
                     }

@@ -117,6 +117,7 @@ fn ui_catalog() {
 
     let played: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(Vec::new()));
     let accepted: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(Vec::new()));
+    let queries: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(Vec::new()));
     let opened: Rc<RefCell<Vec<(DetailKind, String)>>> = Rc::new(RefCell::new(Vec::new()));
     let closed: Rc<RefCell<u32>> = Rc::new(RefCell::new(0));
 
@@ -132,8 +133,10 @@ fn ui_catalog() {
     {
         let shell_ref = shell.as_weak();
         let suggestions_src = suggestions_src.clone();
+        let queries = queries.clone();
         shell.on_query_changed(move |text| {
             let shell = shell_ref.unwrap();
+            queries.borrow_mut().push(text.to_string());
             let all = madrigal_innertube::CatalogClient::parse_suggestions(&suggestions_src)
                 .unwrap();
             apply_suggestions(&shell, &text, &all);
@@ -367,6 +370,10 @@ fn ui_catalog() {
     );
     click_nth(&shell, "SearchPage::filter-chip", 1);
     assert_eq!(shell.get_search_results().row_count(), 20);
+
+    click_nth(&shell, "M3SearchBar::search-clear", 0);
+    assert_eq!(shell.get_search_query().as_str(), "");
+    assert_eq!(queries.borrow().last().map(String::as_str), Some(""));
 
     click_nth(&shell, "SearchPage::source-chip", 0);
     assert_eq!(shell.get_search_source(), 0);

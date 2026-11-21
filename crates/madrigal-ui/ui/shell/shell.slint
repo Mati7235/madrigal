@@ -810,6 +810,7 @@ export component MainShell inherits Window {
                         root.search-last-submitted = root.search-query;
                         root.page = 1;
                     }
+                    cleared => { root.query-changed(""); }
                     nav-key(text) => {
                         if (root.page == 1) {
                             if (text == Key.UpArrow) {
