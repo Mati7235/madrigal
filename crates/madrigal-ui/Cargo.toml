@@ -67,5 +67,9 @@ name = "check_ui_catalog"
 path = "tests/checks/check_ui_catalog.rs"
 
 [[test]]
+name = "check_ui_actions"
+path = "tests/checks/check_ui_actions.rs"
+
+[[test]]
 name = "check_artwork"
 path = "tests/checks/check_artwork.rs"
