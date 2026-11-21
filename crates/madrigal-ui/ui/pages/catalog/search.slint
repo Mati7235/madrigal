@@ -1,7 +1,7 @@
 import { Font, Palette, Type } from "../../tokens.slint";
 import { I18n } from "../../i18n.slint";
 import { M3Chip, M3Card } from "../../components/cards.slint";
-import { M3IconButton } from "../../components/buttons.slint";
+import { M3Button, M3IconButton } from "../../components/buttons.slint";
 import { Icons } from "../../components/icons.slint";
 import { M3ListItem } from "../../components/rows.slint";
 import { TrackMenuRequest } from "../../components/menu.slint";
@@ -17,8 +17,11 @@ export component SearchPage inherits FocusScope {
     in property<[CatalogItem]> results;
     in property<[string]> recent-searches;
     in-out property<int> source: 1;
+    in-out property<bool> error: false;
     focus-on-tab-navigation: false;
-    property<bool> show-empty: root.query != "" && root.results.length == 0;
+    property<bool> show-empty: root.query != "" && root.results.length == 0 && !root.error;
+    property<string> empty-category: root.filter-tab == 1 ? I18n.trl(I18n.lang, "search.empty.cat.songs") : root.filter-tab == 2 ? I18n.trl(I18n.lang, "search.empty.cat.artists") : root.filter-tab == 3 ? I18n.trl(I18n.lang, "search.empty.cat.albums") : I18n.trl(I18n.lang, "search.empty.cat.playlists");
+    property<string> empty-text: root.source == 0 ? I18n.trl(I18n.lang, "search.empty.local") : root.filter-tab == 0 ? I18n.trl(I18n.lang, "search.empty.all").replace-all("%1", root.query) : I18n.trl(I18n.lang, "search.empty.filter").replace-all("%1", root.empty-category).replace-all("%2", root.query);
     property<bool> tight: root.height < 420px;
     property<int> suggestion-rows: root.tight ? 1 : 3;
 
@@ -26,6 +29,7 @@ export component SearchPage inherits FocusScope {
     callback key-dispatched(string);
     callback filter-selected(int);
     callback source-selected(int);
+    callback retry-requested();
     callback detail-requested(DetailRef);
     callback play-requested(CatalogItem);
     callback recent-accepted(string);
@@ -180,7 +184,9 @@ export component SearchPage inherits FocusScope {
                 width: 100%;
 
                 search-empty := Text {
-                    text: I18n.trl(I18n.lang, "search.section.empty");
+                    text: root.empty-text;
+                    accessible-label: root.empty-text;
+                    wrap: word-wrap;
                     color: root.palette.on-surface-variant;
                     font-size: Type.body-large.size;
                     font-family: Type.body-large.family;
@@ -188,6 +194,27 @@ export component SearchPage inherits FocusScope {
                     vertical-alignment: center;
                     width: 100%;
                     height: 100%;
+                }
+            }
+
+            if (root.error) : search-error-box := VerticalLayout {
+                spacing: 12px;
+                alignment: center;
+                search-error-text := Text {
+                    text: I18n.trl(I18n.lang, "search.error.network");
+                    accessible-label: I18n.trl(I18n.lang, "search.error.network");
+                    color: root.palette.on-surface-variant;
+                    font-size: Type.body-large.size;
+                    font-family: Type.body-large.family;
+                    horizontal-alignment: center;
+                    wrap: word-wrap;
+                }
+                search-retry := M3Button {
+                    text: I18n.trl(I18n.lang, "common.retry");
+                    fill: root.palette.primary;
+                    content: root.palette.on-primary;
+                    state-on-surface: root.palette.on-surface;
+                    clicked => { root.retry-requested(); }
                 }
             }
 

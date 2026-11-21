@@ -414,6 +414,52 @@ fn ui_catalog() {
     assert_eq!(shell.get_search_results().row_count(), 0);
     assert!(!shell.get_search_query().is_empty());
 
+    shell.set_search_query("the beatles".into());
+    shell.set_search_source(1);
+    shell.set_search_filter_tab(0);
+    madrigal_ui::apply_search_results(&shell, Vec::new());
+    kit::mock_advance(Duration::from_millis(50));
+    let empty = kit::find_by_id(&shell, "SearchPage::search-empty").unwrap();
+    assert_eq!(
+        empty.accessible_label().unwrap().as_str(),
+        "No hay resultados para «the beatles». Probá otras palabras."
+    );
+    shell.set_search_filter_tab(4);
+    kit::mock_advance(Duration::from_millis(50));
+    let empty = kit::find_by_id(&shell, "SearchPage::search-empty").unwrap();
+    assert_eq!(
+        empty.accessible_label().unwrap().as_str(),
+        "No hay listas para «the beatles». Probá Todo."
+    );
+    shell.set_search_source(0);
+    shell.set_search_filter_tab(0);
+    kit::mock_advance(Duration::from_millis(50));
+    let empty = kit::find_by_id(&shell, "SearchPage::search-empty").unwrap();
+    assert_eq!(
+        empty.accessible_label().unwrap().as_str(),
+        "No tenés canciones descargadas que coincidan. Probá En línea."
+    );
+    let retries: Rc<RefCell<u32>> = Rc::new(RefCell::new(0));
+    {
+        let retries = retries.clone();
+        shell.on_search_retry(move || {
+            *retries.borrow_mut() += 1;
+        });
+    }
+    shell.set_search_source(1);
+    shell.set_search_error(true);
+    kit::mock_advance(Duration::from_millis(50));
+    let error = kit::find_by_id(&shell, "SearchPage::search-error-text").unwrap();
+    assert_eq!(
+        error.accessible_label().unwrap().as_str(),
+        "No pudimos buscar. Revisá tu conexión y reintentá."
+    );
+    assert!(kit::find_by_id(&shell, "SearchPage::search-empty").is_err());
+    kit::click_by_id(&shell, "SearchPage::search-retry").unwrap();
+    assert_eq!(*retries.borrow(), 1);
+    shell.set_search_error(false);
+    shell.set_search_filter_tab(1);
+
     shell.set_search_query("".into());
     madrigal_ui::apply_suggestions(&shell, "", &[]);
     let recent = [

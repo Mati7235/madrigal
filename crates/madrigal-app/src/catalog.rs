@@ -415,7 +415,11 @@ pub fn apply_catalog_event(
             }
             eprintln!("catalog {slot:?}: {message}");
             match slot {
-                CatalogSlot::Search | CatalogSlot::Suggestions => clear_search(shell),
+                CatalogSlot::Search => {
+                    apply_search_results(shell, Vec::new());
+                    shell.set_search_error(true);
+                }
+                CatalogSlot::Suggestions => apply_suggestions(shell, "", &[]),
                 CatalogSlot::Detail => apply_detail_error(shell, &message),
                 CatalogSlot::Home | CatalogSlot::Explore => {}
             }
@@ -451,6 +455,7 @@ impl Link {
     }
 
     fn filtered_search(&self, shell: &MainShell, tab: i32, query: &str) {
+        shell.set_search_error(false);
         let id = self.generations.begin(CatalogSlot::Search);
         let online = !query.is_empty() && shell.get_search_source() == SOURCE_ONLINE;
         if tab == 0 && online {
@@ -758,6 +763,17 @@ fn register_callbacks(shell: &MainShell, link: &Link) {
                 shell.set_search_filter_tab(tab);
                 let query = shell.get_search_query();
                 link.filtered_search(&shell, tab, query.trim());
+            }
+        }
+    });
+
+    shell.on_search_retry({
+        let weak = shell.as_weak();
+        let link = link.clone();
+        move || {
+            if let Some(shell) = weak.upgrade() {
+                let query = shell.get_search_query();
+                link.query(&shell, &query);
             }
         }
     });

@@ -32,6 +32,7 @@ fn fixture(name: &str) -> String {
 
 struct FixtureSource {
     fail_detail: Arc<AtomicBool>,
+    fail_search: Arc<AtomicBool>,
 }
 
 impl CatalogSource for FixtureSource {
@@ -48,6 +49,11 @@ impl CatalogSource for FixtureSource {
         _query: &str,
         filter: SearchFilter,
     ) -> Result<SearchOutcome, madrigal_innertube::Error> {
+        if self.fail_search.load(Ordering::SeqCst) {
+            return Err(madrigal_innertube::Error::Fixture(
+                "fixture search failure".to_owned(),
+            ));
+        }
         match filter {
             SearchFilter::Songs => Ok(SearchOutcome::Songs(CatalogClient::parse_search_songs(
                 &fixture("search_songs_beatles.json"),
@@ -141,6 +147,7 @@ fn app_catalog() {
     kit::init_headless();
     let shell = MainShell::new().expect("shell");
     let fail_detail = Arc::new(AtomicBool::new(false));
+    let fail_search = Arc::new(AtomicBool::new(false));
     let (sink, rx) = mpsc::channel();
     let delivery: madrigal_app::catalog::Delivery = {
         let sink = Arc::new(Mutex::new(sink));
@@ -155,6 +162,7 @@ fn app_catalog() {
         &Content::default(),
         Box::new(FixtureSource {
             fail_detail: Arc::clone(&fail_detail),
+            fail_search: Arc::clone(&fail_search),
         }),
         delivery,
     )
@@ -313,6 +321,21 @@ fn app_catalog() {
         apply(next_event(&rx));
     }
     assert_eq!(shell.get_search_results().row_count(), 20, "online source");
+
+    fail_search.store(true, Ordering::SeqCst);
+    shell.invoke_query_changed("beatles".into());
+    for _ in 0..2 {
+        apply(next_event(&rx));
+    }
+    assert!(shell.get_search_error(), "failed search is reported");
+    assert_eq!(shell.get_search_results().row_count(), 0, "failed search empty");
+    fail_search.store(false, Ordering::SeqCst);
+    shell.invoke_search_retry();
+    for _ in 0..2 {
+        apply(next_event(&rx));
+    }
+    assert!(!shell.get_search_error(), "retry clears the error");
+    assert_eq!(shell.get_search_results().row_count(), 20, "retry results");
 
     shell.invoke_query_changed("".into());
     assert_eq!(

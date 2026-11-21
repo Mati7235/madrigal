@@ -182,6 +182,7 @@ export component MainShell inherits Window {
     in property<[CatalogItem]> search-results;
     in property<[string]> search-recent;
     in-out property<int> search-source: 1;
+    in-out property<bool> search-error: false;
     in-out property<int> search-submit-count: 0;
     in-out property<string> search-last-submitted: "";
     in-out property<int> search-remove-count: 0;
@@ -526,6 +527,7 @@ export component MainShell inherits Window {
     callback suggestion-accepted(string);
     callback filter-selected(int);
     callback source-selected(int);
+    callback search-retry();
     callback recent-accepted(string);
     callback recent-removed(string);
     callback recent-cleared();
@@ -996,6 +998,7 @@ export component MainShell inherits Window {
                 search-results: root.search-results;
                 search-recent: root.search-recent;
                 search-source <=> root.search-source;
+                search-error <=> root.search-error;
                 explore-moods-left: root.explore-moods-left;
                 explore-moods-right: root.explore-moods-right;
                 explore-charts-id: root.explore-charts-id;
@@ -1018,6 +1021,7 @@ export component MainShell inherits Window {
                 suggestion-accepted(text) => { root.suggestion-accepted(text); }
                 filter-selected(i) => { root.filter-selected(i); }
                 source-selected(i) => { root.source-selected(i); }
+                search-retry() => { root.search-retry(); }
                 recent-accepted(text) => { root.recent-accepted(text); }
                 recent-removed(text) => { root.recent-removed(text); }
                 recent-cleared() => { root.recent-cleared(); }
