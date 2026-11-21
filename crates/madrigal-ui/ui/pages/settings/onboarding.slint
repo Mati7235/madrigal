@@ -172,8 +172,11 @@ export component OnboardingOverlay inherits Rectangle {
             }
 
             ob-folder-field := M3TextField {
+                width: 520px;
                 label: I18n.trl(I18n.lang, "settings.storage_folder_path");
                 text <=> root.folder;
+                placeholder: I18n.trl(I18n.lang, "settings.ph.ob_folder");
+                support: I18n.trl(I18n.lang, "settings.hint.ob_folder");
                 field-bg: root.palette.surface-container-highest;
                 line: root.palette.outline-variant;
                 focus-line: root.palette.primary;

@@ -38,6 +38,7 @@ export component SectionView inherits Rectangle {
 
     property<bool> show-advanced: false;
     property<string> open-picker: "";
+    property<bool> narrow: self.width < 760px;
 
     property<length> field-width: root.group == 7 ? min(420px, max(220px, self.width - 240px)) : min(360px, max(200px, self.width - 420px));
     property<length> secret-width: min(320px, max(160px, self.width - 460px));
@@ -294,7 +295,7 @@ export component SectionView inherits Rectangle {
                             }
 
                             if (row.kind == "slider") : slider-frame := Rectangle {
-                                width: 352px;
+                                width: root.narrow ? 288px : 352px;
 
                                 VerticalLayout {
                                     alignment: center;
@@ -307,12 +308,12 @@ export component SectionView inherits Rectangle {
                                             alignment: center;
 
                                             slider-shift := Rectangle {
-                                                width: 252px;
+                                                width: root.narrow ? 196px : 252px;
                                                 height: 44px;
 
                                                 row-slider := M3Slider {
                                                     x: -16px;
-                                                    width: 284px;
+                                                    width: root.narrow ? 228px : 284px;
                                                     height: 44px;
                                                     show-value: false;
                                                     label: I18n.trl(I18n.lang, row.label);
@@ -330,7 +331,7 @@ export component SectionView inherits Rectangle {
                                             alignment: center;
 
                                             slider-value := Text {
-                                                width: 88px;
+                                                width: root.narrow ? 72px : 88px;
                                                 height: 24px;
                                                 text: row.val-label;
                                                 color: root.palette.on-surface;
@@ -346,7 +347,7 @@ export component SectionView inherits Rectangle {
                                 }
                             }
 
-                            if (row.kind == "choice" && (row.options.length <= 4 || root.group == 7)) : choice-frame := Rectangle {
+                            if (row.kind == "choice" && row.options.length <= 4 && !root.narrow && root.group != 7) : choice-frame := Rectangle {
                                 horizontal-stretch: 0;
 
                                 VerticalLayout {
@@ -368,7 +369,7 @@ export component SectionView inherits Rectangle {
                                 }
                             }
 
-                            if (row.kind == "choice" && row.options.length > 4 && root.group != 7) : picker-frame := Rectangle {
+                            if (row.kind == "choice" && (row.options.length > 4 || root.narrow) && root.group != 7) : picker-frame := Rectangle {
                                 width: 220px;
 
                                 VerticalLayout {
@@ -452,7 +453,7 @@ export component SectionView inherits Rectangle {
                         }
                     }
 
-                    if (!row.hidden && (!row.advanced || root.show-advanced) && row.kind == "choice" && row.options.length > 4 && root.group != 7 && root.open-picker == row.key) : picker-list := VerticalLayout {
+                    if (!row.hidden && (!row.advanced || root.show-advanced) && row.kind == "choice" && (row.options.length > 4 || root.narrow) && root.group != 7 && root.open-picker == row.key) : picker-list := VerticalLayout {
                         padding-bottom: 8px;
                         spacing: 2px;
 
@@ -648,8 +649,10 @@ export component SectionView inherits Rectangle {
 
                     acct-manual := M3TextField {
                         width: root.field-width;
+                        height: 56px;
                         label: I18n.trl(I18n.lang, "settings.manualCookie");
                         text <=> root.manual-cookie;
+                        placeholder: I18n.trl(I18n.lang, "settings.ph.manualCookie");
                         enabled: !root.account-busy;
                         field-bg: root.palette.surface-container;
                         line: root.palette.outline-variant;

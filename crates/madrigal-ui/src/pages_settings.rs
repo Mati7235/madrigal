@@ -312,6 +312,7 @@ fn slider_unit(key: &str) -> Unit {
         | "scrobble_delay_secs" => Unit::Seconds,
         "history_duration_days" | "remind_after" => Unit::Days,
         "font_size" | "thumbnail_corner_radius" => Unit::Pixels,
+        "blur_radius" => Unit::Percent,
         "max_image_cache_mb" | "max_song_cache_mb" | "max_canvas_cache_mb"
         | "max_lyrics_cache_mb" => Unit::Megabytes,
         _ => Unit::Plain,
@@ -499,7 +500,8 @@ fn blocks(group: SettingsGroup) -> &'static [Block] {
         ],
         SettingsGroup::Ai => &[
             Block { title: "settings.sub.ai.provider", tier: Tier::Everyday, keys: &["provider", "api_key", "selected_model"] },
-            Block { title: "settings.block.advanced", tier: Tier::Advanced, keys: &["custom_endpoint", "custom_model", "custom_prompt", "validation_status"] },
+            Block { title: "settings.block.advanced", tier: Tier::Advanced, keys: &["custom_endpoint", "custom_model", "custom_prompt"] },
+            Block { title: "", tier: Tier::Hidden, keys: &["validation_status"] },
         ],
         SettingsGroup::Updates => &[
             Block { title: "settings.sub.updates.updates", tier: Tier::Everyday, keys: &["automatic_update_check", "enable_update_notification", "update_channel", "remind_after"] },
@@ -933,7 +935,7 @@ fn integrations_rows(g: &madrigal_settings::Integrations) -> Vec<SettingRow> {
         pw("listenbrainz_token", "settings.listenbrainz_token", &g.listenbrainz_token, ""),
         sw("lastfm_scrobbling_enabled", "settings.lastfm_scrobbling_enabled", g.lastfm_scrobbling_enabled),
         tx("lastfm_username", "settings.lastfm_username", &g.lastfm_username),
-        ch("lastfm_provider", "settings.lastfm_provider", &ev(&g.lastfm_provider), &["LASTFM", "LIBREFM", "CUSTOM"]),
+        ch("lastfm_provider", "settings.lastfm_provider", &ev(&g.lastfm_provider), &["LAST_FM", "LIBRE_FM", "CUSTOM"]),
         tx("lastfm_custom_endpoint", "settings.lastfm_custom_endpoint", &g.lastfm_custom_endpoint),
         sw("lastfm_use_now_playing", "settings.lastfm_use_now_playing", g.lastfm_use_now_playing),
         sl("scrobble_delay_percent", "settings.scrobble_delay_percent", g.scrobble_delay_percent as f64, 0.0, 100.0),
@@ -949,21 +951,21 @@ fn integrations_rows(g: &madrigal_settings::Integrations) -> Vec<SettingRow> {
         tx("discord_activity_details", "settings.discord_activity_details", &g.discord_activity_details),
         tx("discord_activity_state", "settings.discord_activity_state", &g.discord_activity_state),
         tx("discord_button1_label", "settings.discord_button1_label", &g.discord_button1_label),
-        tx("discord_button1_url_source", "settings.discord_button1_url_source", &g.discord_button1_url_source),
+        ch("discord_button1_url_source", "settings.discord_button1_url_source", &g.discord_button1_url_source, &["", "songurl", "custom"]),
         tx("discord_button1_custom_url", "settings.discord_button1_custom_url", &g.discord_button1_custom_url),
         sw("discord_button1_enabled", "settings.discord_button1_enabled", g.discord_button1_enabled),
         tx("discord_button2_label", "settings.discord_button2_label", &g.discord_button2_label),
-        tx("discord_button2_url_source", "settings.discord_button2_url_source", &g.discord_button2_url_source),
+        ch("discord_button2_url_source", "settings.discord_button2_url_source", &g.discord_button2_url_source, &["", "songurl", "custom"]),
         tx("discord_button2_custom_url", "settings.discord_button2_custom_url", &g.discord_button2_custom_url),
         sw("discord_button2_enabled", "settings.discord_button2_enabled", g.discord_button2_enabled),
         sw("discord_show_when_paused", "settings.discord_show_when_paused", g.discord_show_when_paused),
         ch("discord_activity_type", "settings.discord_activity_type", &ev(&g.discord_activity_type), &["PLAYING", "STREAMING", "LISTENING", "WATCHING", "COMPETING"]),
         ch("discord_presence_status", "settings.discord_presence_status", &ev(&g.discord_presence_status), &["ONLINE", "IDLE", "DND", "INVISIBLE"]),
-        tx("discord_large_image_type", "settings.discord_large_image_type", &g.discord_large_image_type),
-        tx("discord_large_text_source", "settings.discord_large_text_source", &g.discord_large_text_source),
+        ch("discord_large_image_type", "settings.discord_large_image_type", &g.discord_large_image_type, &["", "thumbnail", "artist", "custom"]),
+        ch("discord_large_text_source", "settings.discord_large_text_source", &g.discord_large_text_source, &["", "song", "artist", "album", "app", "custom"]),
         tx("discord_large_text_custom", "settings.discord_large_text_custom", &g.discord_large_text_custom),
         tx("discord_large_image_custom_url", "settings.discord_large_image_custom_url", &g.discord_large_image_custom_url),
-        tx("discord_small_image_type", "settings.discord_small_image_type", &g.discord_small_image_type),
+        ch("discord_small_image_type", "settings.discord_small_image_type", &g.discord_small_image_type, &["", "thumbnail", "artist", "custom", "song", "album", "appicon"]),
         tx("discord_small_image_custom_url", "settings.discord_small_image_custom_url", &g.discord_small_image_custom_url),
         sw("show_spotify_playlists", "settings.show_spotify_playlists", g.show_spotify_playlists),
         tx("spotify_account_name", "settings.spotify_account_name", &g.spotify_account_name),
@@ -1873,6 +1875,51 @@ mod tests {
     }
 
     #[test]
+    fn every_choice_option_round_trips() {
+        for group in all_groups() {
+            if group == SettingsGroup::Account {
+                continue;
+            }
+            for row in rows_of(group) {
+                if row.kind != SettingKind::Choice {
+                    continue;
+                }
+                for option in &row.options {
+                    let mut settings = madrigal_settings::Settings::default();
+                    apply_value(
+                        &mut settings,
+                        group,
+                        row.key,
+                        &SettingsValue::Choice(option.clone()),
+                    )
+                    .unwrap_or_else(|err| panic!("{group:?} {} {option:?}: {err}", row.key));
+                }
+                if !row.text_val.is_empty() {
+                    assert!(
+                        row.options.contains(&row.text_val),
+                        "{group:?} {} current {:?} is not an option",
+                        row.key,
+                        row.text_val
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn text_rows_carry_placeholder_and_hint() {
+        for group in all_groups() {
+            for row in rows_of(group) {
+                if row.hidden || !matches!(row.kind, SettingKind::Text | SettingKind::ApiKey) {
+                    continue;
+                }
+                assert!(!row.placeholder.is_empty(), "{}", row.key);
+                assert!(!row.hint.is_empty(), "{}", row.key);
+            }
+        }
+    }
+
+    #[test]
     fn advanced_and_hidden_rows_stay_out_of_everyday_groups() {
         let player = rows_of(SettingsGroup::Player);
         let by_key = |key: &str| player.iter().find(|row| row.key == key).unwrap();
@@ -1884,6 +1931,8 @@ mod tests {
         assert!(by_key("equalizer_custom_profiles_json").hidden);
         let updates = rows_of(SettingsGroup::Updates);
         assert!(updates.iter().find(|row| row.key == "launch_count").unwrap().hidden);
+        let ai = rows_of(SettingsGroup::Ai);
+        assert!(ai.iter().find(|row| row.key == "validation_status").unwrap().hidden);
     }
 
     #[test]

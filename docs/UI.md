@@ -236,10 +236,13 @@ Settings row patterns (presentation only; keys and stored values unchanged):
   "Mostrar opciones avanzadas" (`SectionView::sec-toggle`). Hidden rows are
   internal state: stored and parity-checked, never drawn.
 - Labels, hints (`settings.hint.<row key>`) and placeholders
-  (`settings.ph.<row key>`) are i18n keys found by row key; a row only gets a
-  hint or placeholder when its key exists.
+  (`settings.ph.<row key>`) are i18n keys found by row key; every visible text
+  or key row must have both (tested).
 - Choices of up to four values are chips; longer lists open an inline picker
-  (`row-picker` then `picker-option`). Option labels are `settings.opt.<field>.<value>`.
+  (`row-picker` then `picker-option`). Below 760px of section width every
+  choice uses the picker so chips never overflow. Option labels are
+  `settings.opt.<field>.<value>`.
+- Slider controls narrow from 352px to 288px in the same compact case.
 - Sliders show the real value with its unit through `slider_text`: speed and
   line spacing `×`, pitch in semitones, output gain in dB (stored in mB), `%`,
   seconds, days, px, and MB/GB for cache limits.
