@@ -458,8 +458,15 @@ fn internet_rows(n: &madrigal_settings::Internet) -> Vec<SettingRow> {
 }
 
 fn storage_rows(s: &madrigal_settings::Storage) -> Vec<SettingRow> {
+    let downloads_dir = if s.downloads_dir.trim().is_empty() {
+        madrigal_downloads::default_downloads_dir()
+            .to_string_lossy()
+            .into_owned()
+    } else {
+        s.downloads_dir.clone()
+    };
     vec![
-        tx("downloads_dir", "settings.downloads", &s.downloads_dir),
+        tx("downloads_dir", "settings.downloads", &downloads_dir),
         sl("download_concurrency", "settings.download_concurrency", s.download_concurrency as f64, 1.0, 6.0),
         sl("max_image_cache_mb", "settings.max_image_cache_mb", s.max_image_cache_mb as f64, 0.0, 1048576.0),
         sl("max_song_cache_mb", "settings.max_song_cache_mb", s.max_song_cache_mb as f64, 0.0, 1048576.0),

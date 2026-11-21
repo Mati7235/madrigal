@@ -278,6 +278,16 @@ fn ui_settings() {
             }
             SettingsGroup::Storage => {
                 assert!(!handles(&shell, "SectionView::row-field").is_empty());
+                let rows = shell.get_settings_rows();
+                let dir = (0..rows.row_count())
+                    .map(|index| rows.row_data(index).unwrap())
+                    .find(|row| row.key.as_str() == "downloads_dir")
+                    .expect("downloads dir row");
+                assert!(
+                    dir.val_text.ends_with("Madrigal"),
+                    "downloads dir: {}",
+                    dir.val_text
+                );
             }
             SettingsGroup::Privacy => {
                 assert!(!handles(&shell, "SectionView::row-toggle").is_empty());
