@@ -124,7 +124,7 @@ Position comes from `LyricsClock` driven by a 16 ms timer (frozen when paused),
 and the active line is auto-scrolled to one third of the column (300 ms ease);
 a manual flick pauses that for 4 s behind a tonal "Back to current line"
 button. The header holds the −0.1 s / +0.1 s sync buttons and the offset value.
-`QueueDrawer` tabs All/Searched/Continue/Autoplaying from
+`QueueDrawer` tabs All/Results/Up next/Recommended from
 `queue_tabs_from_queue`, drag-reorder commits on `pointer-event(up)`,
 edit-lock toggle, per-row remove, current-track mark. Dialogs:
 `SleepTimerDialog`, `TempoPitchDialog`, `EqualizerDialog` (10 bands +
