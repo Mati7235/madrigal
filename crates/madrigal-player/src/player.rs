@@ -22,6 +22,13 @@ struct ResolveDone {
     generation: u64,
     track: TrackIdentity,
     result: Result<ResolvedStream, String>,
+    resolved_at: Instant,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct LoadTimings {
+    pub resolved: Option<Instant>,
+    pub loaded: Option<Instant>,
 }
 
 struct Resolver {
@@ -42,6 +49,7 @@ impl Resolver {
                         generation: request.generation,
                         track: request.track,
                         result,
+                        resolved_at: Instant::now(),
                     };
                     if outbox.send(done).is_err() {
                         break;
@@ -68,6 +76,7 @@ pub struct Player<S: StreamSource> {
     resolver: Option<Resolver>,
     last_error_log: Option<String>,
     route: Option<String>,
+    timings: LoadTimings,
 }
 
 const LOAD_GRACE: Duration = Duration::from_secs(2);
@@ -89,7 +98,12 @@ impl<S: StreamSource> Player<S> {
             resolver: None,
             last_error_log: None,
             route: None,
+            timings: LoadTimings::default(),
         }
+    }
+
+    pub fn timings(&self) -> LoadTimings {
+        self.timings
     }
 
     pub fn apply_settings(&mut self, config: &PlayerConfig) -> Result<(), Error> {
@@ -256,6 +270,7 @@ impl<S: StreamSource> Player<S> {
             EngineEvent::FileLoaded => {
                 self.pending = None;
                 self.skips.on_success();
+                self.timings.loaded = Some(Instant::now());
                 Ok(false)
             }
             EngineEvent::EndFile(reason) => self.on_end_file(*reason),
@@ -272,6 +287,7 @@ impl<S: StreamSource> Player<S> {
                 EngineEvent::FileLoaded => {
                     self.pending = None;
                     self.skips.on_success();
+                    self.timings.loaded = Some(Instant::now());
                 }
                 EngineEvent::EndFile(reason) => {
                     advanced = self.on_end_file(reason)? || advanced;
@@ -346,11 +362,13 @@ impl<S: StreamSource> Player<S> {
         self.pending = None;
         self.last_error_log = None;
         self.route = None;
+        self.timings = LoadTimings::default();
         if self.source.resolves_remotely(&track) {
             self.engine.stop()?;
             return self.request_resolve(track);
         }
         let resolved = self.source.resolve(&track).map_err(Error::Resolve)?;
+        self.timings.resolved = Some(Instant::now());
         self.apply_load(&resolved)
     }
 
@@ -401,7 +419,10 @@ impl<S: StreamSource> Player<S> {
             }
             self.awaiting = None;
             match done.result {
-                Ok(resolved) => self.apply_load(&resolved)?,
+                Ok(resolved) => {
+                    self.timings.resolved = Some(done.resolved_at);
+                    self.apply_load(&resolved)?;
+                }
                 Err(detail) => {
                     self.skip_next()?;
                     return Err(Error::Resolve(detail));

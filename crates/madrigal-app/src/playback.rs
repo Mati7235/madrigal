@@ -477,6 +477,10 @@ impl Playback {
         self.player.engine().logs()
     }
 
+    pub fn timings(&self) -> madrigal_player::LoadTimings {
+        self.player.timings()
+    }
+
     pub fn poll(&mut self, now: Instant) {
         if let Err(err) = self.player.poll_failed_load(now) {
             self.error = Some(err.to_string());

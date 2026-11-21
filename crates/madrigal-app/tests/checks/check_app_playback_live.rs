@@ -74,35 +74,71 @@ fn app_playback_live() {
     })
     .expect("boot app");
     let shell = &app.ui.shell;
-    shell.invoke_play_requested(item);
-
-    let started = Instant::now();
-    let mut positions = Vec::new();
-    while started.elapsed() < WAIT {
-        kit::mock_advance(Duration::from_millis(100));
-        std::thread::sleep(Duration::from_millis(20));
-        let position = shell.get_position_ms();
-        if positions.last().copied() != Some(position) {
-            positions.push(position);
+    let mut runs: Vec<[f64; 3]> = Vec::new();
+    for run in 0..5 {
+        let start = Instant::now();
+        shell.invoke_play_requested(item.clone());
+        let mut resolved = None;
+        let mut loaded = None;
+        let mut audible = None;
+        let mut positions = Vec::new();
+        while start.elapsed() < WAIT {
+            kit::mock_advance(Duration::from_millis(100));
+            let timings = app.playback_timings();
+            if resolved.is_none() {
+                resolved = timings
+                    .resolved
+                    .map(|at| at.saturating_duration_since(start));
+            }
+            if loaded.is_none() {
+                loaded = timings.loaded.map(|at| at.saturating_duration_since(start));
+            }
+            let position = app.playback_position_ms();
+            if positions.last().copied() != Some(position) {
+                positions.push(position);
+            }
+            if loaded.is_some() && position > 0 {
+                audible = Some(start.elapsed());
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(10));
         }
-        if position > 1000 {
-            break;
-        }
-    }
-    if shell.get_position_ms() <= 1000 {
+        let (Some(resolved), Some(loaded), Some(audible)) = (resolved, loaded, audible) else {
+            println!(
+                "run {run} stalled: positions {positions:?} title={:?} paused={} error_code={:?} error={:?} dialog={}",
+                shell.get_track_title().as_str(),
+                shell.get_paused(),
+                shell.get_error_code().as_str(),
+                shell.get_error_message().as_str(),
+                shell.get_player_dialog()
+            );
+            for line in app.engine_logs() {
+                println!("  mpv {line}");
+            }
+            panic!("playback did not reach audio in {WAIT:?}");
+        };
+        let millis = |duration: Duration| duration.as_secs_f64() * 1000.0;
+        let mode = if run == 0 { "cold" } else { "warm" };
         println!(
-            "positions: {positions:?} title={:?} paused={} error_code={:?} error={:?} dialog={}",
-            shell.get_track_title().as_str(),
-            shell.get_paused(),
-            shell.get_error_code().as_str(),
-            shell.get_error_message().as_str(),
-            shell.get_player_dialog()
+            "run {run} {mode}: resolved {:.1} ms, file-loaded {:.1} ms, position>0 {:.1} ms",
+            millis(resolved),
+            millis(loaded),
+            millis(audible)
         );
-        for line in app.engine_logs() {
-            println!("  mpv {line}");
-        }
-        panic!("position did not advance in {WAIT:?}");
+        runs.push([millis(resolved), millis(loaded), millis(audible)]);
     }
+    for (name, index) in [("resolved", 0), ("file-loaded", 1), ("position>0", 2)] {
+        let mut values: Vec<f64> = runs.iter().map(|run| run[index]).collect();
+        values.sort_by(f64::total_cmp);
+        println!(
+            "{name} min/median/max: {:.1} / {:.1} / {:.1} ms",
+            values[0],
+            values[values.len() / 2],
+            values[values.len() - 1]
+        );
+    }
+    std::thread::sleep(Duration::from_secs(1));
+    kit::mock_advance(Duration::from_millis(100));
     let first = shell.get_position_ms();
     std::thread::sleep(Duration::from_secs(1));
     kit::mock_advance(Duration::from_millis(100));

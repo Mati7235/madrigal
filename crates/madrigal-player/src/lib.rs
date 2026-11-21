@@ -13,6 +13,8 @@ pub mod stream_info;
 use std::fmt;
 use std::io;
 
+pub use player::LoadTimings;
+
 #[derive(Debug)]
 pub enum Error {
     Mpv(String),

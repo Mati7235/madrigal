@@ -113,6 +113,18 @@ impl AppState {
         let playback = lock(&core);
         playback.engine_logs()
     }
+
+    pub fn playback_timings(&self) -> madrigal_player::LoadTimings {
+        let core = self.playback.borrow().core();
+        let playback = lock(&core);
+        playback.timings()
+    }
+
+    pub fn playback_position_ms(&self) -> i32 {
+        let core = self.playback.borrow().core();
+        let playback = lock(&core);
+        playback.position_ms()
+    }
 }
 
 fn wire_playback(shell: &MainShell, core: &Arc<Mutex<Playback>>) {
