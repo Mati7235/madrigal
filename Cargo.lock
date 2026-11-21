@@ -3531,6 +3531,7 @@ dependencies = [
  "madrigal-db",
  "madrigal-i18n",
  "madrigal-localmedia",
+ "madrigal-lyrics",
  "madrigal-paths",
  "madrigal-player",
  "madrigal-settings",

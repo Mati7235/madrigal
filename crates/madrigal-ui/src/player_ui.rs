@@ -464,7 +464,7 @@ fn current_track(shell: &MainShell) -> Option<madrigal_core::Track> {
     })
 }
 
-fn maybe_fetch_lyrics(shell: &MainShell) {
+pub fn maybe_fetch_lyrics(shell: &MainShell) {
     let key = format!("{}:{}", shell.get_track_id(), shell.get_queue_current_index());
     let changed = LAST_TRACK.with(|slot| {
         let mut slot = slot.borrow_mut();

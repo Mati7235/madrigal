@@ -1,4 +1,5 @@
 pub mod cli;
+pub mod lyrics;
 pub mod playback;
 pub mod state;
 pub mod store;

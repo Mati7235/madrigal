@@ -53,6 +53,7 @@ impl AppState {
         apply_background_style(&ui.shell, &settings.appearance);
         wire_player_callbacks(&ui.shell);
         wire_playback(&ui.shell, &core);
+        crate::lyrics::wire(&ui.shell);
         let poll = start_poll(&ui.shell, Rc::clone(&service));
 
         Ok(Self {
