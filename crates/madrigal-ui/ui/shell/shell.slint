@@ -183,6 +183,7 @@ export component MainShell inherits Window {
     in property<[string]> search-recent;
     in-out property<int> search-source: 1;
     in-out property<bool> search-error: false;
+    in-out property<bool> search-done: true;
     in-out property<int> search-submit-count: 0;
     in-out property<string> search-last-submitted: "";
     in-out property<int> search-remove-count: 0;
@@ -1001,6 +1002,7 @@ export component MainShell inherits Window {
                 search-recent: root.search-recent;
                 search-source <=> root.search-source;
                 search-error <=> root.search-error;
+                search-done <=> root.search-done;
                 explore-moods-left: root.explore-moods-left;
                 explore-moods-right: root.explore-moods-right;
                 explore-charts-id: root.explore-charts-id;

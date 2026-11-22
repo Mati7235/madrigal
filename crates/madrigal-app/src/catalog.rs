@@ -14,9 +14,9 @@ use madrigal_settings::{Content, SearchSource, Settings};
 use madrigal_ui::{
     album_results, apply_album_detail, apply_artist_detail, apply_browse, apply_browse_detail,
     apply_charts_entry, apply_detail_error, apply_home, apply_home_chip, apply_moods,
-    apply_playlist_detail, apply_releases, apply_search_results, apply_suggestions,
-    artist_results, begin_detail_load, home_chips, song_results, CatalogItem, DetailKind, DetailRef,
-    MainShell,
+    apply_playlist_detail, apply_releases, apply_search_partial, apply_search_results,
+    apply_suggestions, artist_results, begin_detail_load, home_chips, song_results, CatalogItem,
+    DetailKind, DetailRef, MainShell,
 };
 use slint::{ComponentHandle, ModelRc, VecModel};
 
@@ -29,6 +29,47 @@ const SOURCE_ONLINE: i32 = 1;
 
 pub type HomeSlot = Mutex<Option<HomeFeed>>;
 pub type Delivery = Arc<dyn Fn(CatalogEvent) + Send + Sync>;
+
+#[derive(Default)]
+pub struct SearchAggregate {
+    request_id: u64,
+    songs: Vec<Track>,
+    artists: Vec<Artist>,
+    albums: Vec<Album>,
+    failed: bool,
+}
+
+pub type SearchSlot = Mutex<SearchAggregate>;
+
+impl SearchAggregate {
+    fn apply(&mut self, request_id: u64, outcome: Option<SearchOutcome>) {
+        if self.request_id != request_id {
+            self.request_id = request_id;
+            self.songs.clear();
+            self.artists.clear();
+            self.albums.clear();
+            self.failed = false;
+        }
+        match outcome {
+            Some(SearchOutcome::Songs(songs)) => self.songs = songs,
+            Some(SearchOutcome::Artists(artists)) => self.artists = artists,
+            Some(SearchOutcome::Albums(albums)) => self.albums = albums,
+            None => self.failed = true,
+        }
+    }
+
+    fn items(&self) -> Vec<CatalogItem> {
+        madrigal_ui::mixed_results(&self.songs, &self.artists, &self.albums)
+    }
+
+    fn is_empty(&self) -> bool {
+        self.songs.is_empty() && self.artists.is_empty() && self.albums.is_empty()
+    }
+
+    fn failed(&self) -> bool {
+        self.failed
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DetailPage {
@@ -132,11 +173,12 @@ pub enum CatalogEvent {
         request_id: u64,
         outcome: SearchOutcome,
     },
-    SearchMixed {
+    SearchKind {
         request_id: u64,
-        songs: Vec<Track>,
-        artists: Vec<Artist>,
-        albums: Vec<Album>,
+        outcome: Option<SearchOutcome>,
+    },
+    SearchDone {
+        request_id: u64,
     },
     Explore {
         request_id: u64,
@@ -217,7 +259,7 @@ fn run_worker(
     generations: Arc<Generations>,
     delivery: Delivery,
 ) {
-    for request in requests {
+    'requests: for request in requests {
         if let Request::SetSession { cookie } = request {
             source.set_session(cookie);
             continue;
@@ -259,13 +301,23 @@ fn run_worker(
                     }),
             ),
             Request::SearchMixed { id, query } => {
-                let (songs, artists, albums) = search_mixed(source.as_mut(), &query);
-                CatalogEvent::SearchMixed {
-                    request_id: id,
-                    songs,
-                    artists,
-                    albums,
+                for filter in [
+                    SearchFilter::Songs,
+                    SearchFilter::Artists,
+                    SearchFilter::Albums,
+                ] {
+                    if !generations.is_current(slot, id) {
+                        continue 'requests;
+                    }
+                    delivery(CatalogEvent::SearchKind {
+                        request_id: id,
+                        outcome: search_kind(source.as_mut(), &query, filter),
+                    });
                 }
+                if generations.is_current(slot, id) {
+                    delivery(CatalogEvent::SearchDone { request_id: id });
+                }
+                continue;
             }
             Request::Explore { id, country } => settle(
                 slot,
@@ -292,26 +344,34 @@ fn run_worker(
     }
 }
 
-type MixedSearch = (Vec<Track>, Vec<Artist>, Vec<Album>);
-
-fn search_mixed(source: &mut (dyn CatalogSource + Send), query: &str) -> MixedSearch {
-    let songs = match source.search(query, SearchFilter::Songs) {
-        Ok(SearchOutcome::Songs(songs)) => songs,
-        _ => Vec::new(),
-    };
-    let artists = match source.search(query, SearchFilter::Artists) {
-        Ok(SearchOutcome::Artists(artists)) => artists,
-        _ => Vec::new(),
-    };
-    let albums = match source.search(query, SearchFilter::Albums) {
-        Ok(SearchOutcome::Albums(albums)) => albums,
-        _ => Vec::new(),
-    };
-    (songs, artists, albums)
+fn search_kind(
+    source: &mut (dyn CatalogSource + Send),
+    query: &str,
+    filter: SearchFilter,
+) -> Option<SearchOutcome> {
+    match source.search(query, filter) {
+        Ok(SearchOutcome::Songs(songs)) if filter == SearchFilter::Songs => {
+            Some(SearchOutcome::Songs(songs))
+        }
+        Ok(SearchOutcome::Artists(artists)) if filter == SearchFilter::Artists => {
+            Some(SearchOutcome::Artists(artists))
+        }
+        Ok(SearchOutcome::Albums(albums)) if filter == SearchFilter::Albums => {
+            Some(SearchOutcome::Albums(albums))
+        }
+        _ => None,
+    }
 }
 
 fn lock(home: &HomeSlot) -> MutexGuard<'_, Option<HomeFeed>> {
     match home.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    }
+}
+
+fn lock_search(search: &SearchSlot) -> MutexGuard<'_, SearchAggregate> {
+    match search.lock() {
         Ok(guard) => guard,
         Err(poisoned) => poisoned.into_inner(),
     }
@@ -327,6 +387,7 @@ pub fn apply_catalog_event(
     event: CatalogEvent,
     generations: &Generations,
     home: &HomeSlot,
+    search: &SearchSlot,
     show_chips: bool,
 ) {
     match event {
@@ -371,17 +432,33 @@ pub fn apply_catalog_event(
                 }
             }
         }
-        CatalogEvent::SearchMixed {
+        CatalogEvent::SearchKind {
             request_id,
-            songs,
-            artists,
-            albums,
+            outcome,
         } => {
-            if generations.is_current(CatalogSlot::Search, request_id) {
-                apply_search_results(
-                    shell,
-                    madrigal_ui::mixed_results(&songs, &artists, &albums),
-                );
+            if !generations.is_current(CatalogSlot::Search, request_id) {
+                return;
+            }
+            let items = {
+                let mut aggregate = lock_search(search);
+                aggregate.apply(request_id, outcome);
+                aggregate.items()
+            };
+            apply_search_partial(shell, items);
+        }
+        CatalogEvent::SearchDone { request_id } => {
+            if !generations.is_current(CatalogSlot::Search, request_id) {
+                return;
+            }
+            let (empty, failed) = {
+                let aggregate = lock_search(search);
+                (aggregate.is_empty(), aggregate.failed())
+            };
+            if empty && failed {
+                apply_search_results(shell, Vec::new());
+                shell.set_search_error(true);
+            } else {
+                shell.set_search_done(true);
             }
         }
         CatalogEvent::Explore { request_id, pages } => {
@@ -462,6 +539,7 @@ impl Link {
         let id = self.generations.begin(CatalogSlot::Search);
         let online = !query.is_empty() && shell.get_search_source() == SOURCE_ONLINE;
         if tab == 0 && online {
+            shell.set_search_done(false);
             self.send(Request::SearchMixed {
                 id,
                 query: query.to_owned(),
@@ -470,6 +548,7 @@ impl Link {
         }
         match filter_for_tab(tab) {
             Some(filter) if online => {
+                shell.set_search_done(false);
                 self.send(Request::Search {
                     id,
                     query: query.to_owned(),
@@ -553,6 +632,7 @@ pub fn wire_play_requests(shell: &MainShell, core: &Arc<Mutex<Playback>>) {
 pub struct Wiring {
     generations: Arc<Generations>,
     home: Arc<HomeSlot>,
+    search: Arc<SearchSlot>,
     requests: Sender<Request>,
 }
 
@@ -563,6 +643,10 @@ impl Wiring {
 
     pub fn home(&self) -> Arc<HomeSlot> {
         Arc::clone(&self.home)
+    }
+
+    pub fn search(&self) -> Arc<SearchSlot> {
+        Arc::clone(&self.search)
     }
 
     pub fn set_session(&self, cookie: Option<String>) {
@@ -578,6 +662,7 @@ pub fn wire_catalog(
     let content = &settings.content;
     let generations = Arc::new(Generations::default());
     let home: Arc<HomeSlot> = Arc::new(Mutex::new(None));
+    let search: Arc<SearchSlot> = Arc::new(Mutex::new(SearchAggregate::default()));
     let show_chips = settings.content.show_home_category_chips;
     let artwork = Arc::new(ArtworkCache::new(
         ArtworkCache::default_dir(),
@@ -587,16 +672,18 @@ pub fn wire_catalog(
     let delivery: Delivery = {
         let generations = Arc::clone(&generations);
         let home = Arc::clone(&home);
+        let search = Arc::clone(&search);
         let artwork = Arc::clone(&artwork);
         Arc::new(move |event| {
             let cover = detail_cover(&event);
             let weak = weak.clone();
             let generations = Arc::clone(&generations);
             let home = Arc::clone(&home);
+            let search = Arc::clone(&search);
             let artwork = Arc::clone(&artwork);
             let _ = slint::invoke_from_event_loop(move || {
                 if let Some(shell) = weak.upgrade() {
-                    apply_catalog_event(&shell, event, &generations, &home, show_chips);
+                    apply_catalog_event(&shell, event, &generations, &home, &search, show_chips);
                     if let Some((request_id, url)) = cover {
                         if generations.is_current(CatalogSlot::Detail, request_id) {
                             request_detail_cover(&shell, &artwork, request_id, url, &generations);
@@ -619,6 +706,7 @@ pub fn wire_catalog(
         delivery,
         generations,
         home,
+        search,
     )
 }
 
@@ -675,6 +763,7 @@ pub fn wire_catalog_with(
         delivery,
         Arc::new(Generations::default()),
         Arc::new(Mutex::new(None)),
+        Arc::new(Mutex::new(SearchAggregate::default())),
     )
 }
 
@@ -685,6 +774,7 @@ fn wire_shared(
     delivery: Delivery,
     generations: Arc<Generations>,
     home: Arc<HomeSlot>,
+    search: Arc<SearchSlot>,
 ) -> Result<Wiring, String> {
     let (requests, inbox) = mpsc::channel();
     let worker_generations = Arc::clone(&generations);
@@ -716,6 +806,7 @@ fn wire_shared(
     Ok(Wiring {
         generations,
         home,
+        search,
         requests,
     })
 }

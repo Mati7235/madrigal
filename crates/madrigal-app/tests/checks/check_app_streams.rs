@@ -395,7 +395,14 @@ fn part_catalog_play(shell: &MainShell, streams: Orchestrator, tracks: &[Track],
     )
     .expect("wire catalog");
     let apply = |event: CatalogEvent| {
-        apply_catalog_event(shell, event, &wiring.generations(), &wiring.home(), true);
+        apply_catalog_event(
+            shell,
+            event,
+            &wiring.generations(),
+            &wiring.home(),
+            &wiring.search(),
+            true,
+        );
     };
 
     shell.set_search_query("beatles".into());

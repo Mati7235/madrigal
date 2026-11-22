@@ -446,6 +446,15 @@ fn ui_catalog() {
         empty.accessible_label().unwrap().as_str(),
         "No hay resultados para «the beatles». Probá otras palabras."
     );
+    shell.set_search_done(false);
+    kit::mock_advance(Duration::from_millis(50));
+    assert!(
+        kit::find_by_id(&shell, "SearchPage::search-empty").is_err(),
+        "empty copy waits until every kind finishes"
+    );
+    shell.set_search_done(true);
+    kit::mock_advance(Duration::from_millis(50));
+    assert!(kit::find_by_id(&shell, "SearchPage::search-empty").is_ok());
     shell.set_search_filter_tab(4);
     kit::mock_advance(Duration::from_millis(50));
     let empty = kit::find_by_id(&shell, "SearchPage::search-empty").unwrap();

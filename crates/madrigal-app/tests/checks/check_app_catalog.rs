@@ -124,6 +124,29 @@ fn next_event(rx: &Receiver<CatalogEvent>) -> CatalogEvent {
     rx.recv_timeout(TIMEOUT).expect("catalog event")
 }
 
+fn search_settled(event: &CatalogEvent) -> bool {
+    matches!(
+        event,
+        CatalogEvent::Search { .. }
+            | CatalogEvent::SearchDone { .. }
+            | CatalogEvent::Failed {
+                slot: CatalogSlot::Search,
+                ..
+            }
+    )
+}
+
+fn apply_search(rx: &Receiver<CatalogEvent>, apply: &dyn Fn(CatalogEvent)) {
+    loop {
+        let event = next_event(rx);
+        let settled = search_settled(&event);
+        apply(event);
+        if settled {
+            return;
+        }
+    }
+}
+
 fn click_nth(shell: &MainShell, id: &str, n: usize) {
     let mut found = kit::ElementHandle::find_by_element_id(shell, id);
     let handle = found
@@ -174,6 +197,7 @@ fn app_catalog() {
             event,
             &wiring.generations(),
             &wiring.home(),
+            &wiring.search(),
             true,
         );
     };
@@ -221,22 +245,8 @@ fn app_catalog() {
 
     shell.set_search_query("beatles".into());
     shell.invoke_query_changed("beatles".into());
-    for _ in 0..2 {
-        apply(next_event(&rx));
-    }
-    assert_eq!(shell.get_search_results().row_count(), 24, "mixed results");
-    assert_eq!(
-        shell.get_search_results().row_data(0).unwrap().title.as_str(),
-        "The Beatles"
-    );
-    assert_eq!(
-        shell.get_search_results().row_data(8).unwrap().title.as_str(),
-        "Rubber Soul (Remastered 2009)"
-    );
-    assert_eq!(
-        shell.get_search_results().row_data(16).unwrap().title.as_str(),
-        "Tomorrow Never Knows (Mono)"
-    );
+    assert!(!shell.get_search_done(), "search pending after submit");
+    apply(next_event(&rx));
     assert_eq!(
         shell.get_search_suggestions().row_count(),
         1,
@@ -246,6 +256,57 @@ fn app_catalog() {
         shell.get_search_suggestions().row_data(0).unwrap().as_str(),
         "beatles"
     );
+    assert!(!shell.get_search_done(), "suggestions do not finish the search");
+    assert_eq!(shell.get_search_results().row_count(), 0, "no results yet");
+
+    apply(next_event(&rx));
+    assert_eq!(shell.get_search_results().row_count(), 8, "songs land first");
+    assert!(!shell.get_search_done(), "songs alone do not finish the search");
+
+    apply(next_event(&rx));
+    assert_eq!(shell.get_search_results().row_count(), 16, "artists join");
+    assert_eq!(
+        shell.get_search_results().row_data(0).unwrap().title.as_str(),
+        "The Beatles"
+    );
+    assert!(!shell.get_search_done(), "artists alone do not finish the search");
+
+    apply(next_event(&rx));
+    assert_eq!(shell.get_search_results().row_count(), 24, "albums join");
+    assert_eq!(
+        shell.get_search_results().row_data(8).unwrap().title.as_str(),
+        "Rubber Soul (Remastered 2009)"
+    );
+    assert_eq!(
+        shell.get_search_results().row_data(16).unwrap().title.as_str(),
+        "Tomorrow Never Knows (Mono)"
+    );
+    assert!(!shell.get_search_done(), "search settles after every kind");
+
+    apply(next_event(&rx));
+    assert!(shell.get_search_done(), "mixed search finished");
+    assert_eq!(shell.get_search_results().row_count(), 24, "mixed results");
+
+    let empty_search = wiring.generations().begin(CatalogSlot::Search);
+    shell.set_search_done(false);
+    apply(CatalogEvent::SearchKind {
+        request_id: empty_search,
+        outcome: Some(SearchOutcome::Songs(Vec::new())),
+    });
+    apply(CatalogEvent::SearchKind {
+        request_id: empty_search,
+        outcome: Some(SearchOutcome::Artists(Vec::new())),
+    });
+    apply(CatalogEvent::SearchKind {
+        request_id: empty_search,
+        outcome: Some(SearchOutcome::Albums(Vec::new())),
+    });
+    assert_eq!(shell.get_search_results().row_count(), 0);
+    assert!(!shell.get_search_done(), "empty message waits for every kind");
+    apply(CatalogEvent::SearchDone {
+        request_id: empty_search,
+    });
+    assert!(shell.get_search_done(), "all kinds finished empty");
 
     shell.invoke_filter_selected(2);
     apply(next_event(&rx));
@@ -317,23 +378,17 @@ fn app_catalog() {
     );
 
     shell.invoke_source_selected(1);
-    for _ in 0..2 {
-        apply(next_event(&rx));
-    }
+    apply_search(&rx, &apply);
     assert_eq!(shell.get_search_results().row_count(), 20, "online source");
 
     fail_search.store(true, Ordering::SeqCst);
     shell.invoke_query_changed("beatles".into());
-    for _ in 0..2 {
-        apply(next_event(&rx));
-    }
+    apply_search(&rx, &apply);
     assert!(shell.get_search_error(), "failed search is reported");
     assert_eq!(shell.get_search_results().row_count(), 0, "failed search empty");
     fail_search.store(false, Ordering::SeqCst);
     shell.invoke_search_retry();
-    for _ in 0..2 {
-        apply(next_event(&rx));
-    }
+    apply_search(&rx, &apply);
     assert!(!shell.get_search_error(), "retry clears the error");
     assert_eq!(shell.get_search_results().row_count(), 20, "retry results");
 

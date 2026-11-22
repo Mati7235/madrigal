@@ -91,6 +91,7 @@ export component PageHost inherits Rectangle {
     in property<[string]> search-recent;
     in-out property<int> search-source: 1;
     in-out property<bool> search-error: false;
+    in-out property<bool> search-done: true;
 
     in property<[MoodEntry]> explore-moods-left;
     in property<[MoodEntry]> explore-moods-right;
@@ -201,6 +202,7 @@ export component PageHost inherits Rectangle {
         recent-searches: root.search-recent;
         source <=> root.search-source;
         error <=> root.search-error;
+        search-done <=> root.search-done;
         suggestion-accepted(text) => { root.suggestion-accepted(text); }
         filter-selected(i) => { root.filter-selected(i); }
         source-selected(i) => { root.source-selected(i); }

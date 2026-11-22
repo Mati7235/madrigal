@@ -296,6 +296,11 @@ pub fn album_results(albums: &[Album]) -> Vec<CatalogItem> {
 }
 
 pub fn apply_search_results(shell: &MainShell, items: Vec<CatalogItem>) {
+    apply_search_partial(shell, items);
+    shell.set_search_done(true);
+}
+
+pub fn apply_search_partial(shell: &MainShell, items: Vec<CatalogItem>) {
     shell.set_search_results(ModelRc::new(VecModel::from_slice(&items)));
     shell.set_search_error(false);
     artwork::resolve_search(shell);

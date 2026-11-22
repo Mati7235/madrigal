@@ -19,8 +19,9 @@ export component SearchPage inherits FocusScope {
     in property<[string]> recent-searches;
     in-out property<int> source: 1;
     in-out property<bool> error: false;
+    in-out property<bool> search-done: true;
     focus-on-tab-navigation: false;
-    property<bool> show-empty: root.query != "" && root.results.length == 0 && !root.error;
+    property<bool> show-empty: root.query != "" && root.results.length == 0 && root.search-done && !root.error;
     property<string> empty-category: root.filter-tab == 1 ? I18n.trl(I18n.lang, "search.empty.cat.songs") : root.filter-tab == 2 ? I18n.trl(I18n.lang, "search.empty.cat.artists") : root.filter-tab == 3 ? I18n.trl(I18n.lang, "search.empty.cat.albums") : I18n.trl(I18n.lang, "search.empty.cat.playlists");
     property<string> empty-text: root.source == 0 ? I18n.trl(I18n.lang, "search.empty.local") : root.filter-tab == 0 ? I18n.trl(I18n.lang, "search.empty.all").replace-all("%1", root.query) : I18n.trl(I18n.lang, "search.empty.filter").replace-all("%1", root.empty-category).replace-all("%2", root.query);
     property<bool> tight: root.height < 420px;
