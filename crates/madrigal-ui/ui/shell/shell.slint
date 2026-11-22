@@ -880,7 +880,7 @@ export component MainShell inherits Window {
                             root.search-last-submitted = text;
                             root.query-changed(text);
                         }
-                        root.page = 1;
+                        root.navigate(1);
                     }
                     cleared => { root.query-changed(""); }
                     nav-key(text) => {

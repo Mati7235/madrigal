@@ -752,6 +752,22 @@ fn ui_catalog() {
     assert!(dispatch_key(&shell, "Escape"));
     assert!(shell.get_sidebar_focused());
 
+    click_nth(&shell, "SearchPage::filter-chip", 2);
+    click_nth(&shell, "SearchPage::hit-row", 0);
+    assert_eq!(opened.borrow().last().unwrap().0, DetailKind::Artist);
+    assert!(is_detail_open(&shell));
+    shell.set_search_query("abbey".into());
+    shell.set_search_suggestion_index(-1);
+    kit::click_by_id(&shell, "MainShell::top-bar").unwrap();
+    shell.window().dispatch_event(slint::platform::WindowEvent::KeyPressed {
+        text: slint::platform::Key::Return.into(),
+    });
+    assert!(!is_detail_open(&shell), "search submit leaves the detail page");
+    assert_eq!(shell.get_page(), 1);
+    assert_eq!(shell.get_search_last_submitted().as_str(), "abbey");
+    assert_eq!(*closed.borrow(), 6);
+    assert!(kit::find_by_id(&shell, "SearchPage::results-scroll").is_ok());
+
     apply_home(&shell, &feed);
     apply_browse_detail(&shell, &madrigal_innertube::CatalogClient::parse_browse(&explore_src).unwrap(), "Browse");
     assert_eq!(shell.get_detail_sections().row_count(), 3);
