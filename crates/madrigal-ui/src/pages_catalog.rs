@@ -534,14 +534,10 @@ fn split_count(raw: &str) -> Option<(&str, &str)> {
 }
 
 fn normalize_count(number: &str) -> String {
-    let Some((index, separator)) = number
-        .char_indices()
-        .filter(|(_, ch)| *ch == '.' || *ch == ',')
-        .last()
-    else {
+    let Some(index) = number.rfind(['.', ',']) else {
         return number.to_owned();
     };
-    let decimals = number[index + separator.len_utf8()..].chars().count();
+    let decimals = number[index + 1..].chars().count();
     let decimal = decimals == 1 || decimals == 2;
     let mut normalized = String::new();
     for (offset, ch) in number.char_indices() {
