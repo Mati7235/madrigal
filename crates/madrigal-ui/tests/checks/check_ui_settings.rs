@@ -577,7 +577,7 @@ fn ui_settings() {
     assert_eq!(flicks.len(), 1);
     let view = flicks[0].absolute_position();
     let view_size = flicks[0].size();
-    flicks[0].scroll(0.0, -600.0);
+    flicks[0].scroll(0.0, -300.0);
     kit::mock_advance(Duration::from_millis(100));
     let mut providers = handles(&shell, "SectionView::prov-row");
     assert!(providers.len() > 5, "lyrics providers missing");
