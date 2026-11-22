@@ -229,6 +229,7 @@ impl<S: StreamSource> Player<S> {
             return Err(Error::NoTrack);
         }
         self.load_current()?;
+        self.engine.set_paused(false)?;
         Ok(())
     }
 

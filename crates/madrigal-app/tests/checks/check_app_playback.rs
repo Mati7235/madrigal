@@ -5,6 +5,7 @@ use std::time::{Duration, Instant};
 use madrigal_app::desktop::{Desktop, ERROR_CODE};
 use madrigal_app::playback::{track_from_file, Playback, PlaybackService};
 use madrigal_app::state::AppState;
+use madrigal_core::Track;
 use madrigal_player::engine::EngineConfig;
 use madrigal_player::stream_info::StreamOrigin;
 use madrigal_settings::{Player as PlayerConfig, RepeatMode, Settings};
@@ -49,6 +50,27 @@ fn make_wav(dir: &Path, name: &str) -> PathBuf {
     out
 }
 
+fn track_from_wav(path: &Path) -> Track {
+    let (identity, meta) = track_from_file(path).expect("track from wav");
+    let artists = meta
+        .artist
+        .split(", ")
+        .filter(|artist| !artist.is_empty())
+        .map(str::to_owned)
+        .collect();
+    Track {
+        identity,
+        title: meta.title,
+        artists,
+        album: None,
+        duration_secs: meta.duration_secs,
+        thumbnail: None,
+        track_number: None,
+        local_path: None,
+        set_video_id: None,
+    }
+}
+
 fn wait_playing(playback: &mut Playback, floor_ms: i32) {
     let started = Instant::now();
     while started.elapsed() < Duration::from_secs(5) {
@@ -76,6 +98,7 @@ fn app_playback() {
 
     let wav = make_wav(root.path(), "track.wav");
     let other = make_wav(root.path(), "other.wav");
+    let third = make_wav(root.path(), "third.wav");
     let config = EngineConfig {
         vo: "null".to_owned(),
         ao: "null".to_owned(),
@@ -163,6 +186,16 @@ fn app_playback() {
     );
     playback.play_pause().expect("resume");
     assert!(!playback.paused());
+
+    playback.play_pause().expect("pause");
+    assert!(playback.paused());
+    playback
+        .enqueue_track(&track_from_wav(&third))
+        .expect("play row while paused");
+    assert!(!playback.paused(), "row click must start playback");
+    assert_eq!(playback.snapshot().title, "third");
+    assert_eq!(playback.snapshot().queue_index, 2);
+    wait_playing(&mut playback, 200);
 
     playback.set_volume(0.25).expect("volume");
     assert!((playback.volume() - 0.25).abs() < 0.05);
