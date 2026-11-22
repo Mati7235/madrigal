@@ -203,7 +203,20 @@ fn app_playback() {
     assert_eq!(playback.snapshot().repeat, RepeatMode::One);
     playback.set_shuffle(true);
     assert!(playback.snapshot().shuffle);
+    playback.play_pause().expect("pause");
+    assert!(playback.paused());
+    let saved = playback.session_state().expect("session state");
     drop(playback);
+
+    let streams = madrigal_app::streams::orchestrator().expect("orchestrator");
+    let mut restored = Playback::open(config.clone(), &settings, streams).expect("open restored");
+    assert!(restored.restore_session(&saved));
+    assert!(restored.has_track(), "restored queue without current track");
+    assert!(restored.paused());
+    restored.play_pause().expect("play restored queue");
+    assert!(!restored.paused(), "restored queue must start playing");
+    wait_playing(&mut restored, 200);
+    drop(restored);
 
     kit::init_headless();
     let app = AppState::boot_with_engine(config).expect("boot app");

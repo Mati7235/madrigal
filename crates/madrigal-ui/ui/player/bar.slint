@@ -300,7 +300,7 @@ export component NowPlayingBar inherits Rectangle {
                     bar-play := M3IconButton {
                         icon: root.has-track && !root.paused ? Icons.pause : Icons.play;
                         icon-size: 20px;
-                        enabled: root.has-track;
+                        enabled: root.has-track || root.queue-count > 0;
                         icon-color: root.palette.on-primary;
                         selected: root.has-track && !root.paused;
                         fill: root.palette.primary;

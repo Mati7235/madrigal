@@ -321,7 +321,15 @@ impl Playback {
     }
 
     pub fn play_pause(&mut self) -> Result<(), String> {
-        if self.player.queue().current().is_none() || self.player.is_idle() {
+        if self.player.queue().is_empty() {
+            return Ok(());
+        }
+        if self.player.queue().current().is_none() {
+            self.player.queue_mut().play_at(0);
+            self.revision = self.revision.wrapping_add(1);
+            return self.player.play().map_err(|err| err.to_string());
+        }
+        if self.player.is_idle() {
             return self.player.play().map_err(|err| err.to_string());
         }
         if self.paused() {

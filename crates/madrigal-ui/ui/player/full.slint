@@ -141,6 +141,7 @@ component PlayerConsole inherits VerticalLayout {
     in property<string> artist;
     in property<image> cover;
     in property<bool> has-track: false;
+    in property<int> queue-count: 0;
     in property<string> pos-text;
     in property<string> dur-text;
     in property<float> frac: 0;
@@ -314,7 +315,7 @@ component PlayerConsole inherits VerticalLayout {
             height: root.compact ? 48px : 56px;
             icon: root.has-track && !root.paused ? Icons.pause : Icons.play;
             icon-size: 28px;
-            enabled: root.has-track;
+            enabled: root.has-track || root.queue-count > 0;
             icon-color: root.palette.on-primary;
             selected: root.has-track && !root.paused;
             fill: root.palette.primary;
@@ -431,6 +432,7 @@ export component FullPlayer inherits Rectangle {
     in property<string> album;
     in property<image> cover;
     in property<bool> has-track: false;
+    in property<int> queue-count: 0;
     in property<int> position-ms: 0;
     in property<int> duration-ms: 0;
     in property<bool> paused: true;
@@ -703,6 +705,7 @@ export component FullPlayer inherits Rectangle {
                         artist: root.artist;
                         cover: root.cover;
                         has-track: root.has-track;
+                        queue-count: root.queue-count;
                         pos-text: root.pos-text;
                         dur-text: root.dur-text;
                         frac: root.frac;
@@ -769,6 +772,7 @@ export component FullPlayer inherits Rectangle {
                 artist: root.artist;
                 cover: root.cover;
                 has-track: root.has-track;
+                queue-count: root.queue-count;
                 pos-text: root.pos-text;
                 dur-text: root.dur-text;
                 frac: root.frac;

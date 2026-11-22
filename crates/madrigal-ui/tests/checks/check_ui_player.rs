@@ -271,7 +271,7 @@ fn paused_play_icon_uses_on_primary() {
         include_str!("../../ui/player/full.slint"),
     ] {
         assert!(source.contains("root.has-track && !root.paused ? Icons.pause : Icons.play"));
-        assert!(source.contains("enabled: root.has-track;"));
+        assert!(source.contains("enabled: root.has-track || root.queue-count > 0;"));
         assert!(source.contains("selected: root.has-track && !root.paused;"));
         assert!(source.contains("icon-color: root.palette.on-primary;"));
         assert!(!source.contains("icon-color: root.paused ? root.palette.on-surface-variant"));
@@ -409,12 +409,24 @@ fn ui_player() {
         plays,
         "empty queue disables the play button"
     );
+    assert_eq!(shell.get_queue_count(), 0);
+    shell.set_queue_count(5);
+    kit::mock_advance(Duration::from_millis(50));
+    assert!(
+        color_pixels(&shell, "NowPlayingBar::bar-play", on_primary) > 0,
+        "queue without a loaded track keeps the play icon visible"
+    );
+    kit::click_by_id(&shell, "NowPlayingBar::bar-play").unwrap();
+    assert_eq!(shell.get_play_toggle_count(), plays + 1);
+    assert!(!shell.get_paused(), "queue play request starts playback");
+    shell.set_paused(true);
+    shell.set_queue_count(0);
     shell.set_has_track(true);
     kit::mock_advance(Duration::from_millis(50));
     madrigal_ui::apply_shell_theme(&shell, madrigal_ui::ThemeKind::Light);
 
     kit::click_by_id(&shell, "NowPlayingBar::bar-play").unwrap();
-    assert_eq!(shell.get_play_toggle_count(), 1);
+    assert_eq!(shell.get_play_toggle_count(), plays + 2);
     assert!(!shell.get_paused());
     shell.set_paused(true);
     kit::click_by_id(&shell, "NowPlayingBar::bar-next").unwrap();
