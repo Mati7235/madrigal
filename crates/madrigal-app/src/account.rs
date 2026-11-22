@@ -26,6 +26,7 @@ pub const ERR_PROFILE: &str = "settings.errProfileNotFound";
 pub const ERR_NO_LOGIN: &str = "settings.errNoLogin";
 pub const ERR_READ: &str = "settings.errRead";
 pub const ERR_AUTH: &str = "settings.errAuth";
+pub const ERR_KEYRING: &str = "settings.errKeyring";
 pub const ERR_UNKNOWN: &str = "settings.errUnknown";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -106,10 +107,17 @@ fn finish_login(
     session.channel_id = info.channel_id.unwrap_or_default();
     session.avatar_url = info.avatar.unwrap_or_default();
     let store = SessionStore::default();
-    let _ = store.save(&session, None);
-    LoginOutcome::Connected {
-        name: session.account_name.clone(),
-        email: identity(&session),
+    match store.save(&session, None) {
+        Ok(_) => LoginOutcome::Connected {
+            name: session.account_name.clone(),
+            email: identity(&session),
+        },
+        Err(err) if err.no_keyring() => LoginOutcome::Failed {
+            error: ERR_KEYRING.to_owned(),
+        },
+        Err(_) => LoginOutcome::Failed {
+            error: ERR_UNKNOWN.to_owned(),
+        },
     }
 }
 
@@ -188,6 +196,7 @@ pub fn sign_out(store: &SessionStore) {
 }
 
 pub fn restore_session(store: &SessionStore) -> Option<Session> {
+    store.migrate();
     let session = store.active();
     if session.catalog_ready() && !session.account_name.is_empty() {
         Some(session)

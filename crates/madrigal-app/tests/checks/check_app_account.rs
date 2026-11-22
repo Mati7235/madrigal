@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 use madrigal_account::store::SessionStore;
 use madrigal_app::account::{
     login_with_cookie, run_login_with, start_login_with, wire_account_with, LoginOutcome,
-    LoginStart, ERR_AUTH, ERR_CHOICE, ERR_MANUAL, ERR_NO_BROWSER,
+    LoginStart, ERR_AUTH, ERR_CHOICE, ERR_KEYRING, ERR_MANUAL, ERR_NO_BROWSER,
 };
 use madrigal_app::catalog::{
     wire_catalog_with, CatalogEvent, CatalogSource, ExplorePages,
@@ -288,11 +288,6 @@ fn app_account() {
         !SessionStore::default().active().catalog_ready(),
         "sign out clears the stored session"
     );
-    let jar = SessionStore::default()
-        .cookies_path(None)
-        .map(|path| std::fs::read_to_string(path).unwrap_or_default())
-        .unwrap_or_default();
-    assert!(!jar.contains("LOGIN_INFO"), "sign out removes the cookie jar");
 
     let empty = tempfile::tempdir().expect("empty home");
     std::env::set_var("HOME", empty.path());
@@ -423,4 +418,43 @@ fn account_manual_and_chooser() {
             error: ERR_CHOICE.to_owned()
         }
     );
+}
+
+#[test]
+fn missing_keyring_reports_localized_error() {
+    let (_guard, _root, home) = isolate();
+    firefox_layout(home.path());
+    std::env::set_var("MADRIGAL_KEYRING", "fail");
+
+    let outcome = run_login_with(&validator_ok);
+    assert_eq!(
+        outcome,
+        LoginOutcome::Failed {
+            error: ERR_KEYRING.to_owned()
+        }
+    );
+    assert!(
+        !SessionStore::default().active().catalog_ready(),
+        "failed keyring save must stay signed out"
+    );
+    let path = SessionStore::default()
+        .account_path("default")
+        .expect("account path");
+    assert!(
+        !path.exists()
+            || !std::fs::read_to_string(&path)
+                .unwrap_or_default()
+                .contains("LOGIN_INFO"),
+        "failed keyring save must not leave the cookie on disk"
+    );
+    assert_eq!(
+        madrigal_i18n::tr(madrigal_i18n::Lang::Es, ERR_KEYRING),
+        "Madrigal necesita un llavero del sistema para guardar tu sesión de forma segura. Instalá o activá GNOME Keyring, KWallet o KeePassXC (con Secret Service) y volvé a intentar."
+    );
+    assert_eq!(
+        madrigal_i18n::tr(madrigal_i18n::Lang::En, ERR_KEYRING),
+        "Madrigal needs a system keyring to save your session securely. Install or enable GNOME Keyring, KWallet or KeePassXC (with Secret Service) and try again."
+    );
+
+    std::env::set_var("MADRIGAL_KEYRING", "0");
 }

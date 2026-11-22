@@ -546,6 +546,7 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("settings.equalizer_virtualizer_enabled", "Virtualizador", "Virtualizer"),
     ("settings.equalizer_virtualizer_strength", "Intensidad del virtualizador", "Virtualizer strength"),
     ("settings.errAuth", "YouTube Music rechazó la sesión. Iniciá sesión de nuevo en tu navegador.", "YouTube Music rejected the session. Sign in again in your browser."),
+    ("settings.errKeyring", "Madrigal necesita un llavero del sistema para guardar tu sesión de forma segura. Instalá o activá GNOME Keyring, KWallet o KeePassXC (con Secret Service) y volvé a intentar.", "Madrigal needs a system keyring to save your session securely. Install or enable GNOME Keyring, KWallet or KeePassXC (with Secret Service) and try again."),
     ("settings.errManual", "Las cookies no tienen una sesión válida de YouTube Music.", "The cookies do not contain a valid YouTube Music session."),
     ("settings.errNoBrowser", "No encontré ningún navegador con sesión de YouTube Music. Iniciá sesión en music.youtube.com y volvé a intentar.", "No browser with a YouTube Music session was found. Sign in at music.youtube.com and try again."),
     ("settings.errNoChoice", "Hay varios navegadores con sesión. Elegí uno.", "Several browsers have a session. Choose one."),
