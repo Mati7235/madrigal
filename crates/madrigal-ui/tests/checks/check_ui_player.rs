@@ -240,6 +240,44 @@ fn liked_icons_are_filled_hearts() {
     assert!(!svg.contains("fill=\"none\""));
 }
 
+fn color_pixels(shell: &MainShell, id: &str, color: slint::Color) -> usize {
+    let handle = kit::find_by_id(shell, id).unwrap();
+    let pos = handle.absolute_position();
+    let size = handle.size();
+    let buffer = shell.window().take_snapshot().unwrap();
+    let width = buffer.width();
+    let x0 = pos.x.max(0.0) as u32;
+    let y0 = pos.y.max(0.0) as u32;
+    let x1 = ((pos.x + size.width).min(width as f32)) as u32;
+    let y1 = ((pos.y + size.height).min(buffer.height() as f32)) as u32;
+    let target = [color.red(), color.green(), color.blue(), color.alpha()];
+    let bytes = buffer.as_bytes();
+    let mut count = 0;
+    for y in y0..y1 {
+        for x in x0..x1 {
+            let offset = ((y * width + x) * 4) as usize;
+            if bytes[offset..offset + 4] == target {
+                count += 1;
+            }
+        }
+    }
+    count
+}
+
+#[test]
+fn paused_play_icon_uses_on_primary() {
+    for source in [
+        include_str!("../../ui/player/bar.slint"),
+        include_str!("../../ui/player/full.slint"),
+    ] {
+        assert!(source.contains("root.has-track && !root.paused ? Icons.pause : Icons.play"));
+        assert!(source.contains("enabled: root.has-track;"));
+        assert!(source.contains("selected: root.has-track && !root.paused;"));
+        assert!(source.contains("icon-color: root.palette.on-primary;"));
+        assert!(!source.contains("icon-color: root.paused ? root.palette.on-surface-variant"));
+    }
+}
+
 #[test]
 fn ui_player() {
     let tmp = tempfile::tempdir().unwrap();
@@ -338,6 +376,42 @@ fn ui_player() {
     assert_eq!(shell.get_position_ms(), 30_000);
     assert_eq!(shell.get_bg_style(), 1);
     assert!(!shell.get_full_player_open());
+
+    madrigal_ui::apply_shell_theme(&shell, madrigal_ui::ThemeKind::Dark);
+    kit::mock_advance(Duration::from_millis(50));
+    let on_primary = shell.get_palette().on_primary;
+    let bar_pixels = color_pixels(&shell, "NowPlayingBar::bar-play", on_primary);
+    assert!(
+        bar_pixels > 0,
+        "paused play icon stays visible on the primary fill"
+    );
+
+    shell.set_full_player_open(true);
+    kit::mock_advance(Duration::from_millis(50));
+    let full_pixels = color_pixels(&shell, "PlayerConsole::full-play", on_primary);
+    assert!(
+        full_pixels > 0,
+        "paused full-player play icon stays visible"
+    );
+    shell.set_full_player_open(false);
+
+    shell.set_has_track(false);
+    kit::mock_advance(Duration::from_millis(50));
+    assert_eq!(
+        color_pixels(&shell, "NowPlayingBar::bar-play", on_primary),
+        0,
+        "disabled play button drops the icon color"
+    );
+    let plays = shell.get_play_toggle_count();
+    kit::click_by_id(&shell, "NowPlayingBar::bar-play").unwrap();
+    assert_eq!(
+        shell.get_play_toggle_count(),
+        plays,
+        "empty queue disables the play button"
+    );
+    shell.set_has_track(true);
+    kit::mock_advance(Duration::from_millis(50));
+    madrigal_ui::apply_shell_theme(&shell, madrigal_ui::ThemeKind::Light);
 
     kit::click_by_id(&shell, "NowPlayingBar::bar-play").unwrap();
     assert_eq!(shell.get_play_toggle_count(), 1);
