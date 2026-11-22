@@ -500,24 +500,66 @@ fn localized_number(number: &str, lang: Lang) -> String {
 }
 
 fn audience_key(raw: &str) -> &'static str {
-    if raw.ends_with("monthly audience") {
+    let raw = raw.to_lowercase();
+    if raw.ends_with("monthly audience")
+        || raw.ends_with("monthly listeners")
+        || raw.ends_with("oyentes mensuales")
+        || raw.ends_with("usuarios mensuales")
+    {
         "artist.monthly_audience"
     } else {
         "artist.subscribers"
     }
 }
 
-pub fn subscriber_label(raw: &str, lang: Lang) -> Option<String> {
-    let token = raw.split_whitespace().next()?.trim();
-    if !token.chars().next().is_some_and(|c| c.is_ascii_digit()) {
+fn split_count(raw: &str) -> Option<(&str, &str)> {
+    let start = raw.find(|c: char| c.is_ascii_digit())?;
+    let rest = &raw[start..];
+    let number_len = rest
+        .char_indices()
+        .take_while(|(_, ch)| ch.is_ascii_digit() || *ch == '.' || *ch == ',')
+        .map(|(index, ch)| index + ch.len_utf8())
+        .last()
+        .unwrap_or(0);
+    if number_len == 0 {
         return None;
     }
-    let key = audience_key(raw);
-    let (number, unit) = match token.chars().last() {
-        Some('K' | 'M' | 'B') => token.split_at(token.len() - 1),
-        _ => (token, ""),
+    let number = &rest[..number_len];
+    let after = rest[number_len..].trim_start();
+    let unit = match after.chars().next() {
+        Some(ch @ ('K' | 'M' | 'B')) => &after[..ch.len_utf8()],
+        _ => "",
     };
-    let number = localized_number(number, lang);
+    Some((number, unit))
+}
+
+fn normalize_count(number: &str) -> String {
+    let Some((index, separator)) = number
+        .char_indices()
+        .filter(|(_, ch)| *ch == '.' || *ch == ',')
+        .last()
+    else {
+        return number.to_owned();
+    };
+    let decimals = number[index + separator.len_utf8()..].chars().count();
+    let decimal = decimals == 1 || decimals == 2;
+    let mut normalized = String::new();
+    for (offset, ch) in number.char_indices() {
+        if ch == '.' || ch == ',' {
+            if decimal && offset == index {
+                normalized.push('.');
+            }
+        } else {
+            normalized.push(ch);
+        }
+    }
+    normalized
+}
+
+pub fn subscriber_label(raw: &str, lang: Lang) -> Option<String> {
+    let (number, unit) = split_count(raw)?;
+    let key = audience_key(raw);
+    let number = localized_number(&normalize_count(number), lang);
     let value = match (lang, unit) {
         (Lang::Es, "") => number,
         (Lang::Es, unit) => format!("{number} {unit}"),

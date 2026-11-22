@@ -656,6 +656,14 @@ fn ui_catalog() {
         Some("55.5M monthly listeners")
     );
     assert_eq!(
+        subscriber_label("56,1 M usuarios mensuales", madrigal_i18n::Lang::Es).as_deref(),
+        Some("56,1 M oyentes mensuales")
+    );
+    assert_eq!(
+        subscriber_label("56,1 M usuarios mensuales", madrigal_i18n::Lang::En).as_deref(),
+        Some("56.1M monthly listeners")
+    );
+    assert_eq!(
         subscriber_label("2.28K subscribers", madrigal_i18n::Lang::Es).as_deref(),
         Some("2,28 K suscriptores")
     );
