@@ -155,6 +155,9 @@ Fast loop: `cargo test -p madrigal-ui --test check_ui_<name>` (or
 `cargo xtask checks --only <name>`) rebuilds one test binary, ~8 s incremental
 with lld + `debug = 1`. Full gates are for task close, not iteration.
 
+Live binary: `cargo build --profile fast -p madrigal-app --bin madrigal`
+(release opt, no LTO, incremental); shipping stays `--release`.
+
 Harness contract (`madrigal-testkit`):
 
 - Pinned versions: `slint = "=1.19.0"` with the `mcp` feature (without it the
