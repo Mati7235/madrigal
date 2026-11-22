@@ -120,8 +120,9 @@ is a `records_from_browser` seam returning Unsupported.
   full workspace re-resolve, and the shared offline index cache is a mix of
   versions (objc2 0.6.4 cached vs 0.6.5 locked) that fails to resolve.
   Keep this crate dependency-free beyond the workspace + serde.
-- Cookies file lives in the runtime dir (`profile_cookies_path`), never next
-  to the session JSON; both written 0600 via `madrigal-secrets`.
+- Cookies live only in the system keyring (Secret Service) via
+  `madrigal-secrets`; the session JSON keeps non-secret metadata and is
+  written 0600. Legacy plaintext is migrated on read, then deleted.
 - Fixtures in `crates/madrigal-account/tests/fixtures/` derive from the
   oracle check vectors; every token is fake (e.g. `AbCdEf123`).
 
@@ -452,7 +453,7 @@ vectors) into `GET open.spotify.com/api/token?reason=transport&
 productType=web-player&totp=&totpServer=&totpVer=` with
 `Cookie: sp_dc=...[; sp_key=...]`; anonymous/blank token means the cookie is
 invalid. Session `{sp_dc, sp_key, access_token, expires_at_ms}` lives in
-`madrigal-secrets` account `spotify` (0600 fallback); reuse while fresh with
+`madrigal-secrets` account `spotify` (system keyring); reuse while fresh with
 the oracle's 60 s grace, otherwise re-exchange via stored cookies; a 401
 refreshes once (rejected-token guard) and only then surfaces `NotLoggedIn`.
 

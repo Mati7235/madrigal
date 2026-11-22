@@ -1,5 +1,11 @@
 # Packaging
 
+## Supported distros
+
+Debian 13, Ubuntu 24.04, Fedora 42+ and Arch, with glibc 2.39 or newer. Sign-in
+requires a Secret Service keyring: GNOME Keyring, KWallet 6 (ksecretd) or
+KeePassXC with the Secret Service integration.
+
 ## AppImage
 
 ```sh
@@ -24,7 +30,8 @@ bundled binary exists.
 linuxdeploy bundles libmpv and its dependency tree (ffmpeg, codecs, audio
 backends) with its default excludelist: glibc, libgcc, GL/EGL, X11/Wayland,
 fontconfig and the kernel interfaces stay host-provided. About 200 libraries.
-Sources live in `packaging/`.
+The keyring backend links `libdbus-1`, which linuxdeploy bundles too. Sources
+live in `packaging/`.
 
 ## Limits
 

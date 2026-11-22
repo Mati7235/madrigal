@@ -49,7 +49,7 @@ Without `cargo` available the check is FAIL.
 | `i18n_parity` | offline | es/en parity of madrigal-i18n: no orphans or empties, tr() non-empty, unknown key errors |
 | `paths_isolation` | offline | All paths contained within MADRIGAL_PROFILE_ROOT |
 | `files_atomic` | offline | All-or-nothing atomic writes with no temp leftovers |
-| `secrets_permissions` | offline | Secrets 0600, symlink rejection, keyring disabled |
+| `secrets_permissions` | offline | Keyring mock roundtrip, 0600 metadata only, symlink rejection, legacy secret migration, missing keyring typed error |
 | `testkit_selftest` | offline | Headless UI harness: click, virtual clock, drag, PNG, layout lint |
 | `db_migrations` | offline | Fresh DB migrates to latest, idempotent reopen, basic song/playlist/event roundtrip |
 | `db_recovery` | offline | Damaged header is quarantined with timestamp and fresh DB takes over; empty and healthy files are never quarantined |
@@ -70,11 +70,12 @@ Without `cargo` available the check is FAIL.
 | `library_playlists` | offline | Local playlists with tags, cover, hidden flag, liked auto-playlist, duplicate policy and undo |
 | `library_stats` | offline | Play counts, streaks, listen time and Year in Music tops over seeded events |
 | `library_history` | offline | Listen/search history with settings pause, clear and duration window |
-| `account_cookies` | offline | Netscape/header cookie parsing, YouTube domain filter, roundtrip serialize, expiry, 0600 writes |
+| `account_cookies` | offline | Netscape/header cookie parsing, YouTube domain filter, roundtrip serialize, expiry |
 | `account_sapisid` | offline | SAPISIDHASH golden vectors and browser auth header assembly |
-| `account_profiles` | offline | Isolated account profiles, settings active pointer, delete, 0600 cookies, browser seam |
+| `account_profiles` | offline | Isolated account profiles, settings active pointer, delete, metadata-only session files, legacy cookie migration, browser seam |
 | `account_firefox` | offline | Firefox family cookie import: profiles.ini default selection, s/ms expiry, container skip, non-YouTube drop, no-login/not-found errors, WAL copy under lock, LibreWolf/Zen/Floorp/Waterfox roots |
 | `account_chromium` | offline | Chromium family cookie import: Local State profile order, v10/v11 AES decryption, v24 host hash, locked DB copy, browser detection/chooser, real headless Chromium DB |
+| `keyring_live` | live | Real Secret Service on a private D-Bus session: set, get and delete across two processes with an unlocked gnome-keyring-daemon |
 | `innertube_search` | offline | Fixture search songs/artists/albums map to core models, filter mapping, suggestions |
 | `innertube_pages` | offline | Fixture artist/album/playlist/watch pages map to models, moods via custom parse, malformed input errors |
 | `localmedia_scan` | native | Local folder scan (ffmpeg fixtures): tags/durations/artwork/lyrics, exclude/short/corrupt handling, Local db upserts, artwork prune |
@@ -97,7 +98,7 @@ Without `cargo` available the check is FAIL.
 | `ui_foundations` | offline | M3E tokens/themes/components via DemoGallery: palette flips, click state, PNG snapshot |
 | `artwork` | offline | ArtworkCache buckets/hits/LRU/prune and headless Cover PNG with generation guard |
 | `sponsorblock` | offline | Segments parse, category filter, active-segment math, skip-once, 404 empty, custom URL |
-| `tidal_client` | offline | Device-link login, 0600 token store, search Tracks, HLS manifest, lyrics payload |
+| `tidal_client` | offline | Device-link login, keyring token store, search Tracks, HLS manifest, lyrics payload |
 | `innertube_home_library` | offline | Fixture home feed maps to models, library/history/writes parse from pinned fixtures, logged-out and real anonymized logged-in (es, en) account menus parse, cookie upgrade builds offline |
 | `innertube_discover` | offline | Fixture charts/new releases/browse walk/mood deep-link/radio fallback map to models, malformed input errors |
 | `shazam_signature` | native | DejaVu signature: determinism, chunked-feed equality, order sensitivity, pinned tone hash, clean wav errors |
@@ -114,7 +115,7 @@ Without `cargo` available the check is FAIL.
 | `ui_shell` | offline | MainShell: sidebar pages, overlays, shortcuts, i18n/theme flips, PNG snapshot |
 | `ui_player` | offline | Player surface: bar, full player, karaoke lyrics, queue drawer, dialogs, PNG snapshot |
 | `ui_catalog` | offline | Catalog screens (Home/Search/Explore/Detail) over innertube fixtures: chips, filters, moods, detail stack, PNG snapshots |
-| `spotify_import` | offline | Cookie TOTP auth exchange, 0600 token store, GQL playlist/track parses, YTM mapper over the real search fixture, mapping cache, unresolved reporting, clean cookie errors |
+| `spotify_import` | offline | Cookie TOTP auth exchange, keyring token store, GQL playlist/track parses, YTM mapper over the real search fixture, mapping cache, unresolved reporting, clean cookie errors |
 | `cast_protocol` | offline | CastV2 framing, CONNECT/LOAD/volume shapes, session state machine, device mapping; mock transport, no TLS |
 | `ui_library` | offline | Library/History/Stats/Downloads pages via MainShell: chip order+tabs, tags, sorts, multiselect, history clear, tops, Year in Music, download rows; Es/En; PNG-sane |
 | `ui_settings` | offline | Settings screens: 11 groups with field parity, apply/toggle/dropdown/drag/mask/test, onboarding, diagnostics |
@@ -128,6 +129,22 @@ Without `cargo` available the check is FAIL.
 | `app_downloads` | offline | Download service over a loopback HTTP server: page rows, progress/speed, queued ordering, pause/resume, retry, cancel and quarantine |
 | `desktop` | offline | Peripherals wiring: settings persistence of volume/repeat/shuffle, session keeper, single-instance file handoff, notification action mapping, scrobble eligibility and outcome merge, D-Bus skip without a session bus, bounded D-Bus setup and shutdown against a silent socket |
 | `app_account` | offline | Browser login wiring: detection/chooser, manual cookie header, account menu validation fills name, handle, channel and avatar into the session, success reports connected, logged-out or rejected cookies map to errAuth, failure sets the mapped error, login and boot restore stay off the UI thread |
+
+## Secret Service check
+
+`keyring_live` starts its own `dbus-run-session` with a temporary `HOME` and an
+unlocked `gnome-keyring-daemon`, so it never touches the user's keyring:
+
+```sh
+cargo xtask checks --group live --only keyring_live
+```
+
+One child process stores the secret; a second child reads and deletes it from
+the same private session.
+
+Offline checks set `MADRIGAL_KEYRING=0` for an in-memory keyring mock;
+`MADRIGAL_KEYRING=fail` simulates a missing Secret Service. Neither mode writes
+plaintext.
 
 ## Visual verification
 
