@@ -58,8 +58,8 @@ impl SearchAggregate {
         }
     }
 
-    fn items(&self) -> Vec<CatalogItem> {
-        madrigal_ui::mixed_results(&self.songs, &self.artists, &self.albums)
+    fn items(&self, lang: madrigal_i18n::Lang) -> Vec<CatalogItem> {
+        madrigal_ui::mixed_results(&self.songs, &self.artists, &self.albums, lang)
     }
 
     fn is_empty(&self) -> bool {
@@ -442,7 +442,7 @@ pub fn apply_catalog_event(
             let items = {
                 let mut aggregate = lock_search(search);
                 aggregate.apply(request_id, outcome);
-                aggregate.items()
+                aggregate.items(madrigal_ui::shell_lang(shell))
             };
             apply_search_partial(shell, items);
         }

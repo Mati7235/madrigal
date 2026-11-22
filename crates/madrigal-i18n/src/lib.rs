@@ -82,7 +82,7 @@ static ENTRIES: &[(&str, &str, &str)] = &[
     ("addto.private", "Privada", "Private"),
     ("addto.searchHint", "Buscar listas…", "Search playlists…"),
     ("addto.title", "Agregar a una lista", "Add to a playlist"),
-    ("artist.monthly_audience", "%1 oyentes mensuales", "%1 monthly audience"),
+    ("artist.monthly_audience", "%1 oyentes mensuales", "%1 monthly listeners"),
     ("artist.subscribers", "%1 suscriptores", "%1 subscribers"),
     ("audio.eq.bass", "Graves", "Bass"),
     ("audio.eq.gain", "Ganancia de salida", "Output gain"),

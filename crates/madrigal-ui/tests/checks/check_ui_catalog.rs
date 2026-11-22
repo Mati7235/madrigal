@@ -387,14 +387,29 @@ fn ui_catalog() {
     assert_eq!(shell.get_search_query().as_str(), "");
     assert_eq!(queries.borrow().last().map(String::as_str), Some(""));
 
+    let mixed_songs =
+        madrigal_innertube::CatalogClient::parse_search_songs(&songs_src).unwrap();
+    let mixed_artists =
+        madrigal_innertube::CatalogClient::parse_search_artists(&artists_src).unwrap();
+    let mixed_albums =
+        madrigal_innertube::CatalogClient::parse_search_albums(&albums_src).unwrap();
     let mixed = mixed_results(
-        &madrigal_innertube::CatalogClient::parse_search_songs(&songs_src).unwrap(),
-        &madrigal_innertube::CatalogClient::parse_search_artists(&artists_src).unwrap(),
-        &madrigal_innertube::CatalogClient::parse_search_albums(&albums_src).unwrap(),
+        &mixed_songs,
+        &mixed_artists,
+        &mixed_albums,
+        madrigal_i18n::Lang::Es,
     );
     assert_eq!(mixed.len(), MIXED_PER_KIND * 3);
     assert_eq!(mixed[0].kind, DetailKind::Artist);
+    assert_eq!(mixed[0].subtitle.as_str(), "55,5 M oyentes mensuales");
     assert_eq!(mixed[MIXED_PER_KIND].kind, DetailKind::Album);
+    let mixed_en = mixed_results(
+        &mixed_songs,
+        &mixed_artists,
+        &mixed_albums,
+        madrigal_i18n::Lang::En,
+    );
+    assert_eq!(mixed_en[0].subtitle.as_str(), "55.5M monthly listeners");
 
     let source_signals: Rc<RefCell<u32>> = Rc::new(RefCell::new(0));
     {
@@ -638,7 +653,7 @@ fn ui_catalog() {
     );
     assert_eq!(
         subscriber_label("55.5M monthly audience", madrigal_i18n::Lang::En).as_deref(),
-        Some("55.5M monthly audience")
+        Some("55.5M monthly listeners")
     );
     assert_eq!(
         subscriber_label("2.28K subscribers", madrigal_i18n::Lang::Es).as_deref(),
@@ -662,7 +677,7 @@ fn ui_catalog() {
     let artist_items_en = madrigal_ui::artist_results(&artists, madrigal_i18n::Lang::En);
     assert_eq!(
         artist_items_en[0].subtitle.as_str(),
-        "55.5M monthly audience"
+        "55.5M monthly listeners"
     );
     assert_eq!(artist_items_en[6].subtitle.as_str(), "2.28K subscribers");
     assert_eq!(
