@@ -203,7 +203,7 @@ impl<S: StreamSource> Player<S> {
         {
             return Ok(false);
         }
-        self.engine.set_paused(state.paused)?;
+        self.engine.set_paused(true)?;
         Ok(true)
     }
 

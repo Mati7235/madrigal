@@ -11,6 +11,7 @@ use madrigal_player::stream_info::StreamOrigin;
 use madrigal_settings::{Player as PlayerConfig, RepeatMode, Settings};
 use madrigal_testkit as kit;
 use madrigal_ui::MainShell;
+use slint::ComponentHandle;
 
 fn have_ffmpeg() -> bool {
     Command::new("ffmpeg")
@@ -81,6 +82,25 @@ fn wait_playing(playback: &mut Playback, floor_ms: i32) {
         std::thread::sleep(Duration::from_millis(50));
     }
     panic!("mpv no avanzó la posición (floor {floor_ms} ms)");
+}
+
+fn button_pixels(shell: &MainShell, id: &str) -> Vec<u8> {
+    let handle = kit::find_by_id(shell, id).unwrap();
+    let pos = handle.absolute_position();
+    let size = handle.size();
+    let buffer = shell.window().take_snapshot().unwrap();
+    let width = buffer.width();
+    let bytes = buffer.as_bytes();
+    let x0 = (pos.x + size.width / 2.0 - 8.0) as u32;
+    let y0 = (pos.y + size.height / 2.0 - 8.0) as u32;
+    let mut out = Vec::with_capacity(16 * 16 * 4);
+    for y in y0..y0 + 16 {
+        for x in x0..x0 + 16 {
+            let offset = ((y * width + x) * 4) as usize;
+            out.extend_from_slice(&bytes[offset..offset + 4]);
+        }
+    }
+    out
 }
 
 #[test]
@@ -203,22 +223,51 @@ fn app_playback() {
     assert_eq!(playback.snapshot().repeat, RepeatMode::One);
     playback.set_shuffle(true);
     assert!(playback.snapshot().shuffle);
-    playback.play_pause().expect("pause");
-    assert!(playback.paused());
+    assert!(!playback.paused(), "session is saved while playing");
     let saved = playback.session_state().expect("session state");
+    assert!(!saved.paused);
     drop(playback);
 
     let streams = madrigal_app::streams::orchestrator().expect("orchestrator");
     let mut restored = Playback::open(config.clone(), &settings, streams).expect("open restored");
     assert!(restored.restore_session(&saved));
     assert!(restored.has_track(), "restored queue without current track");
-    assert!(restored.paused());
+    let restored_snapshot = restored.snapshot();
+    assert!(restored_snapshot.has_track);
+    assert!(
+        restored_snapshot.paused,
+        "restored session must report paused"
+    );
     restored.play_pause().expect("play restored queue");
     assert!(!restored.paused(), "restored queue must start playing");
     wait_playing(&mut restored, 200);
     drop(restored);
 
     kit::init_headless();
+    let restored_shell = MainShell::new().expect("restored shell");
+    madrigal_app::state::apply_snapshot(&restored_shell, &restored_snapshot, true);
+    assert!(restored_shell.get_has_track());
+    assert!(
+        restored_shell.get_paused(),
+        "restored player reports paused"
+    );
+    restored_shell.show().unwrap();
+    kit::mock_advance(Duration::from_millis(100));
+    let play_icon = button_pixels(&restored_shell, "NowPlayingBar::bar-play");
+    restored_shell.set_paused(false);
+    kit::mock_advance(Duration::from_millis(200));
+    let pause_icon = button_pixels(&restored_shell, "NowPlayingBar::bar-play");
+    restored_shell.set_paused(true);
+    kit::mock_advance(Duration::from_millis(200));
+    assert_eq!(
+        button_pixels(&restored_shell, "NowPlayingBar::bar-play"),
+        play_icon
+    );
+    assert_ne!(
+        play_icon, pause_icon,
+        "restored player must draw the play icon"
+    );
+
     let app = AppState::boot_with_engine(config).expect("boot app");
     let (added, errors) = app.open_files(&[
         wav.to_string_lossy().into_owned(),
