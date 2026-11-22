@@ -6,7 +6,7 @@ license.workspace = true
 
 [dependencies]
 madrigal-paths = { path = "../madrigal-paths" }
-keyring = "3"
+keyring = { version = "3", features = ["sync-secret-service", "crypto-rust"] }
 
 [dev-dependencies]
 tempfile = "3"
@@ -17,3 +17,7 @@ workspace = true
 [[test]]
 name = "check_secrets_permissions"
 path = "tests/checks/check_secrets_permissions.rs"
+
+[[test]]
+name = "check_keyring_live"
+path = "tests/checks/check_keyring_live.rs"

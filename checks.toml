@@ -113,6 +113,10 @@ name = "account_chromium"
 group = "offline"
 
 [[check]]
+name = "keyring_live"
+group = "live"
+
+[[check]]
 name = "scrobble_thresholds"
 group = "offline"
 
