@@ -916,8 +916,10 @@ fn privacy_rows(p: &madrigal_settings::Privacy) -> Vec<SettingRow> {
 }
 
 fn account_rows(a: &madrigal_settings::Account, _profiles: &[String]) -> Vec<SettingRow> {
+    let mut sync = sw("ytm_sync", "settings.ytm_sync", a.ytm_sync);
+    sync.section = "settings.sub.account.sync".to_owned();
     vec![
-        sw("ytm_sync", "settings.ytm_sync", a.ytm_sync),
+        sync,
         sw("force_sync_on_account_switch", "settings.force_sync_on_account_switch", a.force_sync_on_account_switch),
     ]
 }

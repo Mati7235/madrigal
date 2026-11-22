@@ -295,7 +295,7 @@ export component SectionView inherits Rectangle {
                             }
 
                             if (row.kind == "slider") : slider-frame := Rectangle {
-                                width: root.narrow ? 288px : 352px;
+                                width: root.narrow ? 300px : 352px;
 
                                 VerticalLayout {
                                     alignment: center;
@@ -331,7 +331,7 @@ export component SectionView inherits Rectangle {
                                             alignment: center;
 
                                             slider-value := Text {
-                                                width: root.narrow ? 72px : 88px;
+                                                width: root.narrow ? 92px : 88px;
                                                 height: 24px;
                                                 text: row.val-label;
                                                 color: root.palette.on-surface;

@@ -242,7 +242,7 @@ Settings row patterns (presentation only; keys and stored values unchanged):
   (`row-picker` then `picker-option`). Below 760px of section width every
   choice uses the picker so chips never overflow. Option labels are
   `settings.opt.<field>.<value>`.
-- Slider controls narrow from 352px to 288px in the same compact case.
+- Slider controls narrow from 352px to 300px in the same compact case.
 - Sliders show the real value with its unit through `slider_text`: speed and
   line spacing `×`, pitch in semitones, output gain in dB (stored in mB), `%`,
   seconds, days, px, and MB/GB for cache limits.
