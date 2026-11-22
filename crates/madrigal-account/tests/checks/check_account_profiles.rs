@@ -1,7 +1,6 @@
 use std::sync::Mutex;
 
 use madrigal_account::browser::records_from_browser;
-use madrigal_account::cookies::CookieRecord;
 use madrigal_account::session::Session;
 use madrigal_account::store::SessionStore;
 
@@ -17,6 +16,18 @@ fn isolate() -> (std::sync::MutexGuard<'static, ()>, tempfile::TempDir) {
     std::env::remove_var("XDG_CONFIG_HOME");
     std::env::remove_var("XDG_DATA_HOME");
     std::env::remove_var("XDG_CACHE_HOME");
+    for id in [
+        "default",
+        "acc2",
+        "work",
+        "legacy",
+        "pendiente",
+        "sin-llavero",
+        "spotify",
+        "tidal",
+    ] {
+        let _ = madrigal_secrets::delete_secret(id);
+    }
     (guard, root)
 }
 
@@ -28,9 +39,13 @@ fn named_session(cookie: &str, name: &str) -> Session {
     }
 }
 
+fn accounts_dir(root: &std::path::Path) -> std::path::PathBuf {
+    root.join("config").join("madrigal").join("accounts")
+}
+
 #[test]
 fn profiles_coexist_isolated() {
-    let (_guard, _root) = isolate();
+    let (_guard, root) = isolate();
     let store = SessionStore::default();
     store.create("default").expect("create default");
     store.create("acc2").expect("create acc2");
@@ -39,18 +54,6 @@ fn profiles_coexist_isolated() {
     let second = named_session("LOGIN_INFO=z; __Secure-3PAPISID=segundo", "Segunda");
     store.save(&first, Some("default")).expect("save default");
     store.save(&second, Some("acc2")).expect("save acc2");
-    store
-        .save_cookies(
-            &[CookieRecord::new("__Secure-3PAPISID", "primero", ".youtube.com")],
-            Some("default"),
-        )
-        .expect("cookies default");
-    store
-        .save_cookies(
-            &[CookieRecord::new("__Secure-3PAPISID", "segundo", ".youtube.com")],
-            Some("acc2"),
-        )
-        .expect("cookies acc2");
 
     let mut ids = store.ids();
     ids.sort();
@@ -64,26 +67,23 @@ fn profiles_coexist_isolated() {
     assert_eq!(back_first.cookie, first.cookie);
     assert_eq!(back_second.cookie, second.cookie);
 
-    let default_jar = std::fs::read_to_string(
-        store.cookies_path(Some("default")).expect("cookies path"),
-    )
-    .expect("read default jar");
-    let acc2_jar =
-        std::fs::read_to_string(store.cookies_path(Some("acc2")).expect("cookies path"))
-            .expect("read acc2 jar");
-    assert!(default_jar.contains("primero"));
-    assert!(!default_jar.contains("segundo"));
-    assert!(acc2_jar.contains("segundo"));
-    assert!(!acc2_jar.contains("primero"));
-
-    let stored =
-        std::fs::read_to_string(store.account_path("default").expect("account path"))
-            .expect("read account");
+    let stored = std::fs::read_to_string(store.account_path("default").expect("account path"))
+        .expect("read account");
     assert!(!stored.contains("primero"));
+    assert!(!stored.contains("\"cookie\""));
     assert!(stored.contains("\"secret_backend\": \"secret\""));
-
-    let fallback = madrigal_secrets::fallback_path("default").expect("fallback");
-    assert_eq!(std::fs::read_to_string(fallback).expect("read secret"), first.cookie);
+    assert_eq!(
+        madrigal_secrets::get_secret("default").expect("read secret"),
+        Some(first.cookie.clone())
+    );
+    assert_eq!(
+        madrigal_secrets::get_secret("acc2").expect("read secret"),
+        Some(second.cookie.clone())
+    );
+    assert!(!accounts_dir(root.path())
+        .join("secret_default.txt")
+        .exists());
+    assert!(!accounts_dir(root.path()).join("secret_acc2.txt").exists());
     assert!(back_first.logged_in());
     assert!(back_first.catalog_ready());
     assert_eq!(back_first.cookie_count(), 2);
@@ -156,25 +156,16 @@ fn delete_removes_files() {
             Some("acc2"),
         )
         .expect("save acc2");
-    let cookies = store
-        .save_cookies(
-            &[CookieRecord::new("__Secure-3PAPISID", "segundo", ".youtube.com")],
-            Some("acc2"),
-        )
-        .expect("cookies acc2");
     let account_path = store.account_path("acc2").expect("account path");
-    assert!(account_path.exists() && cookies.exists());
+    assert!(account_path.exists());
 
     store.activate("acc2").expect("activate acc2");
     store.remove("acc2").expect("remove acc2");
     assert!(!store.ids().contains(&"acc2".to_owned()));
     assert!(!account_path.exists());
-    assert!(!cookies.exists());
-    assert!(
-        madrigal_secrets::get_secret("acc2")
-            .expect("read secret")
-            .is_none()
-    );
+    assert!(madrigal_secrets::get_secret("acc2")
+        .expect("read secret")
+        .is_none());
     assert_eq!(store.active_id(), "default");
 
     store.remove("default").expect("default survives");
@@ -193,45 +184,151 @@ fn invalid_ids_rejected() {
 }
 
 #[test]
-fn cookies_file_private() {
+fn session_metadata_private() {
     let (_guard, _root) = isolate();
     let store = SessionStore::default();
     store.create("default").expect("create default");
     let path = store
-        .save_cookies(
-            &[CookieRecord::new("__Secure-3PAPISID", "s", ".youtube.com")],
+        .save(
+            &named_session("LOGIN_INFO=s; __Secure-3PAPISID=s", "Sesión"),
             Some("default"),
         )
-        .expect("save cookies");
+        .expect("save");
+    let account = store.account_path(&path).expect("account path");
     #[cfg(unix)]
     assert_eq!(
         std::os::unix::fs::PermissionsExt::mode(
-            &std::fs::metadata(&path).expect("meta").permissions()
+            &std::fs::metadata(&account).expect("meta").permissions()
         ) & 0o777,
         0o600
     );
 }
 
 #[test]
-fn symlink_cookies_rejected() {
+fn symlink_session_rejected() {
     let (_guard, _root) = isolate();
     let dir = tempfile::tempdir().expect("tempdir");
-    let victim = dir.path().join("victim.txt");
+    let store = SessionStore::with_dir(dir.path().to_path_buf());
+    let victim = dir.path().join("victim.json");
     std::fs::write(&victim, "intacto").expect("victim");
-    let link = dir.path().join("link.txt");
+    let link = store.account_path("default").expect("account path");
     #[cfg(unix)]
     std::os::unix::fs::symlink(&victim, &link).expect("symlink");
     #[cfg(unix)]
-    assert!(madrigal_account::save_cookies(&[], &link).is_err());
+    assert!(store
+        .save(&named_session("LOGIN_INFO=a", "A"), Some("default"))
+        .is_err());
     assert_eq!(std::fs::read_to_string(&victim).expect("read"), "intacto");
+}
+
+#[test]
+fn legacy_cookie_migrates_from_session_file() {
+    let (_guard, root) = isolate();
+    let store = SessionStore::default();
+    let path = store.account_path("default").expect("account path");
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    let cookie = "LOGIN_INFO=legacy:1; __Secure-3PAPISID=legacy";
+    let text = format!(
+        "{{\n  \"cookie\": \"{}\",\n  \"account_name\": \"Vieja\",\n  \"source_browser\": \"firefox\"\n}}\n",
+        cookie
+    );
+    std::fs::write(&path, text).unwrap();
+    store.migrate();
+
+    let session = store.load("default");
+    assert_eq!(session.cookie, cookie);
+    assert_eq!(session.account_name, "Vieja");
+    let stored = std::fs::read_to_string(&path).expect("read");
+    assert!(!stored.contains("legacy"));
+    assert!(!stored.contains("\"cookie\""));
+    assert!(stored.contains("\"secret_backend\": \"secret\""));
+    assert_eq!(
+        madrigal_secrets::get_secret("default").expect("read secret"),
+        Some(cookie.to_owned())
+    );
+    assert!(!accounts_dir(root.path())
+        .join("secret_default.txt")
+        .exists());
+}
+
+#[test]
+fn legacy_secret_file_migrates_on_load() {
+    let (_guard, root) = isolate();
+    let store = SessionStore::default();
+    let path = store.account_path("default").expect("account path");
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    std::fs::write(
+        &path,
+        "{\n  \"account_name\": \"Vieja\",\n  \"secret_backend\": \"secret\"\n}\n",
+    )
+    .unwrap();
+    let legacy = accounts_dir(root.path()).join("secret_default.txt");
+    let cookie = "LOGIN_INFO=fallback:1; __Secure-3PAPISID=fallback";
+    std::fs::write(&legacy, cookie).unwrap();
+    let service = accounts_dir(root.path()).join("secret_spotify.txt");
+    std::fs::write(&service, "spotify-token").unwrap();
+    store.migrate();
+
+    let session = store.load("default");
+    assert_eq!(session.cookie, cookie);
+    assert!(!legacy.exists());
+    assert!(!service.exists());
+    assert_eq!(
+        madrigal_secrets::get_secret("default").expect("read secret"),
+        Some(cookie.to_owned())
+    );
+    assert_eq!(
+        madrigal_secrets::get_secret("spotify").expect("read secret"),
+        Some("spotify-token".to_owned())
+    );
+}
+
+#[test]
+fn missing_keyring_keeps_plaintext_until_migration() {
+    let (_guard, root) = isolate();
+    let store = SessionStore::default();
+    let path = store.account_path("default").expect("account path");
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    let cookie = "LOGIN_INFO=blocked:1; __Secure-3PAPISID=blocked";
+    let text = format!(
+        "{{\n  \"cookie\": \"{}\",\n  \"account_name\": \"Vieja\"\n}}\n",
+        cookie
+    );
+    std::fs::write(&path, &text).unwrap();
+
+    std::env::set_var("MADRIGAL_KEYRING", "fail");
+    store.migrate();
+    let session = store.load("default");
+    assert!(!session.logged_in());
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
+    assert!(madrigal_account::SecretError::NoKeyring.no_keyring());
+
+    std::env::set_var("MADRIGAL_KEYRING", "0");
+    store.migrate();
+    let migrated = store.load("default");
+    assert_eq!(migrated.cookie, cookie);
+    let stored = std::fs::read_to_string(&path).expect("read");
+    assert!(!stored.contains("blocked"));
+    assert!(!accounts_dir(root.path())
+        .join("secret_default.txt")
+        .exists());
 }
 
 #[test]
 fn browser_seam_empty() {
     let (_guard, _root) = isolate();
     for browser in [
-        "firefox", "librewolf", "zen", "floorp", "waterfox", "chrome", "chromium", "brave",
-        "edge", "vivaldi", "opera",
+        "firefox",
+        "librewolf",
+        "zen",
+        "floorp",
+        "waterfox",
+        "chrome",
+        "chromium",
+        "brave",
+        "edge",
+        "vivaldi",
+        "opera",
     ] {
         assert!(records_from_browser(browser, "").is_err(), "{browser} seam");
     }

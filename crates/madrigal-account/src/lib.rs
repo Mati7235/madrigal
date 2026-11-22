@@ -14,5 +14,6 @@ pub use browser::{
 };
 pub use cookies::{CookieError, CookieRecord};
 pub use errors::AccountError;
-pub use session::{Session, save_cookies};
+pub use madrigal_secrets::SecretError;
+pub use session::Session;
 pub use store::SessionStore;

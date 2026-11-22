@@ -2,8 +2,8 @@ use std::fmt;
 use std::io;
 use std::path::PathBuf;
 
-use crate::cookies::CookieRecord;
-use crate::session::{save_cookies, Session};
+use crate::session::Session;
+use madrigal_secrets::SecretError;
 
 fn checked_id(profile: &str) -> io::Result<&str> {
     if madrigal_paths::valid_profile_id(profile) {
@@ -81,8 +81,8 @@ impl SessionStore {
         madrigal_settings::Settings::load().account.active_account_id
     }
 
-    pub fn create(&self, profile: &str) -> io::Result<PathBuf> {
-        let path = self.account_path(profile)?;
+    pub fn create(&self, profile: &str) -> Result<PathBuf, SecretError> {
+        let path = self.account_path(profile).map_err(SecretError::Io)?;
         if !path.exists() {
             Session::default().save(&path)?;
         }
@@ -100,19 +100,20 @@ impl SessionStore {
         self.load(&self.active_id())
     }
 
-    pub fn save(&self, session: &Session, profile: Option<&str>) -> io::Result<String> {
-        let fallback = self.active_id();
-        let id = checked_id(profile.unwrap_or(&fallback))?.to_owned();
-        session.save(&self.account_path(&id)?)?;
-        Ok(id)
+    pub fn migrate(&self) {
+        madrigal_secrets::migrate_legacy_secrets();
+        for id in self.ids() {
+            let _ = self.load(&id);
+        }
     }
 
-    pub fn save_cookies(
-        &self,
-        records: &[CookieRecord],
-        profile: Option<&str>,
-    ) -> io::Result<PathBuf> {
-        save_cookies(records, &self.cookies_path(profile)?)
+    pub fn save(&self, session: &Session, profile: Option<&str>) -> Result<String, SecretError> {
+        let fallback = self.active_id();
+        let id = checked_id(profile.unwrap_or(&fallback))
+            .map_err(SecretError::Io)?
+            .to_owned();
+        session.save(&self.account_path(&id).map_err(SecretError::Io)?)?;
+        Ok(id)
     }
 
     pub fn activate(&self, profile: &str) -> io::Result<Session> {

@@ -4,7 +4,6 @@ use madrigal_account::cookies::{
     to_netscape, CookieRecord,
 };
 use madrigal_account::errors::{session_expired_message, session_expired_status, AccountError};
-use madrigal_account::session::save_cookies;
 
 const HEADER: &str = include_str!("../fixtures/cookie_header.txt");
 const NETSCAPE: &str = include_str!("../fixtures/cookies_netscape.txt");
@@ -144,28 +143,4 @@ fn account_cookies() {
     assert!(session_expired_status(401));
     assert!(session_expired_status(403));
     assert!(!session_expired_status(500));
-
-    let dir = tempfile::tempdir().expect("tempdir");
-    let cookies_path = dir.path().join("cookies.txt");
-    save_cookies(&youtube, &cookies_path).expect("save cookies");
-    assert_eq!(
-        std::fs::read_to_string(&cookies_path).expect("read"),
-        to_netscape(&youtube).expect("serialize")
-    );
-    #[cfg(unix)]
-    assert_eq!(
-        std::os::unix::fs::PermissionsExt::mode(
-            &std::fs::metadata(&cookies_path).expect("meta").permissions()
-        ) & 0o777,
-        0o600
-    );
-    let victim = dir.path().join("victim.txt");
-    std::fs::write(&victim, "intacto").expect("victim");
-    let link = dir.path().join("link.txt");
-    #[cfg(unix)]
-    std::os::unix::fs::symlink(&victim, &link).expect("symlink");
-    #[cfg(unix)]
-    assert!(save_cookies(&youtube, &link).is_err());
-    #[cfg(unix)]
-    assert_eq!(std::fs::read_to_string(&victim).expect("read"), "intacto");
 }

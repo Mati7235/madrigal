@@ -2,9 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::io;
 use std::path::{Path, PathBuf};
 
-use crate::cookies::{
-    has_login_cookie, has_primary_sapisid, parse_cookie_header, to_netscape, CookieRecord,
-};
+use crate::cookies::{has_login_cookie, has_primary_sapisid, parse_cookie_header};
+use madrigal_secrets::SecretError;
 
 pub const SECRET_BACKEND: &str = "secret";
 
@@ -23,6 +22,21 @@ pub struct Session {
     pub secret_backend: String,
     pub source_browser: String,
     pub source_profile: String,
+}
+
+#[derive(Serialize)]
+struct SessionMetadata<'a> {
+    visitor_data: &'a str,
+    data_sync_id: &'a str,
+    account_name: &'a str,
+    account_email: &'a str,
+    channel_handle: &'a str,
+    channel_id: &'a str,
+    avatar_url: &'a str,
+    authuser: &'a str,
+    secret_backend: &'a str,
+    source_browser: &'a str,
+    source_profile: &'a str,
 }
 
 impl Default for Session {
@@ -58,7 +72,9 @@ impl Session {
     }
 
     pub fn cookie_count(&self) -> usize {
-        parse_cookie_header(&self.cookie).map(|pairs| pairs.len()).unwrap_or(0)
+        parse_cookie_header(&self.cookie)
+            .map(|pairs| pairs.len())
+            .unwrap_or(0)
     }
 
     pub fn brand_channel(&self) -> Option<madrigal_core::Artist> {
@@ -79,10 +95,7 @@ impl Session {
             .file_stem()
             .and_then(|stem| stem.to_str())
             .unwrap_or_default();
-        stem
-            .strip_prefix("session_")
-            .unwrap_or(stem)
-            .to_owned()
+        stem.strip_prefix("session_").unwrap_or(stem).to_owned()
     }
 
     pub fn load(path: &Path) -> Self {
@@ -100,34 +113,64 @@ impl Session {
         if self.secret_backend == SECRET_BACKEND {
             match madrigal_secrets::get_secret(&key) {
                 Ok(Some(secret)) if !secret.is_empty() => self.cookie = secret,
-                _ => self.cookie = String::new(),
+                _ => self.cookie.clear(),
             }
             return;
         }
         if self.cookie.is_empty() {
             return;
         }
-        if madrigal_secrets::set_secret(&key, &self.cookie).is_err() {
+        let legacy = self.cookie.clone();
+        if madrigal_secrets::set_secret(&key, &legacy).is_err() {
+            self.cookie.clear();
             return;
         }
+        self.cookie.clear();
         self.secret_backend = SECRET_BACKEND.to_owned();
-        let _ = self.save(path);
+        if self.write_metadata(path).is_err() {
+            let _ = madrigal_secrets::delete_secret(&key);
+            madrigal_secrets::remove_private(path);
+            return;
+        }
+        self.cookie = legacy;
     }
 
-    pub fn save(&self, path: &Path) -> io::Result<PathBuf> {
+    fn write_metadata(&self, path: &Path) -> Result<PathBuf, SecretError> {
+        let metadata = SessionMetadata {
+            visitor_data: &self.visitor_data,
+            data_sync_id: &self.data_sync_id,
+            account_name: &self.account_name,
+            account_email: &self.account_email,
+            channel_handle: &self.channel_handle,
+            channel_id: &self.channel_id,
+            avatar_url: &self.avatar_url,
+            authuser: &self.authuser,
+            secret_backend: &self.secret_backend,
+            source_browser: &self.source_browser,
+            source_profile: &self.source_profile,
+        };
+        let mut text = serde_json::to_string_pretty(&metadata)
+            .map_err(|err| SecretError::Io(io::Error::new(io::ErrorKind::InvalidData, err)))?;
+        text.push('\n');
+        madrigal_secrets::write_private(path, &text).map_err(SecretError::Io)
+    }
+
+    pub fn save(&self, path: &Path) -> Result<PathBuf, SecretError> {
         let key = Self::secret_key_for(path);
         let mut stored = self.clone();
-        stored.secret_backend = String::new();
-        if !self.cookie.is_empty()
-            && madrigal_secrets::set_secret(&key, &self.cookie).is_ok()
-        {
-            stored.cookie = String::new();
+        let with_secret = !stored.cookie.is_empty();
+        if with_secret {
+            madrigal_secrets::set_secret(&key, &stored.cookie)?;
             stored.secret_backend = SECRET_BACKEND.to_owned();
+        } else {
+            stored.secret_backend.clear();
         }
-        let mut text = serde_json::to_string_pretty(&stored)
-            .map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?;
-        text.push('\n');
-        madrigal_secrets::write_private(path, &text)
+        stored.cookie.clear();
+        let result = stored.write_metadata(path);
+        if result.is_err() && with_secret {
+            let _ = madrigal_secrets::delete_secret(&key);
+        }
+        result
     }
 
     pub fn clear(&mut self, account_path: &Path, cookies_path: &Path) {
@@ -136,10 +179,4 @@ impl Session {
         madrigal_secrets::remove_private(account_path);
         madrigal_secrets::remove_private(cookies_path);
     }
-}
-
-pub fn save_cookies(records: &[CookieRecord], path: &Path) -> io::Result<PathBuf> {
-    let text = to_netscape(records)
-        .map_err(|err| io::Error::new(io::ErrorKind::InvalidInput, err))?;
-    madrigal_secrets::write_private(path, &text)
 }
