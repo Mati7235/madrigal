@@ -1,6 +1,5 @@
 use std::io::{Read, Write};
 use std::net::TcpListener;
-use std::os::unix::fs::PermissionsExt;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use madrigal_tidal::auth::{Client, Credentials, Endpoints, TokenSet};
@@ -300,7 +299,7 @@ fn token() -> TokenSet {
 }
 
 #[test]
-fn device_login_stores_token_0600() {
+fn device_login_stores_token_in_keyring() {
     let _guard = lock_profile();
     let (_root, mock, client) = setup(Behavior {
         pending_first: true,
@@ -328,16 +327,26 @@ fn device_login_stores_token_0600() {
         .collect();
     assert!(bodies.iter().any(|body| body.contains("grant_type=urn")));
     assert!(bodies.iter().all(|body| !body.contains("access-1")));
-    let path = madrigal_secrets::fallback_path("tidal").expect("secret path");
-    let mode = std::fs::metadata(&path).expect("secret file").permissions().mode();
-    assert_eq!(mode & 0o777, 0o600);
-    let stored: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(&path).expect("read")).expect("json");
+    let stored: serde_json::Value = serde_json::from_str(
+        &madrigal_secrets::get_secret("tidal")
+            .expect("read secret")
+            .expect("stored secret"),
+    )
+    .expect("json");
     assert_eq!(stored["access_token"], "access-1");
+    assert!(
+        !madrigal_paths::account_profiles_dir()
+            .join("secret_tidal.txt")
+            .exists()
+    );
     assert!(client.is_logged_in());
     client.logout();
     assert!(!client.is_logged_in());
-    assert!(!path.exists());
+    assert!(
+        madrigal_secrets::get_secret("tidal")
+            .expect("read secret")
+            .is_none()
+    );
 }
 
 #[test]

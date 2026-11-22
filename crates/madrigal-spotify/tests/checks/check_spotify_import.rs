@@ -1,6 +1,5 @@
 use std::io::{Read, Write};
 use std::net::TcpListener;
-use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, MutexGuard};
 
@@ -285,7 +284,7 @@ fn missing_cookies_rejected_without_network() {
 }
 
 #[test]
-fn token_exchange_posts_totp_and_stores_0600() {
+fn token_exchange_posts_totp_and_stores_in_keyring() {
     let _guard = lock_profile();
     let _root = setup_profile();
     let mock = mock();
@@ -306,16 +305,24 @@ fn token_exchange_posts_totp_and_stores_0600() {
     assert!(token_call.cookie_ok);
     assert!(entries.iter().all(|entry| !entry.body.contains("good-dc")));
     drop(entries);
-    let path = madrigal_secrets::fallback_path("spotify").expect("secret path");
-    let mode = std::fs::metadata(&path).expect("secret file").permissions().mode();
-    assert_eq!(mode & 0o777, 0o600);
-    let stored = std::fs::read_to_string(&path).expect("read secret");
+    let stored = madrigal_secrets::get_secret("spotify")
+        .expect("read secret")
+        .expect("stored secret");
     assert!(stored.contains("fresh-access"));
     assert!(stored.contains("good-dc"));
+    assert!(
+        !madrigal_paths::account_profiles_dir()
+            .join("secret_spotify.txt")
+            .exists()
+    );
     assert!(client.is_logged_in());
     client.logout();
     assert!(!client.is_logged_in());
-    assert!(!path.exists());
+    assert!(
+        madrigal_secrets::get_secret("spotify")
+            .expect("read secret")
+            .is_none()
+    );
 }
 
 #[test]
