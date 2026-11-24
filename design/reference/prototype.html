@@ -619,7 +619,8 @@ body{background:var(--surface);color:var(--on-surface);font-family:var(--font-bo
 .queue .qr .tx{display:flex;flex-direction:column}
 .queue .qr .tx b{font-weight:400}
 .qempty{margin:8px;font:400 14px/20px var(--font-body);color:var(--on-surface-variant)}
-.full{position:absolute;inset:0 0 96px 0;z-index:6;background:var(--surface);display:flex;flex-direction:column;overflow:hidden;animation:full-in 350ms cubic-bezier(0.05,0.7,0.1,1)}
+.full{position:absolute;inset:0;z-index:6;background:var(--surface);display:flex;flex-direction:column;overflow:hidden;animation:full-in 350ms cubic-bezier(0.05,0.7,0.1,1)}
+.app:has(.full:not([hidden])) .barwrap{display:none}
 @keyframes full-in{from{transform:translateY(32px);opacity:0}to{transform:none;opacity:1}}
 .snackwrap{position:absolute;left:50%;transform:translateX(-50%);bottom:112px;z-index:10;display:flex;justify-content:center;max-width:calc(100% - 32px)}
 .scrim{position:absolute;inset:0;z-index:8}
@@ -677,7 +678,7 @@ body{background:var(--surface);color:var(--on-surface);font-family:var(--font-bo
 .tmenu .hd span{min-width:0}.tmenu .hd small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* Full player: tinted by the artwork colour (--tint), console left, lyrics / up next / details pane right */
-.full{--tint:var(--primary);--fp-ground:color-mix(in srgb,var(--tint) 14%,var(--surface));--fp-card:color-mix(in srgb,var(--tint) 10%,var(--surface-container));background:var(--fp-ground)}
+.full{--tint:var(--primary);--fp-ground:color-mix(in srgb,var(--tint) 14%,var(--surface));background:var(--fp-ground)}
 .full .fbg{position:absolute;inset:0;pointer-events:none}
 .full[data-bg="theme"] .fbg{background:none}
 .full[data-bg="gradient"] .fbg{background:linear-gradient(180deg,color-mix(in srgb,var(--tint) 30%,var(--surface)) 0%,var(--fp-ground) 70%)}
@@ -686,11 +687,12 @@ body{background:var(--surface);color:var(--on-surface);font-family:var(--font-bo
 .fhd{position:relative;height:64px;display:flex;align-items:center;gap:8px;padding:0 16px;flex:none}
 .fhd .src{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:16px;background:color-mix(in srgb,var(--on-surface) 6%,transparent);font:400 13px/18px var(--font-body);color:var(--on-surface-variant);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .fhd .src b{font-weight:600;color:var(--on-surface);overflow:hidden;text-overflow:ellipsis}
-.fbody{position:relative;flex:1;min-height:0;display:grid;grid-template-columns:minmax(360px,520px) minmax(0,1fr);gap:32px;padding:0 32px 24px}
-.fcon{display:flex;flex-direction:column;justify-content:center;gap:16px;min-width:0;min-height:0}
+.fbody{position:relative;flex:1;min-height:0;display:grid;grid-template-columns:380px minmax(0,1fr);gap:56px;padding:0 32px 40px;scrollbar-width:none}
+.fbody::-webkit-scrollbar{display:none}
+.fcon{display:flex;flex-direction:column;justify-content:center;gap:22px;min-width:0;min-height:0}
 .fcon>*{flex-shrink:0}
 .fart-wrap{display:flex;justify-content:center}
-.fart{--tint:var(--primary);width:min(100%,480px,max(160px,calc(100vh - 600px)));aspect-ratio:1;border-radius:48px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--tint) 55%,var(--surface-container-high));color:var(--on-surface);box-shadow:0 24px 48px -16px color-mix(in srgb,var(--tint) 45%,transparent);transition:border-radius 600ms cubic-bezier(0.2,0,0,1)}
+.fart{--tint:var(--primary);width:min(100%,260px);aspect-ratio:1;border-radius:48px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--tint) 55%,var(--surface-container-high));color:var(--on-surface);transition:border-radius 600ms cubic-bezier(0.2,0,0,1)}
 .fart .ic{width:22%;height:22%;opacity:.85}
 .fart.on{animation:breathe 4s ease-in-out infinite}
 @keyframes breathe{0%,100%{border-radius:48px}50%{border-radius:32px}}
@@ -716,10 +718,10 @@ body{background:var(--surface);color:var(--on-surface);font-family:var(--font-bo
 .ftp .tg.on::after{content:"";position:absolute;bottom:6px;width:4px;height:4px;border-radius:2px;background:currentColor}
 .ftp .sk{width:64px;height:64px;border-radius:32px;background:color-mix(in srgb,var(--on-surface) 8%,transparent);color:var(--on-surface)}
 .ftp .sk .ic{width:28px;height:28px}
-.ftp .pp{width:112px;height:80px;border-radius:40px;background:var(--primary);color:var(--on-primary);box-shadow:0 8px 20px -8px color-mix(in srgb,var(--primary) 60%,transparent);transition:border-radius 300ms cubic-bezier(0.34,1.56,0.64,1),width 300ms cubic-bezier(0.34,1.56,0.64,1)}
+.ftp .pp{width:112px;height:80px;border-radius:40px;background:var(--primary);color:var(--on-primary);transition:border-radius 300ms cubic-bezier(0.2,0,0,1),width 300ms cubic-bezier(0.2,0,0,1)}
 .ftp .pp.on{border-radius:var(--radius-extra-large);width:96px}
 .ftp .pp .ic{width:36px;height:36px}
-.ftp button:focus-visible,.likeb:focus-visible,.upnext:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--on-surface)}
+.ftp button:focus-visible,.likeb:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--on-surface)}
 .ftp .pp:focus-visible{box-shadow:inset 0 0 0 3px var(--on-primary)}
 .fvol{display:flex;align-items:center;gap:8px;color:var(--on-surface-variant)}
 .fvol input{flex:1;height:16px;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
@@ -729,21 +731,16 @@ body{background:var(--surface);color:var(--on-surface);font-family:var(--font-bo
 .fvol input::-moz-range-progress{height:8px;border-radius:4px;background:var(--on-surface)}
 .fvol input::-moz-range-thumb{width:4px;height:20px;border:0;border-radius:2px;background:var(--on-surface)}
 .fvol .vv{width:28px;text-align:right;font:500 12px/16px var(--font-body);font-variant-numeric:tabular-nums}
-.upnext{display:flex;align-items:center;gap:12px;padding:8px 12px 8px 8px;border:0;border-radius:var(--radius-large);background:var(--fp-card);color:var(--on-surface);text-align:left;cursor:pointer;position:relative}
-.upnext .art{width:40px!important;height:40px;flex:none;border-radius:var(--radius-small)}
-.upnext span{flex:1;display:flex;flex-direction:column;min-width:0}
-.upnext small{font:500 11px/16px var(--font-title);letter-spacing:.5px;text-transform:uppercase;color:var(--on-surface-variant)}
-.upnext b{font:500 14px/20px var(--font-title);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fpane{display:flex;flex-direction:column;min-width:0;min-height:0;border-radius:var(--radius-extra-large);background:var(--fp-card);padding:12px 12px 12px;box-sizing:border-box}
+.fpane{display:flex;flex-direction:column;min-width:0;min-height:0;padding:0 24px;box-sizing:border-box}
 .ptabs2{display:flex;gap:4px;padding:4px;border-radius:24px;background:color-mix(in srgb,var(--on-surface) 6%,transparent);align-self:flex-start}
 .ptabs2 button{height:40px;padding:0 16px;border:0;border-radius:20px;background:transparent;color:var(--on-surface-variant);font:500 14px/20px var(--font-title);display:inline-flex;align-items:center;gap:8px;cursor:pointer;transition:background 150ms,color 150ms}
 .ptabs2 button.on{background:var(--surface);color:var(--on-surface);box-shadow:var(--shadow-card)}
 .ptabs2 button:focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--primary)}
-.fpanel{--lsize:22px;flex:1;min-height:0;overflow:hidden;padding:16px 16px 8px}
+.fpanel{--lsize:32px;flex:1;min-height:0;overflow:hidden;padding:16px 16px 8px}
 .lhd{display:flex;align-items:center;gap:4px;margin-bottom:24px}
 .lhd .syn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px 0 10px;border-radius:14px;background:var(--secondary-container);color:var(--on-secondary-container);font:500 12px/16px var(--font-title)}
 .lhd .offv{min-width:56px;text-align:center;font:500 13px/18px var(--font-body);color:var(--on-surface-variant);font-variant-numeric:tabular-nums}
-.lyr3{display:flex;flex-direction:column;gap:18px;font:500 calc(var(--lsize) - 2px)/1.35 var(--font-title);color:var(--on-surface-variant)}
+.lyr3{display:flex;flex-direction:column;gap:26px;font:500 calc(var(--lsize) - 2px)/1.35 var(--font-title);color:var(--on-surface-variant)}
 .lyr3>div{cursor:pointer;border-radius:8px;transition:color 200ms,opacity 200ms;text-wrap:balance}
 .lyr3>div:hover{color:var(--on-surface)}
 .lyr3 .past{opacity:.8}
@@ -852,7 +849,7 @@ body{background:var(--surface);color:var(--on-surface);font-family:var(--font-bo
     liked: new Set(['kob2', 'gs3', 'to2']), theme: 'system', black: false, bg: 'Theme', full: false, fullTab: 'lyrics', qOpen: false,
     query: '', filter: 'All', source: 'Online', libSel: new Set(), dl: [
       { al: 'kob', st: 'done', p: 1 }, { al: 'als', st: 'dl', p: 0.42, sp: 2.4 }, { al: 'to', st: 'queued', p: 0 }, { al: 'mau', st: 'paused', p: 0.22 }, { al: 'sne', st: 'err', p: 0.4 }],
-    lyrSize: 22, sleep: null, tag: 'All', shuffle: false, repeat: 0, vol: 70, lyrOffset: 300,
+    lyrSize: 32, sleep: null, tag: 'All', shuffle: false, repeat: 0, vol: 70, lyrOffset: 300,
   };
   const cur = () => byId(S.queue[S.cur]);
 
@@ -1010,7 +1007,6 @@ body{background:var(--surface);color:var(--on-surface);font-family:var(--font-bo
     const c = cur();
     const liked = S.liked.has(c.id);
     const rep = ['repeat', 'repeat', 'repeat-1'][S.repeat];
-    const nextT = S.queue[S.cur + 1] ? byId(S.queue[S.cur + 1]) : null;
     f.dataset.bg = S.bg.toLowerCase();
     f.style.setProperty('--tint', `var(--${c.al.tint})`);
     f.innerHTML = `<div class="fbg" aria-hidden="true"></div>
@@ -1022,7 +1018,7 @@ body{background:var(--surface);color:var(--on-surface);font-family:var(--font-bo
       <div class="fbody">
         <section class="fcon" aria-label="Now playing">
           <div class="fart-wrap"><span class="fart${S.playing ? ' on' : ''}" style="--tint:var(--${c.al.tint})">${ic('music-2')}</span></div>
-          <div class="fmeta"><div class="ft"><b>${esc(c.t)}</b><span><a href="#" data-album="${c.al.id}">${esc(c.al.a)}</a> · ${esc(c.al.t)} · ${c.al.y}</span></div>
+          <div class="fmeta"><div class="ft"><b>${esc(c.t)}</b><span><a href="#" data-album="${c.al.id}">${esc(c.al.a)}</a> | ${esc(c.al.t)} | ${c.al.y}</span></div>
             <button class="likeb md-sl${liked ? ' on' : ''}" data-like="${c.id}" aria-label="${liked ? 'Unlike' : 'Like'}" aria-pressed="${liked}">${ic(liked ? 'heart-filled' : 'heart')}</button></div>
           <div class="fseek"><span class="wv${S.playing ? ' on' : ''}" id="fseek" role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="${c.d}"><span class="wclip" aria-hidden="true"><svg class="wsvg" width="2064" height="24" viewBox="0 0 2064 24"><path class="wg" d="M0 12 q6 -6 12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0 t12 0" fill="none" stroke="var(--primary)" stroke-width="4" stroke-linecap="round"/></svg></span><span class="wflat"></span><span class="wrest"></span><span class="whd"></span></span>
             <span class="times"><span id="fpos">${fmt(S.pos)}</span><span>−<span id="frem">${fmt(c.d - S.pos)}</span></span></span></div>
@@ -1034,15 +1030,14 @@ body{background:var(--surface);color:var(--on-surface);font-family:var(--font-bo
             <button class="tg md-sl${S.repeat ? ' on' : ''}" data-rep aria-pressed="${!!S.repeat}" aria-label="Repeat ${['off', 'all', 'one'][S.repeat]}">${ic(rep)}</button>
           </div>
           <div class="fvol"><button class="md-icb md-sl" data-mute aria-label="${S.vol ? 'Mute' : 'Unmute'}">${ic('volume-2', 'ic-18')}</button><input id="fvol" type="range" min="0" max="100" value="${S.vol}" aria-label="Volume" style="--v:${S.vol}%"><span class="vv">${S.vol}</span></div>
-          ${nextT ? `<button class="upnext md-sl" data-ftab="queue">${art(nextT.al, 'xs')}<span><small>Up next</small><b>${esc(nextT.t)}</b></span>${ic('chevron-right', 'ic-18')}</button>` : ''}
         </section>
         <section class="fpane" aria-label="Lyrics and details">
           <div class="ptabs2" role="tablist">${[['lyrics', 'Lyrics', 'mic'], ['queue', 'Up next', 'list-music'], ['info', 'Details', 'info']].map(([k, l, i]) => `<button role="tab" aria-selected="${S.fullTab === k}" class="${S.fullTab === k ? 'on' : ''}" data-ftab="${k}">${ic(i, 'ic-18')}${l}</button>`).join('')}</div>
           <div class="fpanel" id="fpanel"></div>
           <div class="ftools">
             <button class="tool md-sl${S.sleep ? ' on' : ''}" data-sleep>${ic('clock', 'ic-18')}${S.sleep ? esc(S.sleep) : 'Sleep timer'}</button>
-            <button class="tool md-sl" data-snack="Speed 1.00× · Pitch 0 st|Reset">${ic('gauge', 'ic-18')}1.00×</button>
-            <button class="tool md-sl" data-snack="Equalizer: Flat|Open">${ic('sliders-horizontal', 'ic-18')}Flat</button>
+            <button class="tool md-sl" data-snack="Speed 1.00× | Pitch 0 st|Reset">${ic('gauge', 'ic-18')}Speed 1.00×</button>
+            <button class="tool md-sl" data-snack="Equalizer: Flat|Open">${ic('sliders-horizontal', 'ic-18')}Equalizer | Flat</button>
           </div>
         </section>
       </div>`;
@@ -1056,7 +1051,7 @@ body{background:var(--surface);color:var(--on-surface);font-family:var(--font-bo
     if (S.fullTab === 'info') {
       if (force) {
         const c = cur();
-        p.innerHTML = `<dl class="info"><dt>Title</dt><dd>${esc(c.t)}</dd><dt>Album</dt><dd>${esc(c.al.t)} (${c.al.y})</dd><dt>Source</dt><dd>YouTube Music · stream</dd><dt>Codec</dt><dd>opus · 160 kbps · 48 kHz</dd><dt>Route</dt><dd>Cache</dd><dt>Loudness</dt><dd>−8.2 LUFS</dd><dt>Buffer</dt><dd><span class="buf"><i></i></span>72%</dd></dl>`;
+        p.innerHTML = `<dl class="info"><dt>Title</dt><dd>${esc(c.t)}</dd><dt>Album</dt><dd>${esc(c.al.t)} (${c.al.y})</dd><dt>Source</dt><dd>YouTube Music | stream</dd><dt>Codec</dt><dd>opus | 160 kbps | 48 kHz</dd><dt>Route</dt><dd>Cache</dd><dt>Loudness</dt><dd>−8.2 LUFS</dd><dt>Buffer</dt><dd><span class="buf"><i></i></span>72%</dd></dl>`;
       }
       return;
     }
@@ -1074,7 +1069,7 @@ body{background:var(--surface);color:var(--on-surface);font-family:var(--font-bo
       lastLine = line;
       p.style.setProperty('--lsize', S.lyrSize + 'px');
       const off = (S.lyrOffset >= 0 ? '+' : '−') + Math.abs(S.lyrOffset / 1000).toFixed(1) + ' s';
-      p.innerHTML = `<div class="lhd"><span class="syn">${ic('check', 'ic-14')}Synced · sample</span><span class="grow"></span>
+      p.innerHTML = `<div class="lhd"><span class="syn">${ic('check', 'ic-14')}Synced</span><span class="grow"></span>
         <button class="md-icb md-sl" data-off="-100" aria-label="Lyrics earlier by 0.1 seconds">${ic('minus', 'ic-18')}</button><span class="offv" aria-live="polite">${off}</span><button class="md-icb md-sl" data-off="100" aria-label="Lyrics later by 0.1 seconds">${ic('plus', 'ic-18')}</button></div>
         <div class="lyr3">${[-2, -1, 0, 1, 2, 3].map((o) => { const i = (line + o + LYR.length) % LYR.length;
           if (o === 0) return `<div class="on" data-seekline="0"><span class="lw" id="lw">${lyricWords(i).map((w) => `<span>${w}</span>`).join(' ')}</span><small>${LYR_ES[i]}</small></div>`;
