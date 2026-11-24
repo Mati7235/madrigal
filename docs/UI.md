@@ -42,7 +42,7 @@ The global lives in `ui/i18n.slint` so gallery and shell share one type;
 compile root.
 
 Shell (`ui/shell/`, presenter `src/shell.rs`): `MainShell` window, preferred
-1280×800 with a 640×480 minimum, whose sidebar and page host fill y=0 down to
+1280×720 (16:9) with a 640×480 minimum, whose sidebar and page host fill y=0 down to
 the 96px Now Playing
 bar, with a
 `SideNav` (Home, Search, Explore, Library, Downloads, Settings; icon + label
@@ -73,6 +73,10 @@ results into the Slint row models.
 
 Breakpoints follow content, not devices; the shell and pages read
 `root.width` / `root.height` and never assume a screen size.
+
+Reference resolutions are 16:9: 1920×1080, 1366×768 and 1280×720, plus the
+640×480 minimum. Visual targets for each live in `design/reference/` and
+`docs/UI-SPEC.md`.
 
 - 1100px wide: below this the 244px sidebar becomes an 80px icon rail; above it
   stays expanded. This is where the page drops under 860px, the width Settings
