@@ -38,7 +38,7 @@ Sample data and copy are illustrative (English); labels come from `madrigal-i18n
 3. SegmentedButton (connected group), Chip (filled, no outline), Snackbar, PlayingIndicator, Dialog shape; SearchBar becomes the TextField pill; TrackMenu takes the Select menu shell.
 4. Rows and cards: ListItem playing / selected states and hover-only More button, MediaCard hover play button, DownloadRow state icons, SelectionBar.
 5. Screens in PageHost order, each checked against its PNG at 1920×1080, 1366×768, 1280×720 and 640×480.
-6. Full player per FullPlayer (tint from the artwork, transport sizes, karaoke sweep, compact under 600px tall), then the wavy seek in the bar.
+6. Full player per FullPlayer (covers the window and hides the bar; tint ground, transport sizes, 32px karaoke lyrics, compact under 600px tall), then the wavy seek in the bar.
 7. Motion: MotionCurrent stays; remaining MotionProposed items one at a time.
 
 ## Done when
@@ -105,9 +105,9 @@ Small buttons rest at 12 and press to 8; medium buttons rest at 16 and press to 
 
 Seven steps: 4 · 8 · 12 · 16 · 24 · 32 · 48. Page margin 16px from the sidebar and the workspace top; section gap 24; card rails gap 12.
 
-Reference resolutions are 16:9: 1920×1080 first, then 1366×768 and 1280×720, plus a 640×480 tile for the minimum. Every screen must fit them with the player bar fully visible and no horizontal overflow.
+Reference resolutions are 16:9: 1920×1080 first, then 1366×768 and 1280×720, plus a 640×480 tile for the minimum. Every screen must fit them with the player bar fully visible (the full player covers it) and no horizontal overflow.
 
-Shell: 244px sidebar (48px items, 16 padding, 6 gap) that collapses to an 80px rail under 1100px; 96px Now Playing bar always visible; 380px queue drawer that becomes a full-width sheet under 800px. Breakpoints follow content, not devices (full table in `docs/UI.md`).
+Shell: 244px sidebar (48px items, 16 padding, 6 gap) that collapses to an 80px rail under 1100px; 96px Now Playing bar visible on every page except the full player; 380px queue drawer that becomes a full-width sheet under 800px. Breakpoints follow content, not devices (full table in `docs/UI.md`).
 
 ### Elevation and motion
 
@@ -699,29 +699,30 @@ Reference: `design/reference/screens/1920x1080/full-player-dark.png` (and other 
 
 The full-screen player: console on the left, a pane with Lyrics / Up next / Details on the right. **Redesign**; interactive version in the prototype, PNGs in `design/reference/screens/*/full-player-*.png`.
 
-**Colour from the artwork.** The player takes a `tint` from the cover (matugen seam; until then the album's accent). Ground = `tint` 14% into `surface`, pane = `tint` 10% into `surface-container`, cover shadow in `tint`. Background styles: Theme (flat tint), Gradient (tint fading down), Blur, Glow (radial light behind the cover).
+**Frame.** Covers the whole window (`inset: 0`) and hides the Now Playing bar, so there is no strip under it. Flat: no card behind the pane, no shadow on the cover, no halo under the play button.
+
+**Colour from the artwork.** The player takes a `tint` from the cover (matugen seam; until then the album's accent). Ground = `tint` 14% into `surface`. Background styles: Theme (flat tint), Gradient (tint fading down), Blur, Glow (radial light behind the cover).
 
 **Header (64px).** Close (chevron-down), a "Playing from <source>" chip, Share lyrics as image, More (TrackMenu).
 
-**Console.**
-- Cover up to 480px, `radius-extra-extra-large` (48) breathing to 32 while playing; size follows the window height (`min(100%, 480, 100vh − 600)`), never below 160px.
-- Title `display-small` 36/500, then artist (a link to the artist) · album · year in `body-large`; a 48px like toggle that morphs disc → `radius-large` square and fills `primary` when liked.
+**Console (380px column).**
+- Cover up to 260px, `radius-extra-extra-large` (48) breathing to 32 while playing.
+- Title `display-small` 36/500, then artist (a link to the artist) | album | year in `body-large`; a 48px like toggle that morphs disc → `radius-large` square and fills `primary` when liked.
 - Seek: wavy while playing (fixed 24px wavelength, clipped at the handle, never stretched), flat when paused; elapsed and remaining time under it in tabular figures.
-- Transport by size: 48px shuffle and repeat toggles (selected = `secondary-container`, `radius-medium`, a dot under the icon; repeat cycles off / all / one), 64px previous / next on an 8% tint, play/pause 112×80 pill that tightens to a 96px `radius-extra-large` square while playing (300ms overshoot easing).
+- Transport by size: 48px shuffle and repeat toggles (selected = `secondary-container`, `radius-medium`, a dot under the icon; repeat cycles off / all / one), 64px previous / next on an 8% tint, play/pause 112×80 pill that tightens to a 96px `radius-extra-large` square while playing (300ms emphasized easing, no bounce).
 - Volume: an 8px track with a 4px handle and the value in digits.
-- Up next card: the next song; opens the Up next tab.
 
-**Pane.** Pill tab switcher (Lyrics, Up next, Details), then:
-- Lyrics: a Synced chip and the −0.1 s / offset / +0.1 s control; lines in Figtree; the active line 12px larger and bold, with a karaoke sweep: sung words `on-surface`, the current word fills `primary` left to right, unsung words `on-surface` at 55% (3.8:1 minimum on every tint and theme); translation under it in `body-large`; past lines at 0.8. Tap a line to seek.
+**Pane.** Pill tab switcher (Lyrics, Up next, Details) on the bare ground, then:
+- Lyrics: a `Synced` chip and the −0.1 s / offset / +0.1 s control; lines in Figtree at 32px (30px lines, 44px active), with a karaoke sweep: sung words `on-surface`, the current word fills `primary` left to right, unsung words `on-surface` at 55% (3.8:1 minimum on every tint and theme); translation under it in `body-large`; past lines at 0.8. Tap a line to seek.
 - Up next: 60px rows with jump and remove.
-- Details: title, album, source, codec / bitrate / sample rate, route, loudness, buffer health.
-- Tool pills at the bottom: Sleep timer (shows the time when set), speed (1.00×), equalizer preset; each opens its dialog.
+- Details: title, album, source, codec / bitrate / sample rate, route, loudness, buffer health; values separated with ` | `.
+- Tool pills at the bottom right: Sleep timer (shows the time when set), Speed 1.00×, Equalizer | Flat; each opens its dialog.
 
 **Sizes.** Two columns from 1100px wide and 700px tall; below, one scrolling column. Under 600px tall the cover shrinks to a 72px thumbnail beside the title so transport stays above the fold (640×480 reference).
 
 **Contrast** (all tints × Light / Dark / Pure Black): title 13:1, secondary text 7.3:1, active-line unsung words 3.8:1 (large bold), sung word 4.1:1, play icon 5.3:1, cover glyph 3.2:1.
 
-Slint: `FullPlayer` / `PlayerConsole` / `PlayerTabs` / `PlayerTools` in `player/full.slint`, `LyricsView` in `player/lyrics.slint`. The wave needs a clipped `Path` of fixed wavelength; the play morph animates width and border-radius only.
+Slint: `FullPlayer` / `PlayerConsole` / `PlayerTabs` / `PlayerTools` in `player/full.slint`, `LyricsView` in `player/lyrics.slint`. The full player covers the window and hides `NowPlayingBar`. The wave needs a clipped `Path` of fixed wavelength; the play morph animates width and border-radius only.
 
 ### HomeScreen
 
