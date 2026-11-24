@@ -775,3 +775,54 @@ Settings at 1280×720: group list plus the selected section.
 - 232px group list (Appearance, Content, Player, Lyrics, Internet, Storage, Privacy, Account, Integrations, AI, Updates) as 48px pills, active `secondary-container`.
 - The section is a card of SettingsRows with a "Show advanced" switch at the end.
 - Below 860px of page width the group list becomes a horizontal chip strip above the section.
+
+## Error and empty states
+
+Reachable in the prototype through `S.err` (`null`, `lyrics`, `offline`, `unavailable`, `download`). Additive styling lives in the `Error and empty states` block at the end of `prototype.html`.
+
+### LyricsEmptyState
+
+Reference: `design/reference/screens/1280x720/err-lyrics-light.png`, `design/reference/screens/1280x720/err-lyrics-dark.png`; `design/reference/screens/1920x1080/err-lyrics-light.png`, `design/reference/screens/1920x1080/err-lyrics-dark.png`.
+
+Full player, Lyrics tab, the song has no lyrics (state `lyrics`).
+
+- The tab switcher and the tool pills stay; the lyric body is replaced by a centred empty state: a 96px expressive blob with a `mic` glyph, a one-line title, a one-line hint, a tonal Retry and a text "Search other sources".
+- Copy: title `No lyrics for this song`; hint `Lyrics aren’t available for this track yet.`; actions `Retry` (`rotate-cw`), `Search other sources`.
+- Tokens: title `on-surface`; hint `on-surface-variant`; blob and Retry `secondary-container` / `on-secondary-container`; text action `on-surface-variant`. Title stays 14.5:1, hint 7.3:1 on every artwork tint.
+- The Synced chip and the offset control are hidden, not disabled. Retry re-runs the lookup and answers with a snackbar; "Search other sources" opens the wider lookup.
+- Slint: `LyricsEmptyState` in `player/lyrics.slint`, shown by `LyricsView` when the lookup returns no lines.
+
+### OfflineBanner
+
+Reference: `design/reference/screens/1280x720/err-offline-light.png`, `design/reference/screens/1280x720/err-offline-dark.png`; `design/reference/screens/1920x1080/err-offline-light.png`, `design/reference/screens/1920x1080/err-offline-dark.png`.
+
+Home with no connection (state `offline`).
+
+- A 64px strip across the whole window, above the sidebar and the page, so the shell becomes banner / nav + page / player bar. Icon, two-line message, then the Dismiss text action on the trailing edge.
+- Copy: `No connection`; `Streaming songs are unavailable. Downloaded songs still play.`; `Dismiss`.
+- Streaming rows keep their place but lose playback: cover at 45%, title `on-surface-variant`, subtitle at 88% of it, a `circle-x` before the duration, no hover, not focusable and not playable. Downloaded albums keep the normal row; the Continue listening block carries a `Downloaded` chip (`download`) and its play button stays `primary`.
+- Tokens: banner `error-container` / `on-error-container` (13.3:1 Light, 7.2:1 Dark and Pure Black); row text `on-surface-variant`; chip `on-primary-container` at 10% over its container. Never use `error` text on `error-container`; use the pair.
+- Slint: `OfflineBanner` in `shell/shell.slint`, above the sidebar and page host; `TrackRow` gains a `streaming-offline` state (dim cover, trailing `circle-x`, no pointer).
+
+### UnavailableRow
+
+Reference: `design/reference/screens/1280x720/err-unavailable-light.png`, `design/reference/screens/1280x720/err-unavailable-dark.png`; `design/reference/screens/1920x1080/err-unavailable-light.png`, `design/reference/screens/1920x1080/err-unavailable-dark.png`.
+
+Library, Songs tab, one song that cannot be played (state `unavailable`).
+
+- The row stays in the list: cover at 45%, title `on-surface-variant`, the artist line replaced by `triangle-alert` + `Not available` in `error`, duration kept at `on-surface-variant`. The checkbox is disabled, the row is not focusable and clicking it does nothing.
+- The More button stays active and opens a short menu: the track header with the subtitle `Not available`, one `Remove` action (`trash`). Remove drops the row and confirms with `Removed from library`.
+- Copy: `Not available`, `Remove`, snackbar `Removed from library`.
+- Tokens: `error` on `surface` (6.5:1 Light, 11.7:1 Dark and Pure Black); menu subtitle `error` on `surface-container-high` (5.7:1 Light).
+- Slint: `TrackRow` state `unavailable` in `components/rows.slint`; `TrackMenu` variant `unavailable` in `components/menu.slint` with only Remove.
+
+### DownloadFailedRow
+
+Reference: `design/reference/screens/1280x720/err-download-light.png`, `design/reference/screens/1280x720/err-download-dark.png`; `design/reference/screens/1920x1080/err-download-light.png`, `design/reference/screens/1920x1080/err-download-dark.png`.
+
+Downloads, one failed item (state `download`).
+
+- The failed row keeps the DownloadRow anatomy: cover, album and artist, status, progress, actions. Status reads `Download failed` with `triangle-alert`; the progress fill is `error` at the last completed percentage; the actions are labelled text buttons Retry (`rotate-cw`) and Remove (`trash`) instead of icon-only.
+- Copy: `Download failed`, `Retry`, `Remove`. The summary pills keep Failed 1; Retry moves the item back to Downloading and the counts update.
+- Tokens: `error` for the status and the progress fill on `surface` (6.5:1 Light, 11.7:1 Dark and Pure Black); Retry label `primary` (5.3:1 Light); Remove `on-surface-variant`.
+- Slint: `DownloadRow` state `failed` in `pages/library/downloads.slint`, with the two text actions in place of the icon buttons.
