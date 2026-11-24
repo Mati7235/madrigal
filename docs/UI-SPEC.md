@@ -27,6 +27,11 @@ Sample data and copy are illustrative (English); labels come from `madrigal-i18n
 | Playing row title | `primary` on `primary-container` | `on-primary-container` + PlayingIndicator | 4.20:1 in Light, under 4.5:1 |
 | Selected row | — | `surface-container-highest` + checked box | `secondary-container` (#cfe5ff) vs `primary-container` (#d6e7ff) are indistinguishable in Light |
 | `sidebar.slint` Downloads icon | `arrow-down` | `download` | every other downloads entry point uses `download` |
+| `player/queue.slint` queue lock | `x` / `list-music` | `lock` / `lock-open` | neither a close nor a playlist glyph says locked |
+| `player/queue.slint` row remove | `minus` | `x` | remove is a close action; `minus` reads as minimise |
+| `components/menu.slint` like row | `star-filled` | `heart-filled` | star is a rating; every other like toggle uses the heart |
+| `components/menu.slint` Go to album | `music-2` | `disc` | `music-2` is the missing-artwork fallback, not an album |
+| `library.slint` Manage tags | `list-plus` | `tag` | adds to a list, not a tag |
 | Dialogs | radius 12 | `radius-extra-large` (28) | M3 dialog shape |
 | `MainShell` preferred size | 1280×800 | 1280×720 | 16:9 reference resolutions |
 | Focus rings | outside the edge in places | inset 2px | parents clip outside rings |
@@ -134,6 +139,44 @@ Where this system goes past the current code, the card says **Proposal** or **In
 ### Iconography
 
 Lucide (ISC), 24px grid, 2px stroke, round caps and joins. Drawn at 20px in buttons and 24px in menu rows, tinted with the content colour of the control (`Image.colorize` in Slint; inline SVG with `currentColor` on the web). Filled variants (`heart-filled`, `star-filled`) mean the toggled-on state. Missing artwork shows `music-2` on `surface-container-high`.
+
+Icon map. One glyph per meaning; the name is the sprite id in `prototype.html` and the SVG name in `ui/icons/`.
+
+| Meaning | Icon |
+| --- | --- |
+| Home | `house` |
+| Search | `search` |
+| Explore, discover, internet | `compass` |
+| Library | `library` |
+| Downloads, download action | `download` |
+| Settings | `settings` |
+| Play / pause | `play` / `pause` |
+| Previous / next | `skip-back` / `skip-forward` |
+| Shuffle | `shuffle` |
+| Repeat all / repeat one | `repeat` / `repeat-1` |
+| Like / liked | `heart` / `heart-filled` |
+| Share | `share-2` |
+| Queue, add to queue | `list-music` |
+| Play next, add to list | `list-plus` |
+| Album | `disc` |
+| Artist, account | `user-round` |
+| Storage | `hard-drive` |
+| Privacy | `shield` |
+| Tags | `tag` |
+| Updates, retry | `rotate-cw` |
+| Sleep timer | `clock` |
+| Speed, tempo | `gauge` |
+| Equalizer, appearance | `sliders-horizontal` |
+| Lyrics | `mic` |
+| Details | `info` |
+| Error | `triangle-alert` |
+| Done | `circle-check` |
+| Close, cancel, remove | `x` |
+| More actions | `ellipsis-vertical` |
+| Sort | `arrow-down-up` |
+| Missing artwork | `music-2` |
+
+`share-2`, `hard-drive`, `disc`, `shield`, `tag` and `arrow-down-up` are not in `ui/icons/` yet; the reference uses them and the port adds them with the icon pass.
 
 ### Voice
 
