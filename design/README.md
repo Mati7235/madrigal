@@ -1,6 +1,9 @@
 # Madrigal UI
 
-New interface direction, designed in FigCraft before implementation.
+Current visual target: `reference/` (16:9 PNGs per screen and component,
+`prototype.html`, `tokens.json`), specified in `docs/UI-SPEC.md`.
+
+The FigCraft files below are a superseded direction.
 
 - Source: `design/madrigal-ui.figcraft`
 - Rendered screens: `design/screens/*.png`
@@ -34,5 +37,4 @@ New interface direction, designed in FigCraft before implementation.
 
 ## Status
 
-Design only. The Slint app still renders the previous 1:1 QML port; implementing this
-direction is pending approval.
+Superseded by `reference/`.

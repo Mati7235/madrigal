@@ -10,8 +10,10 @@
 - No Qt and no Python in the product: Rust across the workspace.
 - The UI is Material 3 Expressive: tokens in `crates/madrigal-ui/ui/tokens.slint`,
   components in `ui/components/`. Direction and decisions live in `docs/UI.md`.
-  The FigCraft mockups in `design/` and the Python QML oracle are superseded
-  references, not specs.
+  The visual target is `design/reference/` (16:9 PNGs per screen and
+  component, prototype) with its spec in `docs/UI-SPEC.md`. The FigCraft
+  mockups in `design/` and the Python QML oracle are superseded references,
+  not specs.
 - Visual work is self-reviewed against the running app PNG before reporting; the
   main agent merges on a PASS report and only spot-checks one PNG per batch.
 - UI work uses the targeted check loop, never the full gate.
