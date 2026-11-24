@@ -35,8 +35,8 @@ Sample data and copy are illustrative (English); labels come from `madrigal-i18n
 
 1. Token fixes and the `download` nav icon.
 2. TextField (filled, label above, inset focus ring), TextArea, Select (tonal pill + floating menu).
-3. SegmentedButton (connected group), Snackbar, PlayingIndicator, Dialog shape.
-4. Rows and lists: ListItem playing / selected states, DownloadRow state icons, SelectionBar.
+3. SegmentedButton (connected group), Chip (filled, no outline), Snackbar, PlayingIndicator, Dialog shape; SearchBar becomes the TextField pill; TrackMenu takes the Select menu shell.
+4. Rows and cards: ListItem playing / selected states and hover-only More button, MediaCard hover play button, DownloadRow state icons, SelectionBar.
 5. Screens in PageHost order, each checked against its PNG at 1920×1080, 1366×768, 1280×720 and 640×480.
 6. Motion: MotionCurrent stays; MotionProposed items one at a time (wavy seek first).
 
@@ -197,12 +197,13 @@ Reference: `design/reference/components/Checkbox.png`.
 
 Reference: `design/reference/components/Chip.png`.
 
-32px pill filter chip for search filters, library tabs and tags.
+32px filter chip for search filters, library tags and dialog options.
 
-- Selected: `secondary-container` fill, `on-secondary-container` label, a 14px check slides in.
-- Unselected: 1px `outline` border, `on-surface-variant` label. Label `label-large`.
-- Rows of chips scroll horizontally, never wrap.
-- Slint: `M3Chip { text, selected, selected-fill, selected-content, unselected-content, unselected-line }` in `cards.slint`.
+- **Redesign proposal:** no outline. Unselected chips are filled `surface-container-highest` with `on-surface` labels; the selected chip turns `secondary` / `on-secondary`, gains a 14px check and tightens its corners from 16 to 10 (200ms `easing-emphasized`).
+- Selection reads by fill, check and shape. `secondary` keeps chips apart from the `primary` SegmentedButton pill and from `primary-container` playing rows.
+- Label `label-large`; hover 0.08 layer; keyboard focus 2px inset ring. Rows of chips scroll horizontally, never wrap.
+- Contrast: `on-secondary` on `secondary` 6.5:1 (Light) / 11.9:1 (Dark); `on-surface` on `surface-container-highest` 14:1 / 13:1.
+- Slint: `M3Chip { text, selected, selected-fill, selected-content, unselected-content, unselected-line }` in `cards.slint`; `unselected-line` goes, `unselected-fill` arrives.
 
 ### SegmentedButton
 
@@ -260,11 +261,12 @@ Ordered, toggleable list for the `providers` settings kind (lyrics, artwork sour
 
 Reference: `design/reference/components/SearchBar.png`.
 
-Pill search field at the top of Search, focused with `/`.
+Search field at the top of Search, focused with `/`.
 
-- `surface-container-high` fill, 18px search icon, `body-large` text, trailing 40px clear button.
-- Focus or `ring`: 2px `primary` border.
-- Slint: `M3SearchBar` in `fields.slint`.
+- **Redesign:** the pill variant of TextField, so search and every other field share one shell: 56px, `radius-full`, `surface-container-highest`, 24px leading search icon, visible placeholder, clear button once there is text.
+- Focus: 2px `primary` inset ring. No separate `ring` property.
+- Opens SearchSuggestions below while focused.
+- Slint: `M3SearchBar` in `fields.slint` becomes `M3TextField { shape: full, leading-icon: search, clearable: true }`.
 
 ### SearchSuggestions
 
@@ -448,8 +450,8 @@ Reference: `design/reference/components/ListItem.png`.
 
 - 36px cover, title `title-small` 14/500, subtitle and duration `label-small` 11px `on-surface-variant`.
 - Hover `surface-container`; playing row `primary-container` with `on-primary-container` text and the animated PlayingIndicator (a `primary` title there is 4.20:1 in Light, under the floor).
+- **Proposal:** the trailing "More actions" button shows only on hover, keyboard focus and the playing row (second row shows hover), so long lists read as text, not a column of icons. It stays in the tab order and keeps its accessible label; right click opens the same TrackMenu.
 - Download state: 120×6 progress bar (`surface-variant` track, `primary` fill).
-- Trailing 40px "More actions" button opens TrackMenu; right click does the same.
 - Slint: `M3ListItem { title, subtitle, duration, active, progress, menu, row-bg, active-bg, accent }` in `rows.slint`.
 
 ### LyricsView
@@ -471,8 +473,9 @@ Reference: `design/reference/components/MediaCard.png`.
 
 - `surface-container` fill, radius `radius-medium`, 118px art (`music-2` fallback on `surface-container-high`).
 - Title 13/600 Figtree, subtitle 11px Inter `on-surface-variant`. Hover veil 0.14.
+- **Proposal:** on hover or keyboard focus a 44px `primary` play button rises 6px into the art's bottom-right corner (150ms fade, 200ms `easing-emphasized`); it plays without opening the detail page, and its corners round from 16 to 22 under the pointer. Second card shows it.
 - Elevated variant lifts `shadow-card` → `shadow-card-hover` in 200ms. Rails are 190px tall horizontal flickables, 12px gap.
-- Slint: `M3Card { media, title, subtitle, cover, lit, fill, shadow-color }` in `cards.slint`.
+- Slint: `M3Card { media, title, subtitle, cover, lit, fill, shadow-color }` in `cards.slint`; add `play-requested` beside `clicked`.
 
 ### MoodTile
 
@@ -518,10 +521,12 @@ Reference: `design/reference/components/TrackMenu.png`.
 
 The one context menu for every song surface.
 
-- 304px card, `surface-container-high`, radius `radius-medium`, `shadow-menu`, 6px inset.
-- 56px header (title `title-small`, artist `label-small`), then 48px rows: 24px icon, 12px gap, `label-large`.
-- Keyboard: Up/Down skip unavailable rows (0.55 opacity), Enter activates, Esc closes, Left leaves the playlist view.
-- Flips above the anchor when there is no room and never covers the 96px player bar.
+- **Redesign:** same shell as the Select menu: 304px, `surface-container-high`, `radius-large-increased` (20), 8px inner padding, `shadow-menu`.
+- Header: 40px cover, title `title-medium`, artist · album `body-small`; a 1px `outline-variant` divider.
+- Rows: 48px, `radius-medium` (12) inside the card, 24px `on-surface-variant` icon, 12px gap, label `body-large`. Groups: playback and library actions, then navigation, split by a divider.
+- States: hover 0.08 layer; keyboard focus a 2px inset `on-surface` ring (first row); a toggled action shows its filled icon in `primary` ("Liked"); unavailable rows at 0.38 (Go to artist when unknown); "Add to playlist" carries a chevron and opens its second view.
+- Keyboard: Up/Down skip unavailable rows, Enter activates, Esc closes, Left leaves the playlist view.
+- Placement: anchored at the pointer or the row's More button, flips above when there is no room, never covers the 96px player bar.
 - Slint: `TrackMenu` in `menu.slint`.
 
 ## Feedback
