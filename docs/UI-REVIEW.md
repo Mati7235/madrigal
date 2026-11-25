@@ -36,4 +36,4 @@ No findings in the design system previews.
 
 ## Next steps
 
-- Component sheets in `design/reference/components/` still show the old blue Light. They belong to the `agy/components` rebuild and need regenerating from the new tokens.
+- Component sheets in `design/reference/components/`: the Light band of all 46 was recoloured from the old blue to the violet tokens by palette mapping, since the HTML sources were lost. Dark and Pure Black bands are untouched. A rebuild from the prototype styles would give exact values.
