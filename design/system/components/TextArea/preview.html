@@ -1,0 +1,14 @@
+<!-- @dsCard group="Inputs" height=260 -->
+<div class="md-root"><label class="tf area" style="width:460px"><span class="lbl">Description</span><span class="f"><textarea placeholder="What is this playlist for?" maxlength="280" aria-label="Description">Late records for the drive home.</textarea></span><span class="sup"><span>Shown under the playlist title</span><span class="cnt" data-of="280">32 / 280</span></span></label></div><script>
+document.querySelectorAll('[data-clear]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();const i=b.closest('.f').querySelector('input');i.value='';i.dispatchEvent(new Event('input',{bubbles:true}));i.focus();}));
+document.querySelectorAll('[data-reveal]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();const i=b.closest('.f').querySelector('input');const on=i.type==='password';i.type=on?'text':'password';b.textContent=on?'Hide':'Show';b.setAttribute('aria-pressed',String(on));}));
+document.querySelectorAll('.tf').forEach(t=>{const c=t.querySelector('.cnt');const i=t.querySelector('input,textarea');if(c&&i)i.addEventListener('input',()=>{c.textContent=i.value.length+' / '+c.dataset.of;});});
+const CHECK=document.querySelector('template#chk')?document.querySelector('template#chk').innerHTML:'';
+document.querySelectorAll('.dd').forEach(d=>{const b=d.querySelector('.trig');const set=o=>{if(o)document.querySelectorAll('.dd.open').forEach(x=>{if(x!==d){x.classList.remove('open');x.querySelector('.trig').setAttribute('aria-expanded','false');}});d.classList.toggle('open',o);b.setAttribute('aria-expanded',String(o));};
+b.addEventListener('click',()=>set(!d.classList.contains('open')));
+d.querySelectorAll('.mo-i').forEach(o=>o.addEventListener('click',()=>{if(o.getAttribute('aria-disabled')==='true'||o.querySelector('.sub'))return;
+d.querySelectorAll('.mo-i').forEach(x=>{if(x.getAttribute('aria-selected')==='true'){x.setAttribute('aria-selected','false');x.querySelector('.lead').innerHTML='';}x.classList.remove('kb');});
+o.setAttribute('aria-selected','true');o.querySelector('.lead').innerHTML=CHECK;d.querySelector('.v').textContent=o.dataset.v;b.setAttribute('aria-label',b.getAttribute('aria-label').replace(/: .*$/,': '+o.dataset.v));set(false);b.focus();}));});
+document.addEventListener('click',e=>{if(!e.target.closest('.dd'))document.querySelectorAll('.dd.open').forEach(d=>{d.classList.remove('open');d.querySelector('.trig').setAttribute('aria-expanded','false');});});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.dd.open').forEach(d=>{d.classList.remove('open');d.querySelector('.trig').setAttribute('aria-expanded','false');});});
+</script>
