@@ -34,6 +34,9 @@ No findings in the design system previews.
 14. **The offline banner is a solid dark red bar.** Decided: keep. It uses `error-container` (`#93000a` in Dark) with `on-error-container` text, the standard Material 3 pairing, and it passes contrast. Every error surface shares it, so changing it is a token change, not a banner fix.
 15. **Home Downloads tile**: fixed, see item 5.
 
+16. **`tokens.slint` Dark and Pure Black `inverse-on-surface`** was `#f2eef7`, equal to `inverse-surface`, so snackbar text would vanish. Fixed to `#322f35`, matching `tokens.json`. All 144 colour tokens now match `tokens.json` in the three themes.
+17. **Full player at 640×480** was crushed by the 360px console column (one word per line). The wide layout now applies only above 1100×700; below it the stacked compact layout returns.
+
 ## Next steps
 
 - Component sheets in `design/reference/components/`: the Light band of all 46 was recoloured from the old blue to the violet tokens by palette mapping, since the HTML sources were lost. Dark and Pure Black bands are untouched. A rebuild from the prototype styles would give exact values.
