@@ -13,9 +13,10 @@ No findings in the design system previews.
 
 ## Priority 1: fix before the agent builds
 
-1. **The reference screenshots of the full player are stale.** `screens/1280x720/full-player-*.png` still show the old version: a glow under the cover, "Synced · sample", the save icon for sharing, "1.00×" and "Flat" without labels, and the Up next card. Regenerate the PNGs from the committed `prototype.html` after the chosen option 3 is applied.
-2. **The bottom bar stays visible under the full player** in the reference. It duplicates the transport. Hide `NowPlayingBar` while the full player is open (the prototype already does this in the local version).
-3. **Decorative glow on the cover.** The tinted box-shadow under the cover is the "brillo" the user rejected. Remove it in the reference and in `FullPlayer/preview.html`.
+1. **Done: reference screenshots regenerated** (22 PNGs: full player, settings and sleep dialog, at every resolution and theme in the set).
+   - Left to fix: the dark strip at the bottom where the bottom bar used to sit. Fill it with the console and pane, or hide it by stretching the content. `screens/1280x720/full-player-*.png` still show the old version: a glow under the cover, "Synced · sample", the save icon for sharing, "1.00×" and "Flat" without labels, and the Up next card. Regenerate the PNGs from the committed `prototype.html` after the chosen option 3 is applied.
+2. **Done: bottom bar hidden under the full player** in `prototype.html`.
+3. **Done: glows and bounce removed** from the cover and the play button.
 
 ## Priority 2: consistency
 
