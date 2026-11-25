@@ -14,7 +14,8 @@ No findings in the design system previews.
 ## Priority 1: fix before the agent builds
 
 1. **Done: reference screenshots regenerated** (22 PNGs: full player, settings and sleep dialog, at every resolution and theme in the set).
-   - Left to fix: the dark strip at the bottom where the bottom bar used to sit. Fill it with the console and pane, or hide it by stretching the content. `screens/1280x720/full-player-*.png` still show the old version: a glow under the cover, "Synced · sample", the save icon for sharing, "1.00×" and "Flat" without labels, and the Up next card. Regenerate the PNGs from the committed `prototype.html` after the chosen option 3 is applied.
+   - Left to fix: the dark strip at the bottom where the bottom bar used to sit. Fill it with the console and pane, or hide it by stretching the content.
+   - Left to fix: the Up next card still shows under the transport.
 2. **Done: bottom bar hidden under the full player** in `prototype.html`.
 3. **Done: glows and bounce removed** from the cover and the play button.
 
