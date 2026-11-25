@@ -26,8 +26,8 @@ No findings in the design system previews.
 | 9 | Technical labels in Details | Done: "Format", "Playing from", "Buffered" |
 | 10 | Lyrics size shows "22 px" | Done: Small, Medium, Large, Extra large |
 | 11 | Error and empty states in reference | Done: `err-download`, `err-lyrics`, `err-offline`, `err-unavailable`. The offline banner was lost in merge `8397095` and restored in this commit |
-| 12 | Contrast across themes and tints | Partly done: 0 text pairs below threshold on the 6 main screens in Light, Dark and Pure Black. Tints not yet measured. Closest pair: the inactive lyric "rain" at 3.9:1 (Light, 42px bold, needs 3.0) |
-| 13 | Focus rings on every control | Partly done: the first 40 Tab stops on Home show a visible ring in all three themes. Other screens not yet checked |
+| 12 | Contrast across themes and tints | Done: 0 text pairs below threshold on Home and the full player with all 6 cover tints, and on the 6 main screens, in Light, Dark and Pure Black. Closest pair: the inactive lyric "rain" at 3.9:1 (Light, 42px bold, needs 3.0) |
+| 13 | Focus rings on every control | Done: Tab through Home, Search, Library, Downloads, Settings and the full player (up to 80 stops each) in all three themes. Every stop shows a ring. Text fields ring their `.tf .f` wrapper (2px primary, inset) |
 
 ## New findings
 
@@ -36,4 +36,4 @@ No findings in the design system previews.
 
 ## Next steps
 
-- Measure the cover tints for contrast and check Tab stops on the other screens (items 12 and 13).
+None open. The reference is ready for implementation.
