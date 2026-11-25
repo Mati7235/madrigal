@@ -18,7 +18,7 @@ No findings in the design system previews.
 | 1 | Full player reference PNGs stale | Done: full player matches the chosen layout |
 | 2 | Bottom bar under the full player | Done |
 | 3 | Glow and bounce on cover and play | Done |
-| 4 | Accent colour in Light | Decided: keep. Light stays the brand blue `#0b6bcb`, which matches the logo and `tokens.slint`. Dark and Pure Black keep the purple |
+| 4 | Accent colour in Light | Done: Light moves to the same violet seed as Dark (`primary` `#6750a4`, violet-grey surfaces). One seed across the three themes. Updated in `tokens.slint`, both `tokens.json`, the prototype, the app icon, the docs and the Light PNGs (1920×1080 and 1280×720, error states included) |
 | 5 | Downloads tile on Home reads as error | Done: tonal `secondary-container` tile |
 | 6 | Downloads rows have a dead middle | Done |
 | 7 | Quick picks crowd their durations | Done: durations in their own column, hover actions hidden in Quick picks so artist and album fit |
@@ -36,4 +36,4 @@ No findings in the design system previews.
 
 ## Next steps
 
-None open. The reference is ready for implementation.
+- Component sheets in `design/reference/components/` still show the old blue Light. They belong to the `agy/components` rebuild and need regenerating from the new tokens.

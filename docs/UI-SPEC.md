@@ -25,7 +25,7 @@ Sample data and copy are illustrative (English); labels come from `madrigal-i18n
 | `tokens.slint` Dark, PureBlack `inverse-on-surface` | `#f2eef7` | `#322f35` | equals `inverse-surface`: snackbar and tooltip text invisible (1:1); target 11.5:1 |
 | `M3TextField` callers `line` | `outline-variant` | no border; filled `surface-container-highest` (see TextField) | `outline-variant` on `surface` is 1.70:1, under 3:1 |
 | Playing row title | `primary` on `primary-container` | `on-primary-container` + PlayingIndicator | 4.20:1 in Light, under 4.5:1 |
-| Selected row | — | `surface-container-highest` + checked box | `secondary-container` (#cfe5ff) vs `primary-container` (#d6e7ff) are indistinguishable in Light |
+| Selected row | — | `surface-container-highest` + checked box | `secondary-container` (#e8def8) vs `primary-container` (#eaddff) are indistinguishable in Light |
 | `sidebar.slint` Downloads icon | `arrow-down` | `download` | every other downloads entry point uses `download` |
 | `player/queue.slint` queue lock | `x` / `list-music` | `lock` / `lock-open` | neither a close nor a playlist glyph says locked |
 | `player/queue.slint` row remove | `minus` | `x` | remove is a close action; `minus` reads as minimise |
@@ -68,7 +68,7 @@ Madrigal is a Rust desktop music player (local library and YouTube Music, synced
 
 | Theme | Ground | Accent | Notes |
 | --- | --- | --- | --- |
-| Light | `surface` #ffffff | `primary` #0b6bcb sky blue | containers are cool blue tints (#f4f8fe → #d8e3f2) |
+| Light | `surface` #ffffff | `primary` #6750a4 violet | containers are violet-grey tints (#f7f2fa → #e6e0e9) |
 | Dark | `surface` #0b0810 | `primary` #cfbcff violet | containers are violet-black (#120e19 → #292234) |
 | Pure Black | `surface` #000000 | `primary` #cfbcff violet | Dark roles with the surface ramp shifted to #000000 for OLED |
 
@@ -134,7 +134,7 @@ Where this system goes past the current code, the card says **Proposal** or **In
 - **Feedback for silent actions.** Snackbar after queue, like and download actions; EmptyState for empty pages.
 - **Softer, larger dialogs.** `radius-extra-large`, centred icon and title.
 - **Screens:** every page composed at 1280×720 (HomeScreen, SearchScreen, ExploreScreen, LibraryScreen, DownloadsScreen, SettingsScreen, DetailScreen, FullPlayer, QueueDrawer) plus CompactShell at 800×450 for the breakpoints.
-- **Selected is not playing.** Selected rows use `surface-container-highest` and a checked box; `secondary-container` is too close to `primary-container` in Light (#cfe5ff vs #d6e7ff) to mark selection.
+- **Selected is not playing.** Selected rows use `surface-container-highest` and a checked box; `secondary-container` is too close to `primary-container` in Light (#e8def8 vs #eaddff) to mark selection.
 
 ### Iconography
 
@@ -787,7 +787,7 @@ Library, Songs tab, with two rows selected. **Redesign proposal.**
 
 - Display title with a tonal "New playlist"; primary Tabs; tag chips with the sort on the right.
 - Multiselect: each row shows a checkbox; selected rows take `surface-container-highest` plus the checked box, and the SelectionBar replaces the toolbar while a selection exists.
-- The playing row keeps `primary-container` and the PlayingIndicator. Selected rows never use `secondary-container`: in Light it is #cfe5ff against `primary-container` #d6e7ff, too close to tell "selected" from "playing".
+- The playing row keeps `primary-container` and the PlayingIndicator. Selected rows never use `secondary-container`: in Light it is #e8def8 against `primary-container` #eaddff, too close to tell "selected" from "playing".
 
 ### QueueDrawer
 

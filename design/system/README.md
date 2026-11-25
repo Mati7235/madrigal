@@ -12,7 +12,7 @@ Madrigal is a Rust desktop music player (local library and YouTube Music, synced
 
 | Theme | Ground | Accent | Notes |
 | --- | --- | --- | --- |
-| Light | `surface` #ffffff | `primary` #0b6bcb sky blue | containers are cool blue tints (#f4f8fe → #d8e3f2) |
+| Light | `surface` #ffffff | `primary` #6750a4 violet | containers are violet-grey tints (#f7f2fa → #e6e0e9) |
 | Dark | `surface` #0b0810 | `primary` #cfbcff violet | containers are violet-black (#120e19 → #292234) |
 | Pure Black | `surface` #000000 | `primary` #cfbcff violet | Dark roles with the surface ramp shifted to #000000 for OLED |
 
@@ -78,7 +78,7 @@ Where this system goes past the current code, the card says **Proposal** or **In
 - **Feedback for silent actions.** Snackbar after queue, like and download actions; EmptyState for empty pages.
 - **Softer, larger dialogs.** `radius-extra-large`, centred icon and title.
 - **Screens:** every page composed at 1280×720 (HomeScreen, SearchScreen, ExploreScreen, LibraryScreen, DownloadsScreen, SettingsScreen, DetailScreen, FullPlayer, QueueDrawer) plus CompactShell at 800×450 for the breakpoints.
-- **Selected is not playing.** Selected rows use `surface-container-highest` and a checked box; `secondary-container` is too close to `primary-container` in Light (#cfe5ff vs #d6e7ff) to mark selection.
+- **Selected is not playing.** Selected rows use `surface-container-highest` and a checked box; `secondary-container` is too close to `primary-container` in Light (#e8def8 vs #eaddff) to mark selection.
 
 ## Iconography
 

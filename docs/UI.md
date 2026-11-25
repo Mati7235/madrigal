@@ -98,8 +98,8 @@ Reference resolutions are 16:9: 1920×1080, 1366×768 and 1280×720, plus the
 
 ## Theme
 
-`tokens.slint` carries two fixed expressive palettes: Light = sky blue accent
-on white, Dark/PureBlack = violet accent on black. `appearance.theme` picks the
+`tokens.slint` carries two fixed expressive palettes with one violet seed: Light =
+violet accent on white, Dark/PureBlack = violet accent on black. `appearance.theme` picks the
 mode; matugen-derived colors for the system mode are an F9 runtime seam.
 
 ## Screen ownership (F8-3..F8-6)
