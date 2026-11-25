@@ -809,6 +809,47 @@ body:has(#full:not([hidden])) .barwrap{display:none}
 @media (prefers-reduced-motion: reduce){.wclip .wg{animation:none}}
 
 body:has(#full:not([hidden])) .barwrap{display:none}body:has(#full:not([hidden])) .app{grid-template-rows:minmax(0,1fr) 0}body:has(#full:not([hidden])) .full{inset:0!important}body:has(#full:not([hidden])) .upnext{display:none}body:has(#full:not([hidden])) .fbody{grid-template-columns:360px minmax(0,1fr);gap:56px;padding:8px 48px 32px}body:has(#full:not([hidden])) .fcon{gap:24px}body:has(#full:not([hidden])) .fart{width:min(100%,300px)!important}body:has(#full:not([hidden])) .fmeta b{font-size:28px;line-height:36px}body:has(#full:not([hidden])) .fpane{background:none;padding:0}body:has(#full:not([hidden])) .fpanel{--lsize:30px!important;display:flex;flex-direction:column;justify-content:center}body:has(#full:not([hidden])) .lyr3{gap:22px}
+/* Error and empty states */
+.app[data-err="offline"]{grid-template-rows:auto minmax(0,1fr) 96px}
+.app[data-err="offline"]>.nav,.app[data-err="offline"]>.main{grid-row:2}
+.app[data-err="offline"]>.barwrap{grid-row:3}
+.err-banner{grid-row:1;grid-column:1/-1;display:flex;align-items:center;gap:16px;min-height:64px;padding:8px 24px;box-sizing:border-box;background:var(--error-container);color:var(--on-error-container)}
+.err-banner>.ic{width:24px;height:24px;flex:none}
+.err-banner .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.err-banner b{font:500 14px/20px var(--font-title);letter-spacing:.1px}
+.err-banner .tx span{font:400 12px/16px var(--font-body);letter-spacing:.4px}
+.err-banner .md-btn.text{flex:none;color:var(--on-error-container)}
+.err-dl-chip{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:2px 8px;border-radius:8px;background:color-mix(in srgb,var(--on-primary-container) 10%,transparent);color:var(--on-primary-container);font:500 11px/16px var(--font-body);letter-spacing:.5px;text-transform:none;vertical-align:middle}
+.err-dl-chip .ic{width:14px;height:14px}
+.trow.err-stream,.crow.err-stream{cursor:default}
+.trow.err-stream:hover,.crow.err-stream:hover{background:transparent}
+.err-stream .art{opacity:.45;filter:saturate(.35)}
+.err-stream .tx b{color:var(--on-surface-variant)}
+.err-stream .tx span,.err-stream .dur,.err-stream .num{color:color-mix(in srgb,var(--on-surface-variant) 88%,transparent)}
+.err-stream .md-icb{opacity:.6}
+.err-why{display:inline-flex;align-items:center;color:var(--on-surface-variant);margin-left:4px}
+.trow.err-na{cursor:default}
+.trow.err-na:hover{background:transparent}
+.err-na .art{opacity:.45;filter:saturate(.35)}
+.err-na .tx b{color:var(--on-surface-variant)}
+.err-na .tx span{display:inline-flex;align-items:center;gap:4px;color:var(--error)}
+.err-na .dur{color:var(--on-surface-variant)}
+.err-na .md-icb{opacity:1}
+.err-na .md-cb{opacity:.45;pointer-events:none}
+.tmenu .hd small.err-note{color:var(--error)}
+.app[data-err="lyrics"] #fpanel{display:none}
+.err-lyr{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:24px;color:var(--on-surface)}
+.err-lyr .blob{width:96px;height:96px;border-radius:40px 52px 36px 52px;background:var(--secondary-container);color:var(--on-secondary-container);display:flex;align-items:center;justify-content:center}
+.err-lyr .blob .ic{width:40px;height:40px}
+.err-lyr h3{margin:8px 0 0;font:400 24px/32px var(--font-title)}
+.err-lyr p{margin:0;font:400 14px/20px var(--font-body);color:var(--on-surface-variant)}
+.err-lyr .acts{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.app[data-err="download"] .dlr .stt{width:150px}
+.app[data-err="download"] .dlr .ac{width:186px}
+.dlr.err-dl .ac{gap:2px}
+.dlr.err-dl .md-btn{height:32px;padding:0 10px}
+.dlr.err-dl .md-btn.retry{color:var(--primary)}
+
 </style>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 12-7 7-7-7"/><path d="M12 5v14"/></symbol><symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol><symbol id="i-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol><symbol id="i-chart-no-axes-column-increasing" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21v-6"/><path d="M12 21V9"/><path d="M19 21V3"/></symbol><symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol><symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol><symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></symbol><symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol><symbol id="i-chevron-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></symbol><symbol id="i-circle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 9-5.5 5.5L8 12"/><circle cx="12" cy="12" r="10"/></symbol><symbol id="i-circle-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 15 6-6"/></symbol><symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></symbol><symbol id="i-compass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.2 7.8-2.1 6.3-6.3 2.1 2.1-6.3 6.3-2.1z"/></symbol><symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol><symbol id="i-ellipsis-vertical" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12h.01"/><path d="M12 5h.01"/><path d="M12 19h.01"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></symbol><symbol id="i-gauge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol><symbol id="i-grip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5h.01"/><path d="M19 5h.01"/><path d="M5 5h.01"/><path d="M12 12h.01"/><path d="M19 12h.01"/><path d="M5 12h.01"/><path d="M12 19h.01"/><path d="M19 19h.01"/><path d="M5 19h.01"/><circle cx="5" cy="5" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="19" cy="5" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="19" r="1"/><circle cx="12" cy="19" r="1"/><circle cx="19" cy="19" r="1"/></symbol><symbol id="i-heart-filled" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/></symbol><symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/></symbol><symbol id="i-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol><symbol id="i-house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol><symbol id="i-languages" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></symbol><symbol id="i-library" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></symbol><symbol id="i-list-music" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M11 19H3"/><path d="M21 16V5"/><circle cx="18" cy="16" r="3"/></symbol><symbol id="i-list-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 5H3"/><path d="M11 12H3"/><path d="M16 19H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></symbol><symbol id="i-list-video" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H3"/><path d="M10 12H3"/><path d="M10 19H3"/><path d="M15 12.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997a1 1 0 0 1-1.517-.86z"/></symbol><symbol id="i-loader-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></symbol><symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></symbol><symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></symbol><symbol id="i-music-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18V2l7 4"/><circle cx="8" cy="18" r="4"/></symbol><symbol id="i-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h5v18h-5z"/><path d="M5 3h5v18H5z"/></symbol><symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/></symbol><symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></symbol><symbol id="i-repeat-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/><path d="M11 10h1v4"/></symbol><symbol id="i-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol><symbol id="i-rotate-cw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></symbol><symbol id="i-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></symbol><symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></symbol><symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-shuffle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></symbol><symbol id="i-skip-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.971 4.285A2 2 0 0 1 21 6v12a2 2 0 0 1-3.029 1.715l-9.997-5.998a2 2 0 0 1-.003-3.432z"/><path d="M3 20V4"/></symbol><symbol id="i-skip-forward" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4v16"/><path d="M6.029 4.285A2 2 0 0 0 3 6v12a2 2 0 0 0 3.029 1.715l9.997-5.998a2 2 0 0 0 .003-3.432z"/></symbol><symbol id="i-sliders-horizontal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></symbol><symbol id="i-square-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></symbol><symbol id="i-square" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/></symbol><symbol id="i-star-filled" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></symbol><symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></symbol><symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol><symbol id="i-undo-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol><symbol id="i-user-round" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="5"/></symbol><symbol id="i-volume-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/></symbol><symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol></svg>
 <div class="app" id="app">
@@ -853,7 +894,7 @@ body:has(#full:not([hidden])) .barwrap{display:none}body:has(#full:not([hidden])
     liked: new Set(['kob2', 'gs3', 'to2']), theme: 'system', black: false, bg: 'Theme', full: false, fullTab: 'lyrics', qOpen: false,
     query: '', filter: 'All', source: 'Online', libSel: new Set(), dl: [
       { al: 'kob', st: 'done', p: 1 }, { al: 'als', st: 'dl', p: 0.42, sp: 2.4 }, { al: 'to', st: 'queued', p: 0 }, { al: 'mau', st: 'paused', p: 0.22 }, { al: 'sne', st: 'err', p: 0.4 }],
-    lyrSize: 22, sleep: null, tag: 'All', shuffle: false, repeat: 0, vol: 70, lyrOffset: 300,
+    lyrSize: 22, sleep: null, tag: 'All', shuffle: false, repeat: 0, vol: 70, lyrOffset: 300, err: null,
   };
   const cur = () => byId(S.queue[S.cur]);
 
@@ -1087,7 +1128,96 @@ body:has(#full:not([hidden])) .barwrap{display:none}body:has(#full:not([hidden])
       for (let k = 0; k < n; k++) { const sp = ws[k]; const v = Math.max(0, Math.min(1, x - k)); sp.style.setProperty('--w', (v * 100).toFixed(0) + '%'); sp.className = v >= 1 ? 'sung' : v > 0 ? 'now' : ''; }
     }
   }
-  function render() { renderNav(); renderPage(); renderBar(); renderQueue(); renderFull(); }
+  function render() { renderNav(); renderPage(); renderBar(); renderQueue(); renderFull(); renderErr(); }
+
+  function renderErr() {
+    const app = $('#app'), main = $('#main');
+    if (!app || !main) return;
+    $$('.err-banner').forEach((n) => n.remove());
+    $$('.err-lyr').forEach((n) => n.remove());
+    if (!S.err || (S.err === 'lyrics' && !(S.full && S.fullTab === 'lyrics'))) { app.removeAttribute('data-err'); return; }
+    app.setAttribute('data-err', S.err);
+
+    if (S.err === 'offline') {
+      const b = document.createElement('div');
+      b.className = 'err-banner';
+      b.setAttribute('role', 'status');
+      b.innerHTML = `${ic('triangle-alert')}<span class="tx"><b>No connection</b><span>Streaming songs are unavailable. Downloaded songs still play.</span></span><button class="md-btn text md-sl" data-err-dismiss>Dismiss</button>`;
+      app.insertBefore(b, app.firstChild);
+      b.querySelector('[data-err-dismiss]').addEventListener('click', () => { S.err = null; render(); });
+      const done = new Set(S.dl.filter((d) => d.st === 'done').map((d) => d.al));
+      $$('.trow[data-play], .crow[data-play]', main).forEach((r) => {
+        const t = byId(r.dataset.play);
+        if (!t || done.has(t.al.id)) return;
+        r.classList.add('err-stream');
+        r.setAttribute('aria-disabled', 'true');
+        r.removeAttribute('tabindex');
+        r.removeAttribute('data-play');
+        const dur = r.querySelector('.dur');
+        if (dur) dur.insertAdjacentHTML('beforebegin', `<span class="err-why" title="Needs a connection">${ic('circle-x', 'ic-14')}</span>`);
+      });
+      const hero = main.querySelector('.hero .big small');
+      if (hero) hero.insertAdjacentHTML('beforeend', ` <span class="err-dl-chip">${ic('download', 'ic-14')}Downloaded</span>`);
+      return;
+    }
+
+    if (S.err === 'unavailable') {
+      const rows = $$('.trow[data-play]', main);
+      const r = rows.find((n) => n.dataset.play === 'kob1') || rows.find((n) => !n.classList.contains('active'));
+      if (!r) return;
+      const tr = byId(r.dataset.play);
+      if (!tr) return;
+      r.classList.add('err-na');
+      r.setAttribute('aria-disabled', 'true');
+      r.setAttribute('aria-label', `${tr.t} is not available`);
+      r.removeAttribute('tabindex');
+      r.removeAttribute('data-play');
+      const cb = r.querySelector('[data-sel]');
+      if (cb) { cb.removeAttribute('data-sel'); cb.setAttribute('aria-disabled', 'true'); cb.setAttribute('tabindex', '-1'); }
+      const sub = r.querySelector('.tx span');
+      if (sub) sub.innerHTML = `${ic('triangle-alert', 'ic-14')}Not available`;
+      const more = r.querySelector('[data-menu]');
+      if (!more) return;
+      const id = more.dataset.menu;
+      more.removeAttribute('data-menu');
+      more.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const rect = more.getBoundingClientRect();
+        openMenu(id, rect.left - 260, rect.bottom + 4);
+        const m = $('#tmenu');
+        m.innerHTML = `<div class="hd">${art(tr.al, 'xs')}<span><b>${esc(tr.t)}</b><small class="err-note">Not available</small></span></div><hr><button class="r" role="menuitem" data-err-remove>${ic('trash')}<span>Remove</span></button>`;
+        const h = m.getBoundingClientRect().height;
+        m.style.top = (rect.bottom + h > window.innerHeight - 104 ? Math.max(8, rect.top - h) : rect.bottom + 4) + 'px';
+        const rm = m.querySelector('[data-err-remove]');
+        rm.addEventListener('click', (e2) => { e2.stopPropagation(); closeMenu(); r.remove(); snack('Removed from library', '', 'trash'); });
+        rm.focus();
+      });
+      return;
+    }
+
+    if (S.err === 'lyrics' && S.full && S.fullTab === 'lyrics') {
+      const pane = $('.fpane');
+      if (!pane) return;
+      const box = document.createElement('div');
+      box.className = 'err-lyr';
+      box.setAttribute('role', 'status');
+      box.innerHTML = `<span class="blob">${ic('mic')}</span><h3>No lyrics for this song</h3><p>Lyrics aren’t available for this track yet.</p><div class="acts"><button class="md-btn tonal md-sl" data-err-retry>${ic('rotate-cw', 'ic-18')}Retry</button><button class="md-btn text md-sl" data-err-sources>Search other sources</button></div>`;
+      pane.insertBefore(box, pane.querySelector('.ftools'));
+      box.querySelector('[data-err-retry]').addEventListener('click', (e) => { e.stopPropagation(); snack('Looking for lyrics…', '', 'rotate-cw'); });
+      box.querySelector('[data-err-sources]').addEventListener('click', (e) => { e.stopPropagation(); snack('Searching other sources…', '', 'search'); });
+      return;
+    }
+
+    if (S.err === 'download' && S.page === 'downloads' && !S.detail) {
+      const rows = $$('.dlr', main);
+      const i = rows.findIndex((n) => n.querySelector('.stt.err'));
+      if (i < 0) return;
+      const row = rows[i];
+      row.classList.add('err-dl');
+      row.querySelector('.stt').innerHTML = `${ic('triangle-alert', 'ic-14')}Download failed`;
+      row.querySelector('.ac').innerHTML = `<button class="md-btn text md-sl retry" data-dl="retry:${i}" aria-label="Retry download">${ic('rotate-cw', 'ic-18')}Retry</button><button class="md-btn text md-sl" data-dl="cancel:${i}" aria-label="Remove download">${ic('trash', 'ic-18')}Remove</button>`;
+    }
+  }
 
   function tick(onlyUi) {
     const c = cur();
@@ -1198,7 +1328,7 @@ body:has(#full:not([hidden])) .barwrap{display:none}body:has(#full:not([hidden])
     if (ds.like) { const had = S.liked.has(ds.like); had ? S.liked.delete(ds.like) : S.liked.add(ds.like); render(); snack(had ? 'Removed from Liked songs' : 'Saved to Liked songs', 'Undo', had ? 'heart' : 'heart-filled', () => { had ? S.liked.add(ds.like) : S.liked.delete(ds.like); render(); }); return; }
     if (ds.queue !== undefined) { S.qOpen = !S.qOpen; renderBar(); renderQueue(); return; }
     if (ds.full !== undefined) { S.full = !S.full; if (S.full) S.qOpen = false; render(); return; }
-    if (ds.ftab) { S.fullTab = ds.ftab; renderFull(); return; }
+    if (ds.ftab) { S.fullTab = ds.ftab; renderFull(); renderErr(); return; }
     if (ds.shuf !== undefined) { S.shuffle = !S.shuffle; renderFull(); snack(S.shuffle ? 'Shuffle on' : 'Shuffle off', '', 'shuffle'); return; }
     if (ds.rep !== undefined) { S.repeat = (S.repeat + 1) % 3; renderFull(); snack(['Repeat off', 'Repeat all', 'Repeat one'][S.repeat], '', S.repeat === 2 ? 'repeat-1' : 'repeat'); return; }
     if (ds.mute !== undefined) { S.vol = S.vol ? 0 : 70; renderFull(); return; }
