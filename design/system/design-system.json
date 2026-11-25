@@ -1,0 +1,430 @@
+{
+ "v": 3,
+ "layout": "files",
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-24T20:03:51Z"
+ },
+ "title": "Madrigal",
+ "namespace": "Madrigal",
+ "libraries": [],
+ "sections": {},
+ "groups": [
+  "Logos",
+  "Icons"
+ ],
+ "assetGroups": {
+  "Logos": {
+   "name": "Logos",
+   "tile": "l",
+   "order": [
+    "madrigal.svg"
+   ],
+   "files": {
+    "madrigal.svg": {
+     "name": "madrigal.svg",
+     "blob": "72d00bad2d6be0d44955b05257186ed6",
+     "size": 377,
+     "type": "image/svg+xml"
+    }
+   }
+  },
+  "Icons": {
+   "name": "Icons",
+   "tile": "s",
+   "order": [
+    "arrow-down.svg",
+    "arrow-left.svg",
+    "arrow-up.svg",
+    "chart-no-axes-column-increasing.svg",
+    "check.svg",
+    "chevron-down.svg",
+    "chevron-left.svg",
+    "chevron-right.svg",
+    "chevron-up.svg",
+    "circle-check.svg",
+    "circle-x.svg",
+    "clock.svg",
+    "compass.svg",
+    "download.svg",
+    "ellipsis-vertical.svg",
+    "gauge.svg",
+    "grip.svg",
+    "heart-filled.svg",
+    "heart.svg",
+    "history.svg",
+    "house.svg",
+    "info.svg",
+    "languages.svg",
+    "library.svg",
+    "list-music.svg",
+    "list-plus.svg",
+    "list-video.svg",
+    "loader-circle.svg",
+    "mic.svg",
+    "minus.svg",
+    "music-2.svg",
+    "pause.svg",
+    "play.svg",
+    "plus.svg",
+    "repeat-1.svg",
+    "repeat.svg",
+    "rotate-cw.svg",
+    "save.svg",
+    "search.svg",
+    "settings.svg",
+    "shuffle.svg",
+    "skip-back.svg",
+    "skip-forward.svg",
+    "sliders-horizontal.svg",
+    "square-check.svg",
+    "square.svg",
+    "star-filled.svg",
+    "star.svg",
+    "trash.svg",
+    "triangle-alert.svg",
+    "undo-2.svg",
+    "user-round.svg",
+    "volume-2.svg",
+    "x.svg"
+   ],
+   "files": {
+    "arrow-down.svg": {
+     "name": "arrow-down.svg",
+     "blob": "131fda2b7d9adf16492f50f8519ab182",
+     "size": 229,
+     "type": "image/svg+xml"
+    },
+    "arrow-left.svg": {
+     "name": "arrow-left.svg",
+     "blob": "9d5f1bc83244864969a4e5e8c9507cf5",
+     "size": 229,
+     "type": "image/svg+xml"
+    },
+    "arrow-up.svg": {
+     "name": "arrow-up.svg",
+     "blob": "8ad8f57070d1f85b5a86f9d5c18a6fb9",
+     "size": 228,
+     "type": "image/svg+xml"
+    },
+    "chart-no-axes-column-increasing.svg": {
+     "name": "chart-no-axes-column-increasing.svg",
+     "blob": "2b1e1e16fdf29f1b5d8dd9f1c61b020f",
+     "size": 243,
+     "type": "image/svg+xml"
+    },
+    "check.svg": {
+     "name": "check.svg",
+     "blob": "23e1b5c2d8fc26c9f3008dd79b25a092",
+     "size": 210,
+     "type": "image/svg+xml"
+    },
+    "chevron-down.svg": {
+     "name": "chevron-down.svg",
+     "blob": "603a3bda62347ba87ef135d5f79ffdb5",
+     "size": 207,
+     "type": "image/svg+xml"
+    },
+    "chevron-left.svg": {
+     "name": "chevron-left.svg",
+     "blob": "bb749d43abf9883178fa9929efc3c495",
+     "size": 209,
+     "type": "image/svg+xml"
+    },
+    "chevron-right.svg": {
+     "name": "chevron-right.svg",
+     "blob": "59d814b04f71fde398e11d119fe4c2ab",
+     "size": 208,
+     "type": "image/svg+xml"
+    },
+    "chevron-up.svg": {
+     "name": "chevron-up.svg",
+     "blob": "6ba64b40352fa8915b5796c33ee11d82",
+     "size": 209,
+     "type": "image/svg+xml"
+    },
+    "circle-check.svg": {
+     "name": "circle-check.svg",
+     "blob": "77f836bf12b8d1bda2d377a87a61d26d",
+     "size": 245,
+     "type": "image/svg+xml"
+    },
+    "circle-x.svg": {
+     "name": "circle-x.svg",
+     "blob": "da60089c7bbecd6a6067cba21b69344e",
+     "size": 257,
+     "type": "image/svg+xml"
+    },
+    "clock.svg": {
+     "name": "clock.svg",
+     "blob": "6b3fd3baae6bf066083fa877b3cbd8be",
+     "size": 238,
+     "type": "image/svg+xml"
+    },
+    "compass.svg": {
+     "name": "compass.svg",
+     "blob": "c93abbfafd70187d3faaa642c8422f8c",
+     "size": 269,
+     "type": "image/svg+xml"
+    },
+    "download.svg": {
+     "name": "download.svg",
+     "blob": "9eae3f461e6ae1a90d374a1a4baa48f1",
+     "size": 281,
+     "type": "image/svg+xml"
+    },
+    "ellipsis-vertical.svg": {
+     "name": "ellipsis-vertical.svg",
+     "blob": "7881338d7649435fe2ed4db867b032d4",
+     "size": 340,
+     "type": "image/svg+xml"
+    },
+    "gauge.svg": {
+     "name": "gauge.svg",
+     "blob": "8adfe154782262c928f0f0f08cdcbb5e",
+     "size": 245,
+     "type": "image/svg+xml"
+    },
+    "grip.svg": {
+     "name": "grip.svg",
+     "blob": "923a5358aaeec78344d13ec8feed9106",
+     "size": 648,
+     "type": "image/svg+xml"
+    },
+    "heart-filled.svg": {
+     "name": "heart-filled.svg",
+     "blob": "c347a9403b3d6414456da10928ed9520",
+     "size": 347,
+     "type": "image/svg+xml"
+    },
+    "heart.svg": {
+     "name": "heart.svg",
+     "blob": "fa9c27504576f2a591a8428f79f9e603",
+     "size": 344,
+     "type": "image/svg+xml"
+    },
+    "history.svg": {
+     "name": "history.svg",
+     "blob": "6076aa00626290a53e4e043deb3098ba",
+     "size": 287,
+     "type": "image/svg+xml"
+    },
+    "house.svg": {
+     "name": "house.svg",
+     "blob": "bc1103a46d64e1fadffd2bcd17bc2e00",
+     "size": 350,
+     "type": "image/svg+xml"
+    },
+    "info.svg": {
+     "name": "info.svg",
+     "blob": "3cdd4e8c3f24ee88c18006d30f51411d",
+     "size": 245,
+     "type": "image/svg+xml"
+    },
+    "languages.svg": {
+     "name": "languages.svg",
+     "blob": "8f03febd2b238016568814aef61f5583",
+     "size": 318,
+     "type": "image/svg+xml"
+    },
+    "library.svg": {
+     "name": "library.svg",
+     "blob": "07a69e99387e1b6d1c004c2701a8ce26",
+     "size": 263,
+     "type": "image/svg+xml"
+    },
+    "list-music.svg": {
+     "name": "list-music.svg",
+     "blob": "3196dab588fdaca2593074df08d812c5",
+     "size": 293,
+     "type": "image/svg+xml"
+    },
+    "list-plus.svg": {
+     "name": "list-plus.svg",
+     "blob": "dca297d7c028958f16c6dccb7834a3dd",
+     "size": 282,
+     "type": "image/svg+xml"
+    },
+    "list-video.svg": {
+     "name": "list-video.svg",
+     "blob": "474956cf3bd75fb1603108229a305854",
+     "size": 349,
+     "type": "image/svg+xml"
+    },
+    "loader-circle.svg": {
+     "name": "loader-circle.svg",
+     "blob": "9ea9928b8484ec9eecfc9003c9ca2867",
+     "size": 222,
+     "type": "image/svg+xml"
+    },
+    "mic.svg": {
+     "name": "mic.svg",
+     "blob": "fbb6b7c8588ad2ee34cc9b9c985fefa4",
+     "size": 324,
+     "type": "image/svg+xml"
+    },
+    "minus.svg": {
+     "name": "minus.svg",
+     "blob": "39f5b58fa073ffc964edfdda75eb29a3",
+     "size": 203,
+     "type": "image/svg+xml"
+    },
+    "music-2.svg": {
+     "name": "music-2.svg",
+     "blob": "a96ce60d5a734f08a87ee713eb47b2c0",
+     "size": 237,
+     "type": "image/svg+xml"
+    },
+    "pause.svg": {
+     "name": "pause.svg",
+     "blob": "131dd94f12a5afb0e83039f5c37312c8",
+     "size": 233,
+     "type": "image/svg+xml"
+    },
+    "play.svg": {
+     "name": "play.svg",
+     "blob": "3ce3b2536ef440b21d1fc53e3d53c13c",
+     "size": 277,
+     "type": "image/svg+xml"
+    },
+    "plus.svg": {
+     "name": "plus.svg",
+     "blob": "c92ea4cd38087e1bd52b054d862f723a",
+     "size": 223,
+     "type": "image/svg+xml"
+    },
+    "repeat-1.svg": {
+     "name": "repeat-1.svg",
+     "blob": "31863daebb89efea1f08b45ff2c87ff3",
+     "size": 328,
+     "type": "image/svg+xml"
+    },
+    "repeat.svg": {
+     "name": "repeat.svg",
+     "blob": "bbda72cf29ebe65e2dd60b96d1728496",
+     "size": 306,
+     "type": "image/svg+xml"
+    },
+    "rotate-cw.svg": {
+     "name": "rotate-cw.svg",
+     "blob": "c24774f07f28bd65833151e6b468031e",
+     "size": 266,
+     "type": "image/svg+xml"
+    },
+    "save.svg": {
+     "name": "save.svg",
+     "blob": "56a30d13d8188cdf65b40cafd48a1a11",
+     "size": 338,
+     "type": "image/svg+xml"
+    },
+    "search.svg": {
+     "name": "search.svg",
+     "blob": "9dc6c179308cf0696e8686689ff3f211",
+     "size": 242,
+     "type": "image/svg+xml"
+    },
+    "settings.svg": {
+     "name": "settings.svg",
+     "blob": "9ac4bf7d27b3fe0d6a87025808345559",
+     "size": 553,
+     "type": "image/svg+xml"
+    },
+    "shuffle.svg": {
+     "name": "shuffle.svg",
+     "blob": "80e4851dead80c860015eb1243fa56c5",
+     "size": 399,
+     "type": "image/svg+xml"
+    },
+    "skip-back.svg": {
+     "name": "skip-back.svg",
+     "blob": "50dbe5b9b86d871247a519665b73f94c",
+     "size": 302,
+     "type": "image/svg+xml"
+    },
+    "skip-forward.svg": {
+     "name": "skip-forward.svg",
+     "blob": "26994c4d54507344de63218ae8309e31",
+     "size": 300,
+     "type": "image/svg+xml"
+    },
+    "sliders-horizontal.svg": {
+     "name": "sliders-horizontal.svg",
+     "blob": "c1acf5d9437f36faeec384aa2687c1af",
+     "size": 522,
+     "type": "image/svg+xml"
+    },
+    "square-check.svg": {
+     "name": "square-check.svg",
+     "blob": "1180f232668172bd3bb009e26498f98d",
+     "size": 257,
+     "type": "image/svg+xml"
+    },
+    "square.svg": {
+     "name": "square.svg",
+     "blob": "07a5141c56faa52bde9514312dd2cb43",
+     "size": 232,
+     "type": "image/svg+xml"
+    },
+    "star-filled.svg": {
+     "name": "star-filled.svg",
+     "blob": "572c763f413f9f91a4fe871fe894f19b",
+     "size": 562,
+     "type": "image/svg+xml"
+    },
+    "star.svg": {
+     "name": "star.svg",
+     "blob": "b10f0384035e4a2ac0fa7860e0dc4e84",
+     "size": 559,
+     "type": "image/svg+xml"
+    },
+    "trash.svg": {
+     "name": "trash.svg",
+     "blob": "3b0c05beb8413674e1761fbd1e11e621",
+     "size": 344,
+     "type": "image/svg+xml"
+    },
+    "triangle-alert.svg": {
+     "name": "triangle-alert.svg",
+     "blob": "55ba64265022fed28a5910d5c1c3f1c5",
+     "size": 308,
+     "type": "image/svg+xml"
+    },
+    "undo-2.svg": {
+     "name": "undo-2.svg",
+     "blob": "db476fb702c0d2d795c4de495d5541ed",
+     "size": 276,
+     "type": "image/svg+xml"
+    },
+    "user-round.svg": {
+     "name": "user-round.svg",
+     "blob": "341c20c7a5f4933fa8cb1fbae84cdf1c",
+     "size": 246,
+     "type": "image/svg+xml"
+    },
+    "volume-2.svg": {
+     "name": "volume-2.svg",
+     "blob": "0782bcbbadf330d59c476ebfba734fa8",
+     "size": 439,
+     "type": "image/svg+xml"
+    },
+    "x.svg": {
+     "name": "x.svg",
+     "blob": "d8d83693dbbc39889ae212f9f9b9f3a5",
+     "size": 227,
+     "type": "image/svg+xml"
+    }
+   }
+  }
+ },
+ "blobs": {},
+ "docs": {
+  "readme": "project/README.md",
+  "sections": []
+ },
+ "lastChange": {
+  "by": "Claude",
+  "at": "2026-11-24T20:46:57Z",
+  "via": "Claude Code",
+  "note": "Redesign proposals: screens, overlays, playing indicator, easing and spring tokens, contrast fix"
+ }
+}

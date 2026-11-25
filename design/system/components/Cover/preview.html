@@ -1,0 +1,36 @@
+<!-- @dsCard height=300 -->
+<div class="cv">
+<!--
+blocks: primary slab 176×280 (radius-extra-extra-large), tertiary disc r72, on-surface square 136×136 (radius-extra-large-increased), primary-fixed-dim + secondary pills
+arrangement: tall slab bleeding off the top with satellites, the square bleeding off the right edge
+pattern: equalizer pills (literal motif: a level meter) built from radius-full; Madrigal is a music player whose expressive shapes are pills and morphing squares
+steps: pill width space-16, gap space-8, heights multiples of space-8; radii radius-full, radius-extra-large-increased, radius-extra-extra-large
+-->
+<svg viewBox="0 0 960 300" width="960" height="300" aria-hidden="true">
+<rect class="b-primary" x="496" y="-40" width="176" height="260" rx="48"/>
+<circle class="b-tertiary" cx="776" cy="88" r="72"/>
+<rect class="b-ink" x="848" y="184" width="136" height="136" rx="32"/>
+<g class="eq">
+<rect class="b-dim" x="520" y="236" width="16" height="48" rx="8"/>
+<rect class="b-dim" x="544" y="252" width="16" height="32" rx="8"/>
+<rect class="b-dim" x="568" y="244" width="16" height="40" rx="8"/>
+<rect class="b-sec" x="696" y="188" width="16" height="96" rx="8"/>
+<rect class="b-dim" x="720" y="220" width="16" height="64" rx="8"/>
+<rect class="b-sec" x="744" y="172" width="16" height="112" rx="8"/>
+<rect class="b-dim" x="768" y="236" width="16" height="48" rx="8"/>
+<rect class="b-sec" x="792" y="204" width="16" height="80" rx="8"/>
+<rect class="b-dim" x="816" y="252" width="16" height="32" rx="8"/>
+</g>
+</svg>
+<div class="tx"><h1>Madrigal</h1><p>Material 3 Expressive for a desktop music player.</p></div>
+</div>
+<style>
+html,body{margin:0;background:var(--surface)}
+.cv{position:relative;width:960px;height:300px;overflow:hidden;background:var(--surface)}
+svg{position:absolute;inset:0}
+.b-primary{fill:var(--primary)}.b-tertiary{fill:var(--tertiary)}.b-ink{fill:var(--on-surface)}
+.b-dim{fill:var(--primary-fixed-dim)}.b-sec{fill:var(--secondary)}
+.tx{position:absolute;left:40px;bottom:32px;max-width:440px}
+h1{margin:0;font:500 88px/0.92 var(--font-title);letter-spacing:-0.2px;color:var(--on-surface)}
+p{margin:16px 0 0;font:400 14px/20px var(--font-body);color:var(--on-surface-variant)}
+</style>
