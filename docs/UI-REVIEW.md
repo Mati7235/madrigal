@@ -14,8 +14,7 @@ No findings in the design system previews.
 ## Priority 1: fix before the agent builds
 
 1. **Done: reference screenshots regenerated** (22 PNGs: full player, settings and sleep dialog, at every resolution and theme in the set).
-   - Left to fix: the dark strip at the bottom where the bottom bar used to sit. Fill it with the console and pane, or hide it by stretching the content.
-   - Left to fix: the Up next card still shows under the transport.
+   - Applied the chosen layout (option 2) and labels (option 3): a 360px console, lyrics without a card, "Speed 1.00×" and "Equalizer · Flat". The Up next card is hidden and the bottom strip is gone. Full-player and sleep-dialog captures regenerated after this change.
 2. **Done: bottom bar hidden under the full player** in `prototype.html`.
 3. **Done: glows and bounce removed** from the cover and the play button.
 
