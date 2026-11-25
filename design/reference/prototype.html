@@ -549,7 +549,7 @@ body{background:var(--surface);color:var(--on-surface);font-family:var(--font-bo
 .trow.active .tx span,.crow.active .tx span,.trow.active .dur,.trow.active .num{color:var(--on-primary-container)}
 .trow .dur{flex:none;min-width:36px;margin-left:8px;text-align:right;font:500 11px/16px var(--font-body);color:var(--on-surface-variant);font-variant-numeric:tabular-nums}
 .trow .num{width:24px;text-align:right;font:500 14px/20px var(--font-title);color:var(--on-surface-variant);font-variant-numeric:tabular-nums;display:inline-flex;justify-content:flex-end}
-.trow .md-icb{opacity:.0;transition:opacity 100ms}.trow:hover .md-icb,.trow:focus-within .md-icb,.trow.active .md-icb{opacity:1}
+.qp .trow .md-icb{display:none}.trow .md-icb{opacity:.0;transition:opacity 100ms}.trow:hover .md-icb,.trow:focus-within .md-icb,.trow.active .md-icb{opacity:1}
 .trow .md-cb{flex:none}
 .trow.active .eqb{color:var(--on-primary-container)}
 .rail{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
@@ -868,6 +868,7 @@ body:has(#full:not([hidden])) .barwrap{display:none}body:has(#full:not([hidden])
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const ic = (n, c = '') => `<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"></use></svg>`;
+  const lyrLabel = (n) => (n <= 19 ? 'Small' : n <= 25 ? 'Medium' : n <= 31 ? 'Large' : 'Extra large');
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const fmt = (s) => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
   const EQ = '<span class="eqb" aria-label="Playing"><i></i><i></i><i></i></span>';
@@ -988,7 +989,7 @@ body:has(#full:not([hidden])) .barwrap{display:none}body:has(#full:not([hidden])
         <div class="sr"><div class="tx"><b>Player background</b><span>Behind the full player</span></div>
           <div class="dd dense right"><button class="trig" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Player background: ${S.bg}"><span class="v">${S.bg}</span><span class="chev">${ic('chevron-down', 'ic-18')}</span></button>
           <div class="mn" role="listbox">${bgs.map(([v, s]) => `<div class="mo-i" role="option" tabindex="-1" aria-selected="${S.bg === v}" data-bg="${v}"><span class="lead">${S.bg === v ? ic('check') : ''}</span><span class="tx"><b>${v}</b><span class="s">${s}</span></span></div>`).join('')}</div></div></div>
-        <div class="sr"><div class="tx"><b>Lyrics size</b><span>Active line in the full player</span></div><div class="rng"><input id="lsize" type="range" min="16" max="36" value="${S.lyrSize}" aria-label="Lyrics size"><em>${S.lyrSize} px</em></div></div>
+        <div class="sr"><div class="tx"><b>Lyrics size</b><span>Active line in the full player</span></div><div class="rng"><input id="lsize" type="range" min="16" max="36" value="${S.lyrSize}" aria-label="Lyrics size"><em>${lyrLabel(S.lyrSize)}</em></div></div>
         <div class="sr"><div class="tx"><b>Last.fm user</b><span>Scrobbles go to this account</span></div><label class="tf dense" style="width:240px"><span class="f"><input id="lfm" type="text" placeholder="username" aria-label="Last.fm user"></span></label></div>
       </section></div>
       `;
@@ -1098,7 +1099,7 @@ body:has(#full:not([hidden])) .barwrap{display:none}body:has(#full:not([hidden])
     if (S.fullTab === 'info') {
       if (force) {
         const c = cur();
-        p.innerHTML = `<dl class="info"><dt>Title</dt><dd>${esc(c.t)}</dd><dt>Album</dt><dd>${esc(c.al.t)} (${c.al.y})</dd><dt>Source</dt><dd>YouTube Music · stream</dd><dt>Codec</dt><dd>opus · 160 kbps · 48 kHz</dd><dt>Route</dt><dd>Cache</dd><dt>Loudness</dt><dd>−8.2 LUFS</dd><dt>Buffer</dt><dd><span class="buf"><i></i></span>72%</dd></dl>`;
+        p.innerHTML = `<dl class="info"><dt>Title</dt><dd>${esc(c.t)}</dd><dt>Album</dt><dd>${esc(c.al.t)} (${c.al.y})</dd><dt>Source</dt><dd>YouTube Music · stream</dd><dt>Format</dt><dd>opus · 160 kbps · 48 kHz</dd><dt>Playing from</dt><dd>Cache</dd><dt>Loudness</dt><dd>−8.2 LUFS</dd><dt>Buffered</dt><dd><span class="buf"><i></i></span>72%</dd></dl>`;
       }
       return;
     }
@@ -1363,7 +1364,7 @@ body:has(#full:not([hidden])) .barwrap{display:none}body:has(#full:not([hidden])
   document.addEventListener('input', (e) => {
     if (e.target.id === 'q') { S.query = e.target.value; renderPage(); }
     if (e.target.id === 'fvol') { S.vol = Number(e.target.value); e.target.style.setProperty('--v', S.vol + '%'); e.target.nextElementSibling.textContent = S.vol; }
-    if (e.target.id === 'lsize') { S.lyrSize = Number(e.target.value); e.target.nextElementSibling.textContent = S.lyrSize + ' px'; }
+    if (e.target.id === 'lsize') { S.lyrSize = Number(e.target.value); e.target.nextElementSibling.textContent = lyrLabel(S.lyrSize); }
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {

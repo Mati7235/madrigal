@@ -18,24 +18,22 @@ No findings in the design system previews.
 | 1 | Full player reference PNGs stale | Done: full player matches the chosen layout |
 | 2 | Bottom bar under the full player | Done |
 | 3 | Glow and bounce on cover and play | Done |
-| 4 | Accent colour in Light | Open: Light primary is still `#0b6bcb`, Dark is `#cfbcff` |
-| 5 | Downloads tile on Home reads as error | Open: still a rose arc tile on Home |
-| 6 | Downloads rows have a dead middle | Open |
-| 7 | Quick picks crowd their durations | Open in the dark home screen |
+| 4 | Accent colour in Light | Decided: keep. Light stays the brand blue `#0b6bcb`, which matches the logo and `tokens.slint`. Dark and Pure Black keep the purple |
+| 5 | Downloads tile on Home reads as error | Done: tonal `secondary-container` tile |
+| 6 | Downloads rows have a dead middle | Done |
+| 7 | Quick picks crowd their durations | Done: durations in their own column, hover actions hidden in Quick picks so artist and album fit |
 | 8 | Prototype note on Settings | Done |
-| 9 | Technical labels in Details | Open: "Codec", "Route", "Buffer" still in the Details tab |
-| 10 | Lyrics size shows "22 px" | Open |
+| 9 | Technical labels in Details | Done: "Format", "Playing from", "Buffered" |
+| 10 | Lyrics size shows "22 px" | Done: Small, Medium, Large, Extra large |
 | 11 | Error and empty states in reference | Done: `err-download`, `err-lyrics`, `err-offline`, `err-unavailable`. The offline banner was lost in merge `8397095` and restored in this commit |
 | 12 | Contrast across themes and tints | Partly done: 0 text pairs below threshold on the 6 main screens in Light, Dark and Pure Black. Tints not yet measured. Closest pair: the inactive lyric "rain" at 3.9:1 (Light, 42px bold, needs 3.0) |
 | 13 | Focus rings on every control | Partly done: the first 40 Tab stops on Home show a visible ring in all three themes. Other screens not yet checked |
 
 ## New findings
 
-14. **The offline banner is a solid dark red bar.** It follows the spec: it uses `error-container`, which in Dark is `#93000a`. The colour is strong. Decide whether that token value should change (a lighter or less saturated `error-container` for Dark), since it sets every error surface.
-15. **Home still uses the Downloads arc tile**, which conflicts with the error language used in ErrorState. Same as item 5.
+14. **The offline banner is a solid dark red bar.** Decided: keep. It uses `error-container` (`#93000a` in Dark) with `on-error-container` text, the standard Material 3 pairing, and it passes contrast. Every error surface shares it, so changing it is a token change, not a banner fix.
+15. **Home Downloads tile**: fixed, see item 5.
 
 ## Next steps
 
-- Items 5, 6, 7 and 14 are layout and colour fixes in the prototype. Do them together, then regenerate the affected Home and Downloads PNGs.
-- Items 4, 9 and 10 need a decision from the user before changing copy or colour.
-- Items 12 and 13: measure the cover tints and the other screens' Tab stops.
+- Measure the cover tints for contrast and check Tab stops on the other screens (items 12 and 13).
